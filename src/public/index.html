@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SafeWatch | المراقبة الذكية</title>
-    <link rel="stylesheet" href="css/style.css?v=3.3">
+    <link rel="stylesheet" href="css/style.css?v=4.0">
     <!-- Ionicons -->
     <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
     <link rel="manifest" href="manifest.json">
@@ -55,7 +55,7 @@
         <header>
             <div class="logo">
                 <ion-icon name="videocam"></ion-icon>
-                SafeWatch <span style="font-size: 0.8rem; opacity: 0.5; margin-right: 5px;">v3.3</span>
+                SafeWatch <span style="font-size: 0.8rem; opacity: 0.5; margin-right: 5px;">v4.0</span>
             </div>
             <div class="connection-status" id="connection-status">
                 <span class="status-dot"></span>
@@ -138,12 +138,23 @@
     </script>
 
     <script>
-        document.getElementById('createable').addEventListener('click', () => {
+        document.getElementById('createable').addEventListener('click', function () {
+            const btn = this;
             const customInput = document.getElementById('custom-session').value.trim();
-            // Use custom ID if provided, otherwise random string
-            const roomId = customInput ? customInput : 'sw-' + Math.random().toString(36).substr(2, 9);
-            // Redirect to viewer/dashboard
-            window.location.href = `viewer.html?session=${roomId}`;
+
+            // Visual feedback
+            btn.innerHTML = '<ion-icon name="sync" class="pulsing"></ion-icon> جاري التحميل...';
+            btn.style.opacity = '0.7';
+            btn.style.pointerEvents = 'none';
+
+            // Generate ID
+            const randomId = Math.random().toString(36).substring(2, 11);
+            const roomId = customInput ? customInput : 'sw-' + randomId;
+
+            // Redirect using standard method
+            setTimeout(function () {
+                window.location.href = 'viewer.html?session=' + encodeURIComponent(roomId);
+            }, 300);
         });
     </script>
 </body>

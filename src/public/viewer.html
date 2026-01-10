@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>لوحة التحكم | SafeWatch</title>
-    <link rel="stylesheet" href="css/style.css?v=3.3">
+    <link rel="stylesheet" href="css/style.css?v=4.0">
     <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="/socket.io/socket.io.js"></script>
@@ -215,42 +215,52 @@
                 </div>
 
                 <script>
-                    const socket = io();
-                    const urlParams = new URLSearchParams(window.location.search);
-                    let roomId = urlParams.get('session');
+                    (function () {
+                        const socket = io();
+                        const urlParams = new URLSearchParams(window.location.search);
+                        const setupScreen = document.getElementById('setup-screen');
+                        const dashboard = document.getElementById('dashboard');
+                        const remoteVideo = document.getElementById('remoteVideo');
+                        const linkDisplay = document.getElementById('link-display');
+                        const qrContainer = document.getElementById('qrcode');
 
-                    // Priority: URL > localStorage
-                    if (!roomId) {
-                        roomId = localStorage.getItem('sw_saved_session');
-                    }
+                        let roomId = urlParams.get('session');
 
-                    if (!roomId) {
-                        console.error("No Session ID found!");
-                        window.location.href = 'index.html';
-                    } else {
+                        // Priority: URL > localStorage
+                        if (!roomId) roomId = localStorage.getItem('sw_saved_session');
+
+                        if (!roomId) {
+                            window.location.href = 'index.html';
+                            return;
+                        }
+
+                        // Persist
                         localStorage.setItem('sw_saved_session', roomId);
-                        // Clean URL to keep it pretty
-                        if (urlParams.has('session')) {
-                            window.history.replaceState({}, document.title, window.location.pathname);
-                        }
-                    }
 
-                    // Generate QR Code & Link
-                    const monitorUrl = `${window.location.protocol}//${window.location.host}/monitor.html?session=${roomId}&token=dev2000`;
-                    document.getElementById('link-display').innerText = monitorUrl;
+                        // Link generation
+                        const monitorUrl = window.location.origin + '/monitor.html?session=' + roomId + '&token=dev2000';
 
-                    // Small delay to ensure QRCode container is ready and library loaded
-                    setTimeout(() => {
-                        try {
-                            new QRCode(document.getElementById("qrcode"), {
-                                text: monitorUrl,
-                                width: 200,
-                                height: 200
-                            });
-                        } catch (e) {
-                            console.error("QR Generation failed:", e);
+                        // Display link immediately
+                        if (linkDisplay) linkDisplay.innerText = monitorUrl;
+
+                        // QR Generation with retry
+                        function generateQR() {
+                            if (typeof QRCode !== 'undefined' && qrContainer) {
+                                qrContainer.innerHTML = ''; // Clear
+                                new QRCode(qrContainer, {
+                                    text: monitorUrl,
+                                    width: 200,
+                                    height: 200
+                                });
+                            } else {
+                                setTimeout(generateQR, 200);
+                            }
                         }
-                    }, 100);
+                        generateQR();
+
+                        // Socket Join
+                        socket.emit('join-room', roomId, 'viewer');
+                    })();
 
                     function resetSession() {
                         if (confirm("هل أنت متأكد؟ سيتم تغيير الرابط والباركود ولن يعمل الرابط القديم.")) {
