@@ -158,8 +158,9 @@
 
             // Handle incoming stream
             peerConnection.ontrack = (event) => {
-                console.log('Stream received');
+                console.log('Stream received with tracks:', event.streams[0].getTracks());
                 remoteVideo.srcObject = event.streams[0];
+                remoteVideo.play().catch(e => console.error("Autoplay failed:", e));
             };
 
             peerConnection.onicecandidate = (event) => {
@@ -168,9 +169,6 @@
                 }
             };
 
-            // Create Offer
-            // We want to receive video, not send audio/video (usually)
-            // But to establish connection we might need to add transceiver or just create offer with receiveAudio/Video
             peerConnection.addTransceiver('video', { direction: 'recvonly' });
             peerConnection.addTransceiver('audio', { direction: 'recvonly' });
 
@@ -179,12 +177,24 @@
             socket.emit('offer', { roomId, sdp: offer });
         }
 
+        let iceCandidatesQueue = [];
+
         socket.on('answer', async (payload) => {
             await peerConnection.setRemoteDescription(new RTCSessionDescription(payload.sdp));
+
+            // Process queued candidates
+            while (iceCandidatesQueue.length > 0) {
+                const candidate = iceCandidatesQueue.shift();
+                await peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
+            }
         });
 
         socket.on('ice-candidate', async (payload) => {
-            await peerConnection.addIceCandidate(new RTCIceCandidate(payload.candidate));
+            if (peerConnection && peerConnection.remoteDescription) {
+                await peerConnection.addIceCandidate(new RTCIceCandidate(payload.candidate));
+            } else {
+                iceCandidatesQueue.push(payload.candidate);
+            }
         });
 
         socket.on('status-update', (payload) => {

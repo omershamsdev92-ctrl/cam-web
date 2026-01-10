@@ -139,6 +139,8 @@
         }
 
         // Socket Events
+        let iceCandidatesQueue = [];
+
         socket.on('offer', async (payload) => {
             console.log("Received Offer");
 
@@ -159,17 +161,27 @@
             };
 
             await peerConnection.setRemoteDescription(new RTCSessionDescription(payload.sdp));
+
+            // Process queued candidates
+            while (iceCandidatesQueue.length > 0) {
+                const candidate = iceCandidatesQueue.shift();
+                await peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
+            }
+
             const answer = await peerConnection.createAnswer();
             await peerConnection.setLocalDescription(answer);
 
             socket.emit('answer', { roomId, sdp: answer });
 
-            // Start sending battery updates
             startBatteryUpdates();
         });
 
         socket.on('ice-candidate', async (payload) => {
-            await peerConnection.addIceCandidate(new RTCIceCandidate(payload.candidate));
+            if (peerConnection && peerConnection.remoteDescription) {
+                await peerConnection.addIceCandidate(new RTCIceCandidate(payload.candidate));
+            } else {
+                iceCandidatesQueue.push(payload.candidate);
+            }
         });
 
         socket.on('control-command', async (payload) => {
