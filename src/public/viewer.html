@@ -225,8 +225,6 @@
                         const qrContainer = document.getElementById('qrcode');
 
                         let roomId = urlParams.get('session');
-
-                        // Priority: URL > localStorage
                         if (!roomId) roomId = localStorage.getItem('sw_saved_session');
 
                         if (!roomId) {
@@ -234,372 +232,132 @@
                             return;
                         }
 
-                        // Persist
                         localStorage.setItem('sw_saved_session', roomId);
-
-                        // Link generation
                         const monitorUrl = window.location.origin + '/monitor.html?session=' + roomId + '&token=dev2000';
-
-                        // Display link immediately
                         if (linkDisplay) linkDisplay.innerText = monitorUrl;
 
-                        // QR Generation with retry
                         function generateQR() {
                             if (typeof QRCode !== 'undefined' && qrContainer) {
-                                qrContainer.innerHTML = ''; // Clear
-                                new QRCode(qrContainer, {
-                                    text: monitorUrl,
-                                    width: 200,
-                                    height: 200
-                                });
+                                qrContainer.innerHTML = '';
+                                new QRCode(qrContainer, { text: monitorUrl, width: 200, height: 200 });
                             } else {
                                 setTimeout(generateQR, 200);
                             }
                         }
                         generateQR();
 
-                        // Socket Join
                         socket.emit('join-room', roomId, 'viewer');
-                    })();
 
-                    function resetSession() {
-                        if (confirm("هل أنت متأكد؟ سيتم تغيير الرابط والباركود ولن يعمل الرابط القديم.")) {
-                            localStorage.removeItem('sw_saved_session');
-                            window.location.href = 'index.html'; // Go back to create a new one
-                        }
-                    }
-
-                    function copyMonitorLink() {
-                        const link = document.getElementById('link-display').innerText;
-                        navigator.clipboard.writeText(link).then(() => {
-                            const btn = document.getElementById('copy-btn');
-                            const span = btn.querySelector('span');
-                            const icon = btn.querySelector('ion-icon');
-
-                            btn.style.background = "var(--accent)";
-                            span.innerText = "تم النسخ!";
-                            icon.name = "checkmark-outline";
-
-                            setTimeout(() => {
-                                btn.style.background = "var(--primary)";
-                                span.innerText = "نسخ";
-                                icon.name = "copy-outline";
-                            }, 2000);
-                        });
-                    }
-
-                    // Join Room
-                    socket.emit('join-room', roomId, 'viewer');
-
-                    // WebRTC
-                    let peerConnection;
-                    const offsetConfig = {
-                        iceServers: [
-                            { urls: 'stun:stun.l.google.com:19302' }
-                        ]
-                    };
-
-                    socket.on('user-connected', async (role) => {
-                        if (role === 'monitor') {
-                            console.log('Monitor connected! Starting connection...');
-                            startConnection();
-                            // Switch UI
-                            setupScreen.style.display = 'none';
-                            dashboard.style.display = 'grid';
-                        }
-                    });
-
-                    async function startConnection() {
-                        peerConnection = new RTCPeerConnection(offsetConfig);
-
-                        peerConnection.onconnectionstatechange = () => {
-                            console.log("Connection State:", peerConnection.connectionState);
-                            if (peerConnection.connectionState === 'connected') {
-                                document.querySelector('.status-indicator').innerHTML = '<ion-icon name="wifi"></ion-icon> متصل بنجاح';
-                                document.querySelector('.status-indicator').style.color = 'var(--accent)';
-                            } else if (peerConnection.connectionState === 'failed' || peerConnection.connectionState === 'disconnected') {
-                                alert("فشل الاتصال المباشر. قد يكون بسبب قيود الشبكة (Jameel Firewall etc).");
+                        // Global functions needed by HTML
+                        window.resetSession = function () {
+                            if (confirm("هل أنت متأكد؟ سيتم تغيير الرابط والباركود ولن يعمل الرابط القديم.")) {
+                                localStorage.removeItem('sw_saved_session');
+                                window.location.href = 'index.html';
                             }
                         };
 
-                        // Handle incoming stream
-                        peerConnection.ontrack = (event) => {
-                            console.log('Stream received with tracks:', event.streams[0].getTracks());
-                            const stream = event.streams[0];
-                            remoteVideo.srcObject = stream;
-
-                            const playPromise = remoteVideo.play();
-                            if (playPromise !== undefined) {
-                                playPromise.catch(error => {
-                                    console.error("Autoplay failed:", error);
-                                    // Show Manual Play Button
-                                    const playBtn = document.getElementById('play-stream-btn');
-                                    playBtn.style.display = 'block';
-                                    playBtn.addEventListener('click', () => {
-                                        remoteVideo.play();
-                                        playBtn.style.display = 'none';
-                                    });
-                                });
-                            }
-                        };
-
-                        peerConnection.onicecandidate = (event) => {
-                            if (event.candidate) {
-                                socket.emit('ice-candidate', { roomId, candidate: event.candidate });
-                            }
-                        };
-
-                        peerConnection.addTransceiver('video', { direction: 'recvonly' });
-                        peerConnection.addTransceiver('audio', { direction: 'recvonly' });
-
-                        const offer = await peerConnection.createOffer();
-                        await peerConnection.setLocalDescription(offer);
-                        socket.emit('offer', { roomId, sdp: offer });
-                    }
-
-                    let iceCandidatesQueue = [];
-
-                    socket.on('answer', async (payload) => {
-                        await peerConnection.setRemoteDescription(new RTCSessionDescription(payload.sdp));
-
-                        // Process queued candidates
-                        while (iceCandidatesQueue.length > 0) {
-                            const candidate = iceCandidatesQueue.shift();
-                            await peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
-                        }
-                    });
-
-                    socket.on('ice-candidate', async (payload) => {
-                        if (peerConnection && peerConnection.remoteDescription) {
-                            await peerConnection.addIceCandidate(new RTCIceCandidate(payload.candidate));
-                        } else {
-                            iceCandidatesQueue.push(payload.candidate);
-                        }
-                    });
-
-                    socket.on('status-update', (payload) => {
-                        if (payload.type === 'battery') {
-                            const batteryLevel = payload.level + '%';
-                            const isCharging = payload.charging;
-
-                            const batteryText = document.getElementById('battery-level');
-                            const batteryIcon = batteryText.previousElementSibling; // The ion-icon
-
-                            batteryText.innerText = batteryLevel;
-
-                            if (isCharging) {
-                                batteryIcon.name = 'battery-charging';
-                                batteryIcon.style.color = '#10b981';
-                            } else if (payload.level < 20) {
-                                batteryIcon.name = 'battery-dead';
-                                batteryIcon.style.color = '#ef4444';
-                            } else {
-                                batteryIcon.name = 'battery-full';
-                                batteryIcon.style.color = 'var(--accent)';
-                            }
-                        }
-                    });
-
-                    socket.on('device-info', (payload) => {
-                        const info = payload.info;
-                        const infoBox = document.getElementById('device-info-box');
-
-                        // Format User Agent for readability
-                        let deviceName = "جهاز غير معروف";
-                        if (info.userAgent.includes("Android")) {
-                            const match = info.userAgent.match(/Android\s([^\s;]+)/);
-                            deviceName = "أندرويد " + (match ? match[1] : "");
-                        } else if (info.userAgent.includes("iPhone")) {
-                            deviceName = "آيفون (iOS)";
-                        }
-
-                        const mapsLink = (info.location && info.location.lat !== 'غير متاح')
-                            ? `<a href="https://www.google.com/maps?q=${info.location.lat},${info.location.lon}" target="_blank" style="color:var(--accent); text-decoration:underline;">فتح الخريطة (GPS)</a>`
-                            : 'غير متاح';
-
-                        infoBox.innerHTML = `
-                            <div style="margin-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 5px;">
-                                <strong style="color: var(--primary);">نظام الجهاز:</strong> ${deviceName}
-                            </div>
-                            <div style="display: grid; grid-template-columns: 1fr; gap: 8px;">
-                                <div><span style="color: var(--text-muted);">الموقع الجغرافي:</span> ${mapsLink}</div>
-                                <div><span style="color: var(--text-muted);">الشاشة:</span> ${info.screen}</div>
-                                <div><span style="color: var(--text-muted);">التوقيت:</span> ${info.timezone}</div>
-                                <div style="display: flex; gap: 10px;">
-                                    <span><span style="color: var(--text-muted);">المعالج:</span> ${info.cores}</span>
-                                    <span><span style="color: var(--text-muted);">الذاكرة:</span> ${info.memory}</span>
-                                </div>
-                                <div><span style="color: var(--text-muted);">الاتصال:</span> ${info.connection}</div>
-                            </div>
-                            <div style="margin-top: 8px; font-size: 0.65rem; opacity: 0.4; word-break: break-all;">
-                                ${info.userAgent}
-                            </div>
-                        `;
-                    });
-
-                    // Controls
-                    function sendCommand(command) {
-                        socket.emit('control-command', { roomId, command });
-                    }
-                    // Fallback Stream Handler
-                    const fallbackVideo = document.getElementById('fallback-video');
-                    let isCompatMode = false;
-
-                    socket.on('stream-data', (image) => {
-                        fallbackVideo.src = image;
-                    });
-
-                    function toggleCompatibilityMode() {
-                        const btn = document.getElementById('toggle-compat-btn');
-                        if (!isCompatMode) {
-                            // Switch ON
-                            isCompatMode = true;
-                            remoteVideo.style.display = 'none';
-                            fallbackVideo.style.display = 'block';
-                            btn.innerText = "العودة للوضع المتطور (HD)";
-                            btn.style.background = "#f59e0b";
-                            // Standard Compat Mode = Fast Frames
-                            socket.emit('control-command', { roomId, command: 'start-compatibility-mode', interval: 100 });
-                        } else {
-                            // Switch OFF
-                            isCompatMode = false;
-                            remoteVideo.style.display = 'block';
-                            fallbackVideo.style.display = 'none';
-                            btn.innerText = "تواجه مشكلة؟ اضغط هنا (وضع التوافق)";
-                            btn.style.background = "rgba(255,255,255,0.2)";
-                            sendCommand('stop-compatibility-mode');
-                        }
-                    }
-
-                    // Snapshot Mode Logic
-                    let isSnapshotMode = false;
-                    function toggleSnapshotMode() {
-                        const btn = document.getElementById('snapshot-mode-btn');
-                        const compatBtn = document.getElementById('toggle-compat-btn');
-
-                        if (!isSnapshotMode) {
-                            isSnapshotMode = true;
-                            btn.classList.add('active');
-                            btn.innerText = "إيقاف وضع اللقطات";
-
-                            // Force switch to image view
-                            remoteVideo.style.display = 'none';
-                            fallbackVideo.style.display = 'block';
-                            compatBtn.style.display = 'none'; // Hide compat button as we are using a variant of it
-
-                            // Start slow updates (every 5 seconds)
-                            socket.emit('control-command', { roomId, command: 'start-compatibility-mode', interval: 5000 });
-                        } else {
-                            isSnapshotMode = false;
-                            btn.classList.remove('active');
-                            btn.innerText = "تفعيل وضع اللقطات (صور كل 5 ثواني)";
-
-                            // Stop
-                            socket.emit('control-command', { roomId, command: 'stop-compatibility-mode' });
-
-                            // Return to normal
-                            remoteVideo.style.display = 'block';
-                            fallbackVideo.style.display = 'none';
-                            compatBtn.style.display = 'block';
-                        }
-                    }
-
-                    // Auto Snapshot Logic
-                    function toggleAutoSnapshot() {
-                        const isEnabled = document.getElementById('auto-snap-toggle').checked;
-                        const minutes = parseInt(document.getElementById('snap-interval').value);
-                        socket.emit('control-command', { roomId, command: 'set-auto-snapshot', enabled: isEnabled, minutes: minutes });
-
-                        if (isEnabled) {
-                            console.log(`Auto-snapshot set for every ${minutes} mins`);
-                        }
-                    }
-
-                    function updateSnapshotInterval() {
-                        const isEnabled = document.getElementById('auto-snap-toggle').checked;
-                        if (isEnabled) toggleAutoSnapshot(); // Re-trigger with new interval
-                    }
-
-                    // Zoom Logic
-                    const zoomSlider = document.getElementById('zoom-slider');
-                    const zoomVal = document.getElementById('zoom-val');
-
-                    zoomSlider.addEventListener('input', (e) => {
-                        const value = e.target.value;
-                        zoomVal.innerText = value + 'x';
-                        socket.emit('control-command', { roomId, command: 'set-zoom', value: parseFloat(value) });
-                    });
-
-                    // Sound Logic
-                    function toggleAudio() {
-                        remoteVideo.muted = !remoteVideo.muted;
-                        const btn = document.getElementById('toggle-audio-btn');
-                        const icon = btn.querySelector('ion-icon');
-                        if (remoteVideo.muted) {
-                            icon.name = "volume-mute";
-                            btn.innerHTML = '<ion-icon name="volume-mute"></ion-icon> تشغيل الصوت (مكتوم حالياً)';
-                            btn.classList.remove('active');
-                        } else {
-                            icon.name = "volume-high";
-                            btn.innerHTML = '<ion-icon name="volume-high"></ion-icon> إيقاف الصوت (مفعل الآن)';
-                            btn.classList.add('active');
-                        }
-                    }
-
-                    // Handle Snapshot Notifications & Gallery
-                    socket.on('stream-data', (payload) => {
-                        // payload is now ALWAYS an object: { roomId, image, isSnapshot }
-                        const imageData = payload.image;
-
-                        // Update fallback video view
-                        fallbackVideo.src = imageData;
-
-                        if (payload.isSnapshot) {
-                            console.log("Adding snapshot to gallery...");
-                            // Add to gallery
-                            addToGallery(imageData);
-
-                            if (!isCompatMode && !isSnapshotMode) {
-                                // Temporarily show the snapshot if we are in live mode
-                                fallbackVideo.style.display = 'block';
-                                remoteVideo.style.display = 'none';
+                        window.copyMonitorLink = function () {
+                            const link = linkDisplay.innerText;
+                            navigator.clipboard.writeText(link).then(() => {
+                                const btn = document.getElementById('copy-btn');
+                                const span = btn.querySelector('span');
+                                const icon = btn.querySelector('ion-icon');
+                                btn.style.background = "var(--accent)";
+                                span.innerText = "تم النسخ!";
+                                icon.name = "checkmark-outline";
                                 setTimeout(() => {
-                                    if (!isCompatMode && !isSnapshotMode) {
-                                        fallbackVideo.style.display = 'none';
-                                        remoteVideo.style.display = 'block';
-                                    }
-                                }, 3000);
+                                    btn.style.background = "var(--primary)";
+                                    span.innerText = "نسخ";
+                                    icon.name = "copy-outline";
+                                }, 2000);
+                            });
+                        };
+
+                        // WebRTC & Socket Events
+                        let peerConnection;
+                        const rtcConfig = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] };
+
+                        socket.on('user-connected', async (role) => {
+                            if (role === 'monitor') {
+                                console.log('Monitor connected!');
+                                startConnection();
+                                setupScreen.style.display = 'none';
+                                dashboard.style.display = 'grid';
                             }
+                        });
+
+                        async function startConnection() {
+                            peerConnection = new RTCPeerConnection(rtcConfig);
+                            peerConnection.onicecandidate = (e) => {
+                                if (e.candidate) socket.emit('ice-candidate', { roomId, candidate: e.candidate });
+                            };
+                            peerConnection.ontrack = (e) => {
+                                remoteVideo.srcObject = e.streams[0];
+                                remoteVideo.play().catch(() => {
+                                    document.getElementById('play-stream-btn').style.display = 'block';
+                                });
+                            };
+                            peerConnection.addTransceiver('video', { direction: 'recvonly' });
+                            peerConnection.addTransceiver('audio', { direction: 'recvonly' });
+                            const offer = await peerConnection.createOffer();
+                            await peerConnection.setLocalDescription(offer);
+                            socket.emit('offer', { roomId, sdp: offer });
                         }
-                    });
 
-                    function addToGallery(data) {
-                        const gallery = document.getElementById('photo-gallery');
-                        const noMsg = document.getElementById('no-photos-msg');
-                        if (noMsg) noMsg.remove();
+                        socket.on('answer', async (payload) => {
+                            await peerConnection.setRemoteDescription(new RTCSessionDescription(payload.sdp));
+                        });
 
-                        const time = new Date().toLocaleTimeString('ar-EG');
+                        socket.on('ice-candidate', async (payload) => {
+                            if (peerConnection && peerConnection.remoteDescription) {
+                                await peerConnection.addIceCandidate(new RTCIceCandidate(payload.candidate));
+                            }
+                        });
 
-                        const item = document.createElement('div');
-                        item.style = "background: #0f172a; border-radius: 10px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1);";
-                        item.innerHTML = `
-                <img src="${data}" style="width: 100%; height: 120px; object-fit: cover;">
-                <div style="padding: 10px; display: flex; justify-content: space-between; align-items: center;">
-                    <span style="font-size: 0.7rem; color: #94a3b8;">${time}</span>
-                    <a href="${data}" download="SafeWatch_${Date.now()}.jpg" style="color: var(--accent); font-size: 1.2rem;">
-                        <ion-icon name="download-outline"></ion-icon>
-                    </a>
-                </div>
-            `;
-                        gallery.prepend(item);
-                    }
+                        window.sendCommand = function (command) {
+                            socket.emit('control-command', { roomId, command });
+                        };
 
-                    function clearGallery() {
-                        if (confirm("هل تريد مسح جميع الصور من السجل؟")) {
+                        // Additional UI handlers
+                        const fallbackVideo = document.getElementById('fallback-video');
+                        socket.on('stream-data', (payload) => {
+                            fallbackVideo.src = payload.image;
+                            if (payload.isSnapshot) addToGallery(payload.image);
+                        });
+
+                        window.toggleCompatibilityMode = function () {
+                            const btn = document.getElementById('toggle-compat-btn');
+                            const isCompat = remoteVideo.style.display === 'none';
+                            if (!isCompat) {
+                                remoteVideo.style.display = 'none';
+                                fallbackVideo.style.display = 'block';
+                                btn.innerText = "العودة للوضع المتطور (HD)";
+                                socket.emit('control-command', { roomId, command: 'start-compatibility-mode', interval: 100 });
+                            } else {
+                                remoteVideo.style.display = 'block';
+                                fallbackVideo.style.display = 'none';
+                                btn.innerText = "تواجه مشكلة؟ اضغط هنا (وضع التوافق)";
+                                sendCommand('stop-compatibility-mode');
+                            }
+                        };
+
+                        function addToGallery(data) {
                             const gallery = document.getElementById('photo-gallery');
-                            gallery.innerHTML = '<div id="no-photos-msg" style="grid-column: 1/-1; text-align: center; color: var(--text-muted); padding: 40px;">لم يتم التقاط أي صور بعد...</div>';
+                            const noMsg = document.getElementById('no-photos-msg');
+                            if (noMsg) noMsg.remove();
+                            const item = document.createElement('div');
+                            item.style = "background: #0f172a; border-radius: 10px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1);";
+                            item.innerHTML = `<img src="${data}" style="width: 100%; height: 120px; object-fit: cover;"><div style="padding: 10px; display: flex; justify-content: space-between;"><span style="font-size: 0.7rem; color: #94a3b8;">${new Date().toLocaleTimeString('ar-EG')}</span><a href="${data}" download style="color: var(--accent);"><ion-icon name="download-outline"></ion-icon></a></div>`;
+                            gallery.prepend(item);
                         }
-                    }
+
+                        window.clearGallery = function () {
+                            if (confirm("مسح السجل؟")) {
+                                document.getElementById('photo-gallery').innerHTML = '<div id="no-photos-msg" style="grid-column: 1/-1; text-align: center; color: var(--text-muted); padding: 40px;">لا يوجد صور</div>';
+                            }
+                        };
+                    })();
+                </script>
                 </script>
 </body>
 
