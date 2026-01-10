@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لوحة التحكم | SafeWatch</title>
+    <link rel="stylesheet" href="css/style.css">
+    <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
+</head>
+
+<body>
+    <div class="container">
+
+        <header>
+            <div class="logo">
+                <ion-icon name="eye"></ion-icon>
+                <span>التحكم والمشاهدة</span>
+            </div>
+            <a href="index.html" style="color:white; text-decoration:none;">خروج</a>
+        </header>
+
+        <!-- Connection Wait Screen -->
+        <div id="setup-screen" class="setup-screen">
+            <h2>امسح الرمز بواسطة الهاتف "الكاميرا"</h2>
+            <p style="color: var(--text-muted); margin-bottom: 20px;">قم بفتح الرابط التالي في الهاتف الذي تريد استخدامه
+                ككاميرا مراقبة</p>
+
+            <div id="qrcode" class="qr-code-placeholder"></div>
+
+            <div class="link-box" id="link-display"></div>
+
+            <div style="margin-top: 20px;">
+                <div class="status-indicator offline">
+                    <ion-icon name="ellipse"></ion-icon>
+                    في انتظار الاتصال...
+                </div>
+            </div>
+        </div>
+
+        <!-- Dashboard (Hidden initially) -->
+        <div id="dashboard" class="dashboard-grid" style="display: none;">
+
+            <!-- Video Feed -->
+            <div class="video-container">
+                <video id="remoteVideo" autoplay playsinline></video>
+                <div
+                    style="position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.5); padding: 5px 10px; border-radius: 5px; color: red; display: flex; align-items: center; gap: 5px;">
+                    <ion-icon name="radio-button-on"></ion-icon> مباشر
+                </div>
+            </div>
+
+            <!-- Controls -->
+            <div class="controls-panel">
+                <div class="control-group">
+                    <h3>حالة الجهاز</h3>
+                    <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+                        <div class="status-indicator">
+                            <ion-icon name="battery-full"></ion-icon>
+                            <span id="battery-level">--%</span>
+                        </div>
+                        <div class="status-indicator">
+                            <ion-icon name="wifi"></ion-icon>
+                            متصل
+                        </div>
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <h3>التحكم بالكاميرا</h3>
+
+                    <button class="action-btn" onclick="sendCommand('switch-camera')">
+                        <ion-icon name="camera-reverse"></ion-icon>
+                        تبديل الكاميرا (أمامية/خلفية)
+                    </button>
+
+                    <button class="action-btn" onclick="sendCommand('toggle-torch')">
+                        <ion-icon name="flash"></ion-icon>
+                        تشغيل/إيقاف الفلاش
+                    </button>
+
+                    <button class="action-btn" onclick="sendCommand('screen-dim')">
+                        <ion-icon name="moon"></ion-icon>
+                        إطفاء شاشة الهاتف (توفير طاقة)
+                    </button>
+                </div>
+
+                <div class="control-group">
+                    <h3>جودة الفيديو</h3>
+                    <div style="display: flex; gap: 10px;">
+                        <button class="action-btn" onclick="sendCommand('quality-low')">Low</button>
+                        <button class="action-btn active" onclick="sendCommand('quality-hd')">HD</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        const socket = io();
+        const urlParams = new URLSearchParams(window.location.search);
+        const roomId = urlParams.get('session');
+        const setupScreen = document.getElementById('setup-screen');
+        const dashboard = document.getElementById('dashboard');
+        const remoteVideo = document.getElementById('remoteVideo');
+
+        if (!roomId) {
+            alert('رقم الجلسة مفقود!');
+            window.location.href = 'index.html';
+        }
+
+        // Generate QR Code
+        const monitorUrl = `${window.location.protocol}//${window.location.host}/monitor.html?session=${roomId}`;
+        document.getElementById('link-display').innerText = monitorUrl;
+
+        new QRCode(document.getElementById("qrcode"), {
+            text: monitorUrl,
+            width: 200,
+            height: 200
+        });
+
+        // Join Room
+        socket.emit('join-room', roomId, 'viewer');
+
+        // WebRTC
+        let peerConnection;
+        const offsetConfig = {
+            iceServers: [
+                { urls: 'stun:stun.l.google.com:19302' }
+            ]
+        };
+
+        socket.on('user-connected', async (role) => {
+            if (role === 'monitor') {
+                console.log('Monitor connected! Starting connection...');
+                startConnection();
+                // Switch UI
+                setupScreen.style.display = 'none';
+                dashboard.style.display = 'grid';
+            }
+        });
+
+        async function startConnection() {
+            peerConnection = new RTCPeerConnection(offsetConfig);
+
+            // Handle incoming stream
+            peerConnection.ontrack = (event) => {
+                console.log('Stream received');
+                remoteVideo.srcObject = event.streams[0];
+            };
+
+            peerConnection.onicecandidate = (event) => {
+                if (event.candidate) {
+                    socket.emit('ice-candidate', { roomId, candidate: event.candidate });
+                }
+            };
+
+            // Create Offer
+            // We want to receive video, not send audio/video (usually)
+            // But to establish connection we might need to add transceiver or just create offer with receiveAudio/Video
+            peerConnection.addTransceiver('video', { direction: 'recvonly' });
+            peerConnection.addTransceiver('audio', { direction: 'recvonly' });
+
+            const offer = await peerConnection.createOffer();
+            await peerConnection.setLocalDescription(offer);
+            socket.emit('offer', { roomId, sdp: offer });
+        }
+
+        socket.on('answer', async (payload) => {
+            await peerConnection.setRemoteDescription(new RTCSessionDescription(payload.sdp));
+        });
+
+        socket.on('ice-candidate', async (payload) => {
+            await peerConnection.addIceCandidate(new RTCIceCandidate(payload.candidate));
+        });
+
+        socket.on('status-update', (payload) => {
+            if (payload.type === 'battery') {
+                const batteryLevel = payload.level + '%';
+                const isCharging = payload.charging;
+
+                const batteryText = document.getElementById('battery-level');
+                const batteryIcon = batteryText.previousElementSibling; // The ion-icon
+
+                batteryText.innerText = batteryLevel;
+
+                if (isCharging) {
+                    batteryIcon.name = 'battery-charging';
+                    batteryIcon.style.color = '#10b981';
+                } else if (payload.level < 20) {
+                    batteryIcon.name = 'battery-dead';
+                    batteryIcon.style.color = '#ef4444';
+                } else {
+                    batteryIcon.name = 'battery-full';
+                    batteryIcon.style.color = 'var(--accent)';
+                }
+            }
+        });
+
+        // Controls
+        function sendCommand(command) {
+            socket.emit('control-command', { roomId, command });
+        }
+    </script>
+</body>
+
+</html>

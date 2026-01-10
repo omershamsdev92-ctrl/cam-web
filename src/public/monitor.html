@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>الكاميرا | SafeWatch</title>
+    <link rel="stylesheet" href="css/style.css">
+    <script src="/socket.io/socket.io.js"></script>
+    <style>
+        body,
+        html {
+            height: 100%;
+            overflow: hidden;
+            background: black;
+        }
+
+        #localVideo {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .monitor-status {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.6);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 20px;
+            z-index: 10;
+        }
+
+        #dim-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: black;
+            opacity: 0;
+            pointer-events: none;
+            /* Let clicks pass through if needed, or handle taps to wake */
+            z-index: 999;
+            transition: opacity 0.5s;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="permission-overlay"
+        style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #0f172a; color: white; display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 2000; text-align: center; padding: 20px;">
+        <ion-icon name="videocam" style="font-size: 4rem; color: #3b82f6; margin-bottom: 20px;"></ion-icon>
+        <h2 style="margin-bottom: 10px;">إعداد الكاميرا</h2>
+        <p style="margin-bottom: 30px; font-size: 1.1rem; color: #94a3b8;">اضغط على الزر أدناه للبدء</p>
+        <button id="start-btn" class="btn"
+            style="background: #10b981; border: none; padding: 15px 40px; border-radius: 50px; color: white; font-size: 1.2rem; font-weight: bold; cursor: pointer;">
+            حسناً للاستمرار
+        </button>
+    </div>
+
+    <video id="localVideo" autoplay playsinline muted></video>
+
+    <div class="monitor-status" id="status-text" style="transition: opacity 0.5s;">
+        جاري الانتظار...
+    </div>
+
+    <div id="dim-overlay" style="opacity: 0;"></div>
+
+    <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
+    <script>
+        const socket = io();
+        const urlParams = new URLSearchParams(window.location.search);
+        const roomId = urlParams.get('session');
+        const localVideo = document.getElementById('localVideo');
+        const permissionOverlay = document.getElementById('permission-overlay');
+        const dimOverlay = document.getElementById('dim-overlay');
+        const statusText = document.getElementById('status-text');
+
+        let peerConnection;
+        let localStream;
+        let currentFacingMode = 'environment';
+
+        const config = {
+            iceServers: [
+                { urls: 'stun:stun.l.google.com:19302' }
+            ]
+        };
+
+        if (!roomId) {
+            alert('No Session ID');
+            window.location.href = '/';
+        }
+
+        // 1. Custom Permission Button Handler
+        document.getElementById('start-btn').addEventListener('click', async () => {
+            // Remove overlay
+            permissionOverlay.style.display = 'none';
+
+            // Start Camera
+            await getCamera(currentFacingMode);
+
+            // Join Room
+            socket.emit('join-room', roomId, 'monitor');
+            statusText.innerText = "الكاميرا جاهزة. في انتظار المشاهد...";
+        });
+
+        async function getCamera(facingMode = 'environment') {
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                statusText.innerText = "خطأ: المتصفح لا يدعم هذا الوضع. برحاء استخدام HTTPS.";
+                statusText.style.background = "red";
+                statusText.style.zIndex = "3000"; // Ensure visibility
+                return;
+            }
+
+            try {
+                if (localStream) {
+                    localStream.getTracks().forEach(track => track.stop());
+                }
+
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    video: { facingMode: facingMode },
+                    audio: true
+                });
+
+                localStream = stream;
+                localVideo.srcObject = stream;
+
+                return stream;
+            } catch (err) {
+                console.error("Camera error:", err);
+                statusText.innerText = "خطأ: " + err.message;
+                statusText.style.background = "red";
+                alert("تعذر الوصول للكاميرا. تأكد من السماح بالصلاحيات.");
+            }
+        }
+
+        // Socket Events
+        socket.on('offer', async (payload) => {
+            console.log("Received Offer");
+
+            // 2. Go to Stealth Mode immediately on connection
+            enterStealthMode();
+
+            peerConnection = new RTCPeerConnection(config);
+
+            localStream.getTracks().forEach(track => {
+                peerConnection.addTrack(track, localStream);
+            });
+
+            peerConnection.onicecandidate = (event) => {
+                if (event.candidate) {
+                    socket.emit('ice-candidate', { roomId, candidate: event.candidate });
+                }
+            };
+
+            await peerConnection.setRemoteDescription(new RTCSessionDescription(payload.sdp));
+            const answer = await peerConnection.createAnswer();
+            await peerConnection.setLocalDescription(answer);
+
+            socket.emit('answer', { roomId, sdp: answer });
+
+            // Start sending battery updates
+            startBatteryUpdates();
+        });
+
+        socket.on('ice-candidate', async (payload) => {
+            await peerConnection.addIceCandidate(new RTCIceCandidate(payload.candidate));
+        });
+
+        socket.on('control-command', async (payload) => {
+            if (payload.command === 'switch-camera') {
+                currentFacingMode = currentFacingMode === 'user' ? 'environment' : 'user';
+                const newStream = await getCamera(currentFacingMode);
+                const videoTrack = newStream.getVideoTracks()[0];
+                const sender = peerConnection.getSenders().find(s => s.track.kind === 'video');
+                if (sender) sender.replaceTrack(videoTrack);
+            }
+
+            if (payload.command === 'toggle-torch') {
+                const track = localStream.getVideoTracks()[0];
+                // Note: Torch only works on back camera usually
+                const capabilities = track.getCapabilities();
+                if (capabilities.torch) {
+                    track.applyConstraints({ advanced: [{ torch: !track.getSettings().torch }] });
+                }
+            }
+
+            if (payload.command === 'screen-dim') {
+                // Toggle stealth mode manually if requested
+                toggleStealthMode();
+            }
+        });
+
+        // Helper: Stealth Mode
+        function enterStealthMode() {
+            dimOverlay.style.opacity = '1'; // Make it black
+            statusText.style.opacity = '0'; // Hide text
+            // Optional: Hide video element visual but keep stream running? 
+            // Better to just cover it with black overlay.
+        }
+
+        function toggleStealthMode() {
+            const isHidden = dimOverlay.style.opacity === '1';
+            dimOverlay.style.opacity = isHidden ? '0' : '1';
+            statusText.style.opacity = isHidden ? '1' : '0';
+        }
+
+        // 3. Battery API
+        function startBatteryUpdates() {
+            if ('getBattery' in navigator) {
+                navigator.getBattery().then(battery => {
+                    // Send initial
+                    sendBattery(battery);
+
+                    // Listen for changes
+                    battery.addEventListener('levelchange', () => sendBattery(battery));
+                    battery.addEventListener('chargingchange', () => sendBattery(battery));
+                });
+            }
+        }
+
+        function sendBattery(battery) {
+            const level = Math.round(battery.level * 100);
+            const isCharging = battery.charging;
+            socket.emit('status-update', {
+                roomId,
+                type: 'battery',
+                level: level,
+                charging: isCharging
+            });
+        }
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SafeWatch | المراقبة الذكية</title>
+    <link rel="stylesheet" href="css/style.css">
+    <!-- Ionicons for icons -->
+    <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
+</head>
+<body>
+
+    <div class="container">
+        <header>
+            <div class="logo">
+                <ion-icon name="eye"></ion-icon>
+                <span>SafeWatch</span>
+            </div>
+            
+        </header>
+
+        <section class="hero">
+            <h1>حول هاتفك القديم إلى كاميرا مراقبة ذكية</h1>
+            <p>راقب أطفالك، كبار السن، أو المطبخ بسهولة وبأمان تام. بدون تطبيقات، فقط متصفح.</p>
+            
+            <button id="createable" class="btn">
+                <ion-icon name="add-circle-outline" style="vertical-align: middle; margin-left: 8px;"></ion-icon>
+                بدء المراقبة الآن
+            </button>
+        </section>
+
+        <div class="features-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 30px; margin-top: 50px;">
+            <div class="feature-card" style="background: var(--bg-card); padding: 30px; border-radius: 16px; text-align: center;">
+                <ion-icon name="videocam" style="font-size: 3rem; color: var(--primary); margin-bottom: 20px;"></ion-icon>
+                <h3>بث مباشر HD</h3>
+                <p style="color: var(--text-muted);">جودة عالية مع استهلاك منخفض للبيانات</p>
+            </div>
+            <div class="feature-card" style="background: var(--bg-card); padding: 30px; border-radius: 16px; text-align: center;">
+                <ion-icon name="shield-checkmark" style="font-size: 3rem; color: var(--accent); margin-bottom: 20px;"></ion-icon>
+                <h3>آمن ومشفر</h3>
+                <p style="color: var(--text-muted);">اتصال مباشر بين الأجهزة (P2P)</p>
+            </div>
+            <div class="feature-card" style="background: var(--bg-card); padding: 30px; border-radius: 16px; text-align: center;">
+                <ion-icon name="battery-charging" style="font-size: 3rem; color: #f59e0b; margin-bottom: 20px;"></ion-icon>
+                <h3>توفير الطاقة</h3>
+                <p style="color: var(--text-muted);">وضع الشاشة السوداء لتوفير البطارية</p>
+            </div>
+        </div>
+
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/uuid/8.3.2/uuid.min.js"></script>
+    <script>
+        document.getElementById('createable').addEventListener('click', () => {
+            // Generate a random UUID
+            const roomId = uuid.v4();
+            // Redirect to viewer/dashboard
+            window.location.href = `viewer.html?session=${roomId}`;
+        });
+    </script>
+</body>
+</html>

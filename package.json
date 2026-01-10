@@ -1,0 +1,18 @@
+{
+    "name": "safe-watch",
+    "version": "1.0.0",
+    "description": "Professional web platform for monitoring children, bedridden elderly people, and kitchens using a mobile phone camera.",
+    "main": "src/server.js",
+    "scripts": {
+        "start": "node src/server.js",
+        "dev": "node src/server.js"
+    },
+    "dependencies": {
+        "express": "^4.18.2",
+        "socket.io": "^4.7.2",
+        "uuid": "^9.0.1"
+    },
+    "engines": {
+        "node": ">=18.0.0"
+    }
+}
