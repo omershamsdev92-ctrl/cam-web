@@ -18,7 +18,8 @@
 }
 
 body {
-    font-family: 'Tajawal', sans-serif; /* Arabic friendly font */
+    font-family: 'Tajawal', sans-serif;
+    /* Arabic friendly font */
     background-color: var(--bg-dark);
     color: var(--text-main);
     direction: rtl;
@@ -62,9 +63,10 @@ header {
 .hero h1 {
     font-size: 3rem;
     margin-bottom: 20px;
-    background: linear-gradient(to right, #3b82f6, #10b981);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
+    color: #ffffff;
+    /* Fallback */
+    text-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+    /* Removed gradient background clip for stability */
 }
 
 .hero p {
@@ -138,7 +140,7 @@ video {
     margin-bottom: 15px;
     font-size: 1rem;
     color: var(--text-muted);
-    border-bottom: 1px solid rgba(255,255,255,0.1);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
     padding-bottom: 10px;
 }
 
@@ -161,8 +163,8 @@ video {
 .action-btn {
     width: 100%;
     padding: 12px;
-    background: rgba(255,255,255,0.05);
-    border: 1px solid rgba(255,255,255,0.1);
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
     color: var(--text-main);
     border-radius: 8px;
     margin-bottom: 10px;
@@ -177,7 +179,7 @@ video {
 }
 
 .action-btn:hover {
-    background: rgba(255,255,255,0.1);
+    background: rgba(255, 255, 255, 0.1);
 }
 
 .action-btn.active {
@@ -216,13 +218,14 @@ video {
 }
 
 .link-box {
-    background: rgba(0,0,0,0.3);
+    background: rgba(0, 0, 0, 0.3);
     padding: 15px;
     border-radius: 8px;
     font-family: monospace;
     margin-top: 20px;
     word-break: break-all;
-    direction: ltr; /* URLs are LTR */
+    direction: ltr;
+    /* URLs are LTR */
 }
 
 /* Mobile optimizations */
@@ -231,7 +234,7 @@ video {
         flex-direction: column;
         gap: 20px;
     }
-    
+
     .hero h1 {
         font-size: 2rem;
     }
