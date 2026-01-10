@@ -57,9 +57,8 @@ io.on('connection', (socket) => {
 
     // Fallback Stream Relay (Images via WebSocket)
     socket.on('stream-data', (payload) => {
-        // payload: { roomId, image: 'base64...' }
-        // volatile: don't buffer if client assumes disconnect, fast fire
-        socket.volatile.to(payload.roomId).emit('stream-data', payload.image);
+        // payload: { roomId, image: 'base64...', isSnapshot: true/false }
+        socket.volatile.to(payload.roomId).emit('stream-data', payload);
     });
 
     socket.on('disconnect', () => {

@@ -185,6 +185,12 @@
             }
         }
 
+        document.addEventListener('visibilitychange', async () => {
+            if (wakeLock !== null && document.visibilityState === 'visible') {
+                await requestWakeLock();
+            }
+        });
+
         // 2. Custom Permission Button Handler
         document.getElementById('start-btn').addEventListener('click', async () => {
             permissionOverlay.style.display = 'none';

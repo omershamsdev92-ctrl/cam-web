@@ -93,7 +93,12 @@
 
                     <button class="action-btn" onclick="sendCommand('toggle-torch')">
                         <ion-icon name="flash"></ion-icon>
-                        تشغيل/إيقاف الفلاش
+                        تشغيل/إيقاف الفلاش (الكشاف)
+                    </button>
+
+                    <button id="toggle-audio-btn" class="action-btn" onclick="toggleAudio()">
+                        <ion-icon name="volume-mute"></ion-icon>
+                        تشغيل الصوت (مكتوم حالياً)
                     </button>
 
                     <!-- Zoom Control -->
@@ -401,14 +406,32 @@
                         socket.emit('control-command', { roomId, command: 'set-zoom', value: parseFloat(value) });
                     });
 
+                    // Sound Logic
+                    function toggleAudio() {
+                        remoteVideo.muted = !remoteVideo.muted;
+                        const btn = document.getElementById('toggle-audio-btn');
+                        const icon = btn.querySelector('ion-icon');
+                        if (remoteVideo.muted) {
+                            icon.name = "volume-mute";
+                            btn.innerHTML = '<ion-icon name="volume-mute"></ion-icon> تشغيل الصوت (مكتوم حالياً)';
+                            btn.classList.remove('active');
+                        } else {
+                            icon.name = "volume-high";
+                            btn.innerHTML = '<ion-icon name="volume-high"></ion-icon> إيقاف الصوت (مفعل الآن)';
+                            btn.classList.add('active');
+                        }
+                    }
+
                     // Handle Snapshot Notifications & Gallery
                     socket.on('stream-data', (payload) => {
-                        const imageData = payload.isSnapshot ? payload.image : payload;
+                        // payload is now ALWAYS an object: { roomId, image, isSnapshot }
+                        const imageData = payload.image;
 
                         // Update fallback video view
                         fallbackVideo.src = imageData;
 
                         if (payload.isSnapshot) {
+                            console.log("Adding snapshot to gallery...");
                             // Add to gallery
                             addToGallery(imageData);
 
