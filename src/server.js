@@ -24,7 +24,7 @@ io.on('connection', (socket) => {
         socket.join(roomId);
         socket.role = role; // 'monitor' (camera) or 'viewer' (dashboard)
         console.log(`${role} joined room: ${roomId}`);
-        
+
         // Notify others in the room
         socket.to(roomId).emit('user-connected', role);
     });
@@ -49,10 +49,17 @@ io.on('connection', (socket) => {
         // command: 'switch-camera', 'toggle-torch', 'set-quality'
         socket.to(payload.roomId).emit('control-command', payload);
     });
-    
+
     // Status updates (Monitor -> Viewer)
     socket.on('status-update', (payload) => {
         socket.to(payload.roomId).emit('status-update', payload);
+    });
+
+    // Fallback Stream Relay (Images via WebSocket)
+    socket.on('stream-data', (payload) => {
+        // payload: { roomId, image: 'base64...' }
+        // volatile: don't buffer if client assumes disconnect, fast fire
+        socket.volatile.to(payload.roomId).emit('stream-data', payload.image);
     });
 
     socket.on('disconnect', () => {

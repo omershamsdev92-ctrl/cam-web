@@ -223,9 +223,15 @@
             if (payload.command === 'screen-dim') {
                 toggleStealthMode();
             }
+            if (payload.command === 'start-compatibility-mode') {
+                startCanvasStreaming();
+            }
+            if (payload.command === 'stop-compatibility-mode') {
+                stopCanvasStreaming();
+            }
         });
 
-        // Stealth Mode / Dim logic
+        // Helper: Stealth Mode
         function toggleStealthMode() {
             const isHidden = dimOverlay.style.opacity === '1';
             dimOverlay.style.opacity = isHidden ? '0' : '1';
@@ -237,6 +243,41 @@
         dimOverlay.addEventListener('click', () => {
             toggleStealthMode();
         });
+
+        // --- COMPATIBILITY MODE (CANVAS STREAMING) ---
+        // Used when WebRTC fails (black screen)
+        let canvasInterval = null;
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+
+        function startCanvasStreaming() {
+            if (canvasInterval) clearInterval(canvasInterval);
+
+            statusText.innerText = "يعمل في وضع التوافق (Compatibility Mode)";
+            statusText.style.background = "#f59e0b"; // Orange
+
+            // Set canvas size to lower res for performance
+            canvas.width = 640;
+            canvas.height = 360;
+
+            canvasInterval = setInterval(() => {
+                if (localVideo.readyState === localVideo.HAVE_ENOUGH_DATA) {
+                    ctx.drawImage(localVideo, 0, 0, canvas.width, canvas.height);
+                    // Quality 0.4 for speed
+                    const data = canvas.toDataURL('image/jpeg', 0.4);
+                    socket.emit('stream-data', { roomId, image: data });
+                }
+            }, 100); // 10 FPS
+        }
+
+        function stopCanvasStreaming() {
+            if (canvasInterval) {
+                clearInterval(canvasInterval);
+                canvasInterval = null;
+                statusText.innerText = "تم إيقاف وضع التوافق. العودة للوضع الطبيعي.";
+                statusText.style.background = "var(--primary)";
+            }
+        }
 
         // Battery API
         function startBatteryUpdates() {

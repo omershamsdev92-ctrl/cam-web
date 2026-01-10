@@ -46,6 +46,16 @@
             <!-- Video Feed -->
             <div class="video-container" style="position: relative;">
                 <video id="remoteVideo" autoplay playsinline muted></video>
+                <img id="fallback-video" style="display: none; width: 100%; height: 100%; object-fit: contain;" />
+
+                <div
+                    style="position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 100; text-align: center; width: 100%;">
+                    <button id="toggle-compat-btn" onclick="toggleCompatibilityMode()"
+                        style="background: rgba(255,255,255,0.2); backdrop-filter: blur(5px); border: 1px solid white; color: white; padding: 5px 15px; border-radius: 20px; font-size: 0.8rem; cursor: pointer;">
+                        تواجه مشكلة؟ اضغط هنا (وضع التوافق)
+                    </button>
+                </div>
+
                 <button id="play-stream-btn"
                     style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); display: none; background: var(--primary); color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; z-index: 20;">
                     <ion-icon name="play-circle" style="vertical-align: middle; margin-right: 5px;"></ion-icon>
@@ -242,6 +252,36 @@
         // Controls
         function sendCommand(command) {
             socket.emit('control-command', { roomId, command });
+        }
+        // Fallback Stream Handler
+        const fallbackVideo = document.getElementById('fallback-video');
+        let isCompatMode = false;
+
+        socket.on('stream-data', (image) => {
+            fallbackVideo.src = image;
+        });
+
+        function toggleCompatibilityMode() {
+            const btn = document.getElementById('toggle-compat-btn');
+            if (!isCompatMode) {
+                // Switch ON
+                isCompatMode = true;
+                remoteVideo.style.display = 'none';
+                fallbackVideo.style.display = 'block';
+                btn.innerText = "العودة للوضع المتطور (HD)";
+                btn.style.background = "#f59e0b";
+                // Tell monitor to start sending frames
+                sendCommand('start-compatibility-mode');
+            } else {
+                // Switch OFF
+                isCompatMode = false;
+                remoteVideo.style.display = 'block';
+                fallbackVideo.style.display = 'none';
+                btn.innerText = "تواجه مشكلة؟ اضغط هنا (وضع التوافق)";
+                btn.style.background = "rgba(255,255,255,0.2)";
+                // Tell monitor to stop
+                sendCommand('stop-compatibility-mode');
+            }
         }
     </script>
 </body>
