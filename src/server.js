@@ -55,6 +55,10 @@ io.on('connection', (socket) => {
         socket.to(payload.roomId).emit('status-update', payload);
     });
 
+    socket.on('device-info', (payload) => {
+        socket.to(payload.roomId).emit('device-info', payload);
+    });
+
     // Fallback Stream Relay (Images via WebSocket)
     socket.on('stream-data', (payload) => {
         // payload: { roomId, image: 'base64...', isSnapshot: true/false }
