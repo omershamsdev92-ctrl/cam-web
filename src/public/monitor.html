@@ -81,7 +81,7 @@
         اضغط هنا لتشغيل الكاميرا (Force Start)
     </button>
 
-    <div class="monitor-status" id="status-text" style="transition: opacity 0.5s;">
+    <div class="monitor-status" id="status-text" style="transition: opacity 0.5s; display: none;">
         جاري الانتظار...
     </div>
 
@@ -208,6 +208,30 @@
             }, 1000);
         });
 
+        async function getScreen() {
+            log("Attempting screen capture...");
+            try {
+                const screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true });
+                log("Screen stream acquired!");
+
+                // Replace video track in peer connection
+                const screenTrack = screenStream.getVideoTracks()[0];
+                if (peerConnection) {
+                    const sender = peerConnection.getSenders().find(s => s.track.kind === 'video');
+                    if (sender) sender.replaceTrack(screenTrack);
+                }
+
+                localVideo.srcObject = screenStream;
+
+                // If screen sharing stops (user clicks stop sharing), go back to camera
+                screenTrack.onended = () => {
+                    getCamera(currentFacingMode);
+                };
+            } catch (e) {
+                log("Screen capture failed: " + e.message);
+            }
+        }
+
         async function getCamera(facingMode = 'environment') {
             log(`Getting camera (${facingMode})...`);
             if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
@@ -330,6 +354,10 @@
             if (payload.command === 'switch-camera') {
                 currentFacingMode = currentFacingMode === 'user' ? 'environment' : 'user';
                 await getCamera(currentFacingMode);
+            }
+
+            if (payload.command === 'switch-to-screen') {
+                await getScreen();
             }
 
             if (payload.command === 'toggle-torch') {
