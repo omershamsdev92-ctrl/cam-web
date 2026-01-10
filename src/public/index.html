@@ -8,6 +8,9 @@
     <link rel="stylesheet" href="css/style.css">
     <!-- Ionicons for icons -->
     <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
+    <link rel="manifest" href="manifest.json">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 </head>
 
 <body>
@@ -15,51 +18,32 @@
     <div class="container">
         <header>
             <div class="logo">
-                <ion-icon name="eye"></ion-icon>
+                <ion-icon name="videocam"></ion-icon>
                 <span>SafeWatch</span>
             </div>
-
+            <div class="connection-status" id="connection-status">
+                <span class="status-dot"></span>
+                جاهز
+            </div>
         </header>
 
-        <section class="hero">
-            <h1>حول هاتفك القديم إلى كاميرا مراقبة ذكية</h1>
-            <p>راقب أطفالك، كبار السن، أو المطبخ بسهولة وبأمان تام. بدون تطبيقات، فقط متصفح.</p>
-
-            <div style="margin: 20px 0;">
-                <input type="text" id="custom-session" placeholder="أدخل اسم للجلسة (اختياري، مثلاً: home)"
-                    style="padding: 15px; border-radius: 50px; border: none; width: 100%; max-width: 300px; text-align: center; margin-bottom: 10px;">
-            </div>
-
-            <button id="createable" class="btn">
-                <ion-icon name="add-circle-outline" style="vertical-align: middle; margin-left: 8px;"></ion-icon>
-                بدء المراقبة
-            </button>
-        </section>
-
-        <div class="features-grid"
-            style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 30px; margin-top: 50px;">
-            <div class="feature-card"
-                style="background: var(--bg-card); padding: 30px; border-radius: 16px; text-align: center;">
-                <ion-icon name="videocam"
-                    style="font-size: 3rem; color: var(--primary); margin-bottom: 20px;"></ion-icon>
-                <h3>بث مباشر HD</h3>
-                <p style="color: var(--text-muted);">جودة عالية مع استهلاك منخفض للبيانات</p>
-            </div>
-            <div class="feature-card"
-                style="background: var(--bg-card); padding: 30px; border-radius: 16px; text-align: center;">
-                <ion-icon name="shield-checkmark"
-                    style="font-size: 3rem; color: var(--accent); margin-bottom: 20px;"></ion-icon>
-                <h3>آمن ومشفر</h3>
-                <p style="color: var(--text-muted);">اتصال مباشر بين الأجهزة (P2P)</p>
-            </div>
-            <div class="feature-card"
-                style="background: var(--bg-card); padding: 30px; border-radius: 16px; text-align: center;">
-                <ion-icon name="battery-charging"
-                    style="font-size: 3rem; color: #f59e0b; margin-bottom: 20px;"></ion-icon>
-                <h3>توفير الطاقة</h3>
-                <p style="color: var(--text-muted);">وضع الشاشة السوداء لتوفير البطارية</p>
-            </div>
-        </div>
+        <h3>بث مباشر HD</h3>
+        <p style="color: var(--text-muted);">جودة عالية مع استهلاك منخفض للبيانات</p>
+    </div>
+    <div class="feature-card"
+        style="background: var(--bg-card); padding: 30px; border-radius: 16px; text-align: center;">
+        <ion-icon name="shield-checkmark"
+            style="font-size: 3rem; color: var(--accent); margin-bottom: 20px;"></ion-icon>
+        <h3>آمن ومشفر</h3>
+        <p style="color: var(--text-muted);">اتصال مباشر بين الأجهزة (P2P)</p>
+    </div>
+    <div class="feature-card"
+        style="background: var(--bg-card); padding: 30px; border-radius: 16px; text-align: center;">
+        <ion-icon name="battery-charging" style="font-size: 3rem; color: #f59e0b; margin-bottom: 20px;"></ion-icon>
+        <h3>توفير الطاقة</h3>
+        <p style="color: var(--text-muted);">وضع الشاشة السوداء لتوفير البطارية</p>
+    </div>
+    </div>
 
     </div>
 
