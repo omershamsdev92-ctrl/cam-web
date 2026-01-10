@@ -62,7 +62,15 @@
         </button>
     </div>
 
-    <video id="localVideo" autoplay playsinline muted></video>
+    <!-- Added onloadedmetadata and style to ensure it's not hidden -->
+    <video id="localVideo" autoplay playsinline muted onloadedmetadata="this.play()"
+        style="width: 100%; height: 100%; object-fit: cover;"></video>
+
+    <!-- Restart Button (Hidden by default, shown on error) -->
+    <button id="restart-cam-btn"
+        style="position: absolute; top: 20px; right: 20px; z-index: 1000; background: red; color: white; border: none; padding: 10px; border-radius: 5px; display: none;">
+        إعادة تشغيل الكاميرا
+    </button>
 
     <div class="monitor-status" id="status-text" style="transition: opacity 0.5s;">
         جاري الانتظار...
@@ -79,11 +87,15 @@
         const permissionOverlay = document.getElementById('permission-overlay');
         const dimOverlay = document.getElementById('dim-overlay');
         const statusText = document.getElementById('status-text');
+        const restartBtn = document.getElementById('restart-cam-btn');
 
         let peerConnection;
         let localStream;
         let currentFacingMode = 'environment';
         let wakeLock = null;
+
+        // Error counter for auto-restart
+        let errorCount = 0;
 
         const config = {
             iceServers: [
@@ -97,6 +109,17 @@
             alert('No Session ID');
             window.location.href = '/';
         }
+
+        // Restart Button Logic
+        restartBtn.addEventListener('click', async () => {
+            await getCamera(currentFacingMode);
+            statusText.innerText = "تم إعادة تشغيل الكاميرا يدوياً.";
+            restartBtn.style.display = 'none';
+            // Reset interval if in compat mode
+            if (statusText.innerHTML.includes("وضع التوافق")) {
+                startCanvasStreaming();
+            }
+        });
 
         // 1. Wake Lock (Keep Screen Alive)
         async function requestWakeLock() {
@@ -132,14 +155,21 @@
                 const stream = await navigator.mediaDevices.getUserMedia({
                     video: {
                         facingMode: facingMode,
-                        width: { ideal: 1280 },
-                        height: { ideal: 720 }
+                        width: { ideal: 640 }, // Lower res for broader compatibility
+                        height: { ideal: 480 }
                     },
                     audio: true
                 });
 
                 localStream = stream;
                 localVideo.srcObject = stream;
+
+                // Ensure it plays
+                try {
+                    await localVideo.play();
+                } catch (e) {
+                    console.log("Play failed, will be handled by auto-play attr");
+                }
 
                 // Refresh connection if active
                 if (peerConnection) {
@@ -152,6 +182,7 @@
             } catch (err) {
                 console.error("Camera error:", err);
                 statusText.innerText = "خطأ الكاميرا: " + err.message;
+                restartBtn.style.display = 'block';
             }
         }
 
@@ -261,7 +292,9 @@
             canvas.width = 320;
             canvas.height = 240;
 
-            canvasInterval = setInterval(() => {
+            errorCount = 0;
+
+            canvasInterval = setInterval(async () => {
                 try {
                     if (localVideo.readyState >= 2) { // HAVE_CURRENT_DATA
                         ctx.drawImage(localVideo, 0, 0, canvas.width, canvas.height);
@@ -269,12 +302,21 @@
                         socket.emit('stream-data', { roomId, image: data });
 
                         framesSent++;
+                        errorCount = 0; // Reset error count
                         if (framesSent % 20 === 0) {
                             statusText.innerHTML = `وضع التوافق يعمل.<br>تم إرسال ${framesSent} إطار`;
                         }
                     } else {
-                        statusText.innerText = "الكاميرا لا تعمل/متوقفة (ReadyState: " + localVideo.readyState + ")";
-                        localVideo.play(); // Try to wake it
+                        errorCount++;
+                        statusText.innerText = "جاري محاولة تشغيل الكاميرا... (" + errorCount + ")";
+                        localVideo.play().catch(e => console.log(e));
+
+                        // Auto-restart if stuck for 5 seconds (25 ticks)
+                        if (errorCount > 25) {
+                            console.log("Auto-restarting camera...");
+                            await getCamera(currentFacingMode);
+                            errorCount = 0;
+                        }
                     }
                 } catch (e) {
                     console.error(e);
