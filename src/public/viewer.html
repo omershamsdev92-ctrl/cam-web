@@ -146,6 +146,16 @@
         async function startConnection() {
             peerConnection = new RTCPeerConnection(offsetConfig);
 
+            peerConnection.onconnectionstatechange = () => {
+                console.log("Connection State:", peerConnection.connectionState);
+                if (peerConnection.connectionState === 'connected') {
+                    document.querySelector('.status-indicator').innerHTML = '<ion-icon name="wifi"></ion-icon> متصل بنجاح';
+                    document.querySelector('.status-indicator').style.color = 'var(--accent)';
+                } else if (peerConnection.connectionState === 'failed' || peerConnection.connectionState === 'disconnected') {
+                    alert("فشل الاتصال المباشر. قد يكون بسبب قيود الشبكة (Jameel Firewall etc).");
+                }
+            };
+
             // Handle incoming stream
             peerConnection.ontrack = (event) => {
                 console.log('Stream received');

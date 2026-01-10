@@ -142,8 +142,9 @@
         socket.on('offer', async (payload) => {
             console.log("Received Offer");
 
-            // 2. Go to Stealth Mode immediately on connection
-            enterStealthMode();
+            // 2. Update status instead of immediate stealth
+            statusText.innerText = "تم الاتصال بالمراقب! جاري إرسال البث...";
+            statusText.style.background = "green";
 
             peerConnection = new RTCPeerConnection(config);
 
