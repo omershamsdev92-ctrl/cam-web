@@ -83,10 +83,13 @@
         let peerConnection;
         let localStream;
         let currentFacingMode = 'environment';
+        let wakeLock = null;
 
         const config = {
             iceServers: [
-                { urls: 'stun:stun.l.google.com:19302' }
+                { urls: 'stun:stun.l.google.com:19302' },
+                { urls: 'stun:stun1.l.google.com:19302' },
+                { urls: 'stun:stun2.l.google.com:19302' }
             ]
         };
 
@@ -95,24 +98,29 @@
             window.location.href = '/';
         }
 
-        // 1. Custom Permission Button Handler
+        // 1. Wake Lock (Keep Screen Alive)
+        async function requestWakeLock() {
+            try {
+                wakeLock = await navigator.wakeLock.request('screen');
+                console.log('Wake Lock is active!');
+            } catch (err) {
+                console.error(`${err.name}, ${err.message}`);
+            }
+        }
+
+        // 2. Custom Permission Button Handler
         document.getElementById('start-btn').addEventListener('click', async () => {
-            // Remove overlay
             permissionOverlay.style.display = 'none';
-
-            // Start Camera
             await getCamera(currentFacingMode);
+            await requestWakeLock(); // Keep screen on
 
-            // Join Room
             socket.emit('join-room', roomId, 'monitor');
             statusText.innerText = "الكاميرا جاهزة. في انتظار المشاهد...";
         });
 
         async function getCamera(facingMode = 'environment') {
             if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-                statusText.innerText = "خطأ: المتصفح لا يدعم هذا الوضع. برحاء استخدام HTTPS.";
-                statusText.style.background = "red";
-                statusText.style.zIndex = "3000"; // Ensure visibility
+                statusText.innerText = "المتصفح لا يدعم الوصول للكاميرا (تأكد من HTTPS).";
                 return;
             }
 
@@ -122,19 +130,28 @@
                 }
 
                 const stream = await navigator.mediaDevices.getUserMedia({
-                    video: { facingMode: facingMode },
+                    video: {
+                        facingMode: facingMode,
+                        width: { ideal: 1280 },
+                        height: { ideal: 720 }
+                    },
                     audio: true
                 });
 
                 localStream = stream;
                 localVideo.srcObject = stream;
 
+                // Refresh connection if active
+                if (peerConnection) {
+                    const videoTrack = stream.getVideoTracks()[0];
+                    const sender = peerConnection.getSenders().find(s => s.track.kind === 'video');
+                    if (sender) sender.replaceTrack(videoTrack);
+                }
+
                 return stream;
             } catch (err) {
                 console.error("Camera error:", err);
-                statusText.innerText = "خطأ: " + err.message;
-                statusText.style.background = "red";
-                alert("تعذر الوصول للكاميرا. تأكد من السماح بالصلاحيات.");
+                statusText.innerText = "خطأ الكاميرا: " + err.message;
             }
         }
 
@@ -143,9 +160,7 @@
 
         socket.on('offer', async (payload) => {
             console.log("Received Offer");
-
-            // 2. Update status instead of immediate stealth
-            statusText.innerText = "تم الاتصال بالمراقب! جاري إرسال البث...";
+            statusText.innerText = "تم الاتصال! البث مباشر الآن.";
             statusText.style.background = "green";
 
             peerConnection = new RTCPeerConnection(config);
@@ -162,10 +177,8 @@
 
             await peerConnection.setRemoteDescription(new RTCSessionDescription(payload.sdp));
 
-            // Process queued candidates
             while (iceCandidatesQueue.length > 0) {
-                const candidate = iceCandidatesQueue.shift();
-                await peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
+                await peerConnection.addIceCandidate(new RTCIceCandidate(iceCandidatesQueue.shift()));
             }
 
             const answer = await peerConnection.createAnswer();
@@ -185,65 +198,66 @@
         });
 
         socket.on('control-command', async (payload) => {
+            console.log("Command received:", payload.command);
+
             if (payload.command === 'switch-camera') {
                 currentFacingMode = currentFacingMode === 'user' ? 'environment' : 'user';
-                const newStream = await getCamera(currentFacingMode);
-                const videoTrack = newStream.getVideoTracks()[0];
-                const sender = peerConnection.getSenders().find(s => s.track.kind === 'video');
-                if (sender) sender.replaceTrack(videoTrack);
+                await getCamera(currentFacingMode);
             }
 
             if (payload.command === 'toggle-torch') {
                 const track = localStream.getVideoTracks()[0];
-                // Note: Torch only works on back camera usually
                 const capabilities = track.getCapabilities();
                 if (capabilities.torch) {
-                    track.applyConstraints({ advanced: [{ torch: !track.getSettings().torch }] });
+                    try {
+                        const currentSettings = track.getSettings();
+                        await track.applyConstraints({ advanced: [{ torch: !currentSettings.torch }] });
+                    } catch (e) {
+                        console.error("Torch error", e);
+                    }
+                } else {
+                    console.warn("Torch not supported on this device/camera.");
                 }
             }
 
             if (payload.command === 'screen-dim') {
-                // Toggle stealth mode manually if requested
                 toggleStealthMode();
             }
         });
 
-        // Helper: Stealth Mode
-        function enterStealthMode() {
-            dimOverlay.style.opacity = '1'; // Make it black
-            statusText.style.opacity = '0'; // Hide text
-            // Optional: Hide video element visual but keep stream running? 
-            // Better to just cover it with black overlay.
-        }
-
+        // Stealth Mode / Dim logic
         function toggleStealthMode() {
             const isHidden = dimOverlay.style.opacity === '1';
             dimOverlay.style.opacity = isHidden ? '0' : '1';
-            statusText.style.opacity = isHidden ? '1' : '0';
+            // Also toggle status text visibility
+            statusText.style.display = isHidden ? 'block' : 'none';
         }
 
-        // 3. Battery API
+        // Add a click listener to the dim overlay to wake it up locally
+        dimOverlay.addEventListener('click', () => {
+            toggleStealthMode();
+        });
+
+        // Battery API
         function startBatteryUpdates() {
             if ('getBattery' in navigator) {
                 navigator.getBattery().then(battery => {
-                    // Send initial
                     sendBattery(battery);
-
-                    // Listen for changes
                     battery.addEventListener('levelchange', () => sendBattery(battery));
                     battery.addEventListener('chargingchange', () => sendBattery(battery));
                 });
+            } else {
+                console.log("Battery API not supported on this device.");
             }
         }
 
         function sendBattery(battery) {
             const level = Math.round(battery.level * 100);
-            const isCharging = battery.charging;
             socket.emit('status-update', {
                 roomId,
                 type: 'battery',
                 level: level,
-                charging: isCharging
+                charging: battery.charging
             });
         }
     </script>

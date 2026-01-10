@@ -44,8 +44,13 @@
         <div id="dashboard" class="dashboard-grid" style="display: none;">
 
             <!-- Video Feed -->
-            <div class="video-container">
-                <video id="remoteVideo" autoplay playsinline></video>
+            <div class="video-container" style="position: relative;">
+                <video id="remoteVideo" autoplay playsinline muted></video>
+                <button id="play-stream-btn"
+                    style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); display: none; background: var(--primary); color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; z-index: 20;">
+                    <ion-icon name="play-circle" style="vertical-align: middle; margin-right: 5px;"></ion-icon>
+                    تشغيل البث يدوياً
+                </button>
                 <div
                     style="position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.5); padding: 5px 10px; border-radius: 5px; color: red; display: flex; align-items: center; gap: 5px;">
                     <ion-icon name="radio-button-on"></ion-icon> مباشر
@@ -159,8 +164,22 @@
             // Handle incoming stream
             peerConnection.ontrack = (event) => {
                 console.log('Stream received with tracks:', event.streams[0].getTracks());
-                remoteVideo.srcObject = event.streams[0];
-                remoteVideo.play().catch(e => console.error("Autoplay failed:", e));
+                const stream = event.streams[0];
+                remoteVideo.srcObject = stream;
+
+                const playPromise = remoteVideo.play();
+                if (playPromise !== undefined) {
+                    playPromise.catch(error => {
+                        console.error("Autoplay failed:", error);
+                        // Show Manual Play Button
+                        const playBtn = document.getElementById('play-stream-btn');
+                        playBtn.style.display = 'block';
+                        playBtn.addEventListener('click', () => {
+                            remoteVideo.play();
+                            playBtn.style.display = 'none';
+                        });
+                    });
+                }
             };
 
             peerConnection.onicecandidate = (event) => {
