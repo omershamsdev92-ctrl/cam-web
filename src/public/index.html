@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SafeWatch | المراقبة الذكية</title>
-    <link rel="stylesheet" href="css/style.css?v=2.7">
+    <link rel="stylesheet" href="css/style.css?v=3.0">
     <!-- Ionicons -->
     <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
     <link rel="manifest" href="manifest.json">
@@ -14,12 +14,44 @@
 </head>
 
 <body>
+    <!-- Password Protection Overlay -->
+    <div id="login-gate" class="login-overlay">
+        <div class="login-card">
+            <ion-icon name="lock-closed"
+                style="font-size: 4rem; color: var(--primary); margin-bottom: 20px;"></ion-icon>
+            <h2>نظام المراقبة الآمن</h2>
+            <p style="color: var(--text-muted); margin-top: 10px;">يرجى إدخال كلمة المرور للمتابعة</p>
+            <input type="password" id="pass-input" class="login-input" placeholder="كلمة المرور">
+            <button onclick="checkPass()" class="btn" style="width: 100%;">دخول</button>
+            <p id="login-error" style="color: var(--danger); margin-top: 15px; display: none; font-size: 0.9rem;">كلمة
+                المرور غير صحيحة!</p>
+        </div>
+    </div>
+
+    <script>
+        function checkPass() {
+            const input = document.getElementById('pass-input').value;
+            if (input === 'dev2000') {
+                localStorage.setItem('sw_auth', 'true');
+                document.getElementById('login-gate').style.display = 'none';
+            } else {
+                const error = document.getElementById('login-error');
+                error.style.display = 'block';
+                setTimeout(() => error.style.display = 'none', 3000);
+            }
+        }
+
+        // Check auth on load
+        if (localStorage.getItem('sw_auth') === 'true') {
+            document.getElementById('login-gate').style.display = 'none';
+        }
+    </script>
 
     <div class="container">
         <header>
             <div class="logo">
                 <ion-icon name="videocam"></ion-icon>
-                SafeWatch <span style="font-size: 0.8rem; opacity: 0.5; margin-right: 5px;">v2.7</span>
+                SafeWatch <span style="font-size: 0.8rem; opacity: 0.5; margin-right: 5px;">v3.0</span>
             </div>
             <div class="connection-status" id="connection-status">
                 <span class="status-dot"></span>
