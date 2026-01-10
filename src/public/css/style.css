@@ -104,7 +104,13 @@ header {
     gap: 20px;
 }
 
-@media (min-width: 768px) {
+@media (min-width: 992px) {
+    .dashboard-grid {
+        grid-template-columns: 2fr 1fr;
+    }
+}
+
+@media (min-width: 1400px) {
     .dashboard-grid {
         grid-template-columns: 3fr 1fr;
     }
@@ -180,6 +186,49 @@ video {
 
 .action-btn:hover {
     background: rgba(255, 255, 255, 0.1);
+    transform: translateY(-2px);
+}
+
+.action-btn ion-icon {
+    font-size: 1.2rem;
+}
+
+.action-btn span {
+    font-size: 0.9rem;
+}
+
+.btn-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+@media (max-width: 480px) {
+    .btn-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.pulsing {
+    animation: beacon 2s infinite;
+}
+
+@keyframes beacon {
+    0% {
+        transform: scale(1);
+        opacity: 1;
+    }
+
+    50% {
+        transform: scale(1.1);
+        opacity: 0.8;
+    }
+
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
 }
 
 .action-btn.active {

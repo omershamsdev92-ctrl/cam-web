@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>لوحة التحكم | SafeWatch</title>
-    <link rel="stylesheet" href="css/style.css?v=2.5">
+    <link rel="stylesheet" href="css/style.css?v=2.7">
     <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="/socket.io/socket.io.js"></script>
@@ -70,93 +70,96 @@
             <!-- Controls -->
             <div class="controls-panel">
                 <div class="control-group">
-                    <h3>حالة الجهاز</h3>
-                    <div style="display: flex; gap: 10px; margin-bottom: 20px;">
-                        <div class="status-indicator">
-                            <ion-icon name="battery-full"></ion-icon>
-                            <span id="battery-level">--%</span>
-                        </div>
-                        <div class="status-indicator">
-                            <ion-icon name="wifi"></ion-icon>
-                            متصل
+                    <div
+                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                        <h3 style="margin:0;">الجهاز المراقب</h3>
+                        <div style="display: flex; gap: 5px;">
+                            <div class="status-indicator" style="padding: 4px 10px; font-size: 0.7rem;">
+                                <ion-icon name="battery-full"></ion-icon>
+                                <span id="battery-level">--%</span>
+                            </div>
+                            <div class="status-indicator" style="padding: 4px 10px; font-size: 0.7rem;">
+                                <ion-icon name="wifi"></ion-icon>
+                                اونلاين
+                            </div>
                         </div>
                     </div>
-                </div>
-
-                <div class="control-group">
-                    <h3>تفاصيل الجهاز المراقب</h3>
                     <div id="device-info-box"
-                        style="font-size: 0.8rem; background: rgba(255,255,255,0.02); padding: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1);">
-                        <p style="color: var(--text-muted); text-align: center;">في انتظار بيانات الجهاز...</p>
+                        style="font-size: 0.75rem; background: rgba(0,0,0,0.2); padding: 12px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05);">
+                        <p style="color: var(--text-muted); text-align: center;">جاري جلب تفاصيل الجهاز...</p>
                     </div>
                 </div>
 
                 <div class="control-group">
-                    <h3>التحكم بالكاميرا</h3>
+                    <h3>التحكم المباشر</h3>
+                    <div class="btn-grid">
+                        <button class="action-btn" onclick="sendCommand('switch-camera')">
+                            <ion-icon name="sync-outline"></ion-icon>
+                            <span>تبديل العدسة</span>
+                        </button>
 
-                    <button class="action-btn" onclick="sendCommand('switch-camera')">
-                        <ion-icon name="sync-outline"></ion-icon>
-                        تبديل الكاميرا (أمامية/خلفية)
-                    </button>
+                        <button class="action-btn" onclick="sendCommand('toggle-torch')">
+                            <ion-icon name="flash-outline"></ion-icon>
+                            <span>الكشاف</span>
+                        </button>
 
-                    <button class="action-btn" onclick="sendCommand('switch-to-screen')"
-                        style="background: #ef4444; border: none;">
-                        <ion-icon name="tv-outline"></ion-icon>
-                        بث شاشة الموبايل (Screen Share)
-                    </button>
+                        <button id="toggle-audio-btn" class="action-btn" onclick="toggleAudio()">
+                            <ion-icon name="volume-mute-outline"></ion-icon>
+                            <span>سماع الصوت</span>
+                        </button>
 
-                    <button class="action-btn" onclick="sendCommand('toggle-torch')">
-                        <ion-icon name="flash"></ion-icon>
-                        تشغيل/إيقاف الفلاش (الكشاف)
-                    </button>
+                        <button class="action-btn" onclick="sendCommand('screen-dim')"
+                            style="border-color: var(--primary);">
+                            <ion-icon name="lock-closed-outline"></ion-icon>
+                            <span>الوضع الأمني</span>
+                        </button>
+                    </div>
 
-                    <button id="toggle-audio-btn" class="action-btn" onclick="toggleAudio()">
-                        <ion-icon name="volume-mute"></ion-icon>
-                        تشغيل الصوت (مكتوم حالياً)
-                    </button>
-
-                    <!-- Zoom Control -->
-                    <div style="margin: 10px 0; padding: 10px; background: rgba(255,255,255,0.05); border-radius: 8px;">
-                        <label style="display:block; margin-bottom:5px; font-size:0.9rem;">التقريب (Zoom): <span
-                                id="zoom-val">1x</span></label>
+                    <div
+                        style="margin: 10px 0 20px; padding: 15px; background: rgba(255,255,255,0.05); border-radius: 12px;">
+                        <label
+                            style="display:flex; justify-content: space-between; margin-bottom:10px; font-size:0.9rem;">
+                            <span>درجة التقريب (Zoom)</span>
+                            <span id="zoom-val" style="color: var(--primary); font-weight: bold;">1x</span>
+                        </label>
                         <input type="range" id="zoom-slider" min="1" max="5" step="0.1" value="1"
                             style="width: 100%; cursor: pointer;">
                     </div>
 
-                    <button class="action-btn" onclick="sendCommand('screen-dim')">
-                        <ion-icon name="lock-closed"></ion-icon>
-                        الوضع الأمني (قفل وهمي للشاشة)
-                    </button>
-
-                    <!-- Snapshot Mode Toggle -->
-                    <button id="snapshot-mode-btn" class="action-btn" onclick="toggleSnapshotMode()"
-                        style="border: 1px solid var(--primary);">
-                        <ion-icon name="images"></ion-icon>
-                        تفعيل وضع اللقطات (صور كل 5 ثواني)
+                    <button class="action-btn" onclick="sendCommand('switch-to-screen')"
+                        style="background: #ef4444; border: none; margin-bottom: 20px;">
+                        <ion-icon name="tv-outline"></ion-icon>
+                        <span>بث شاشة الموبايل (Screen Share)</span>
                     </button>
                 </div>
 
                 <div class="control-group">
-                    <h3>مراقبة متقدمة</h3>
+                    <h3>أدوات المراقبة والصور</h3>
+                    <div class="btn-grid">
+                        <button class="action-btn" onclick="sendCommand('capture-photo')"
+                            style="background: var(--accent); border: none;">
+                            <ion-icon name="camera-outline"></ion-icon>
+                            <span>التقاط صورة</span>
+                        </button>
 
-                    <button class="action-btn" onclick="sendCommand('capture-photo')"
-                        style="background: var(--accent); border: none;">
-                        <ion-icon name="camera"></ion-icon>
-                        التقاط صورة فورية (عالية الجودة)
-                    </button>
+                        <button id="snapshot-mode-btn" class="action-btn" onclick="toggleSnapshotMode()"
+                            style="border: 1px solid var(--primary);">
+                            <ion-icon name="images-outline"></ion-icon>
+                            <span>وضع اللقطات</span>
+                        </button>
+                    </div>
 
                     <div
                         style="margin: 10px 0; padding: 15px; background: rgba(16, 185, 129, 0.1); border-radius: 12px; border: 1px solid var(--accent);">
                         <div
                             style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                            <span style="font-weight: 700;">التحديث التلقائي (صور)</span>
+                            <span style="font-weight: 700;">التحديث التلقائي الدورى</span>
                             <label class="switch">
                                 <input type="checkbox" id="auto-snap-toggle" onchange="toggleAutoSnapshot()">
                                 <span class="slider round"></span>
                             </label>
                         </div>
-                        <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 10px;">يرسل التطبيق لقطة
-                            كل:</p>
+                        <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 10px;">إرسال لقطة كل:</p>
                         <select id="snap-interval" onchange="updateSnapshotInterval()"
                             style="width: 100%; padding: 8px; border-radius: 5px; background: var(--bg-dark); color: white; border: 1px solid rgba(255,255,255,0.2);">
                             <option value="1">دقيقة واحدة</option>
@@ -176,7 +179,8 @@
                     <div
                         style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
                         <h3 style="margin:0;"><ion-icon name="images-outline"
-                                style="vertical-align: middle; margin-left: 5px;"></ion-icon> سجل الصور الملتقطة</h3>
+                                style="vertical-align: middle; margin-left: 5px;"></ion-icon> سجل الصور الملتقطة
+                        </h3>
                         <button onclick="clearGallery()"
                             style="background: none; border: 1px solid var(--danger); color: var(--danger); padding: 5px 15px; border-radius: 5px; cursor: pointer; font-size: 0.8rem;">مسح
                             السجل</button>
