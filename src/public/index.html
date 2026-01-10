@@ -5,8 +5,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SafeWatch | المراقبة الذكية</title>
-    <link rel="stylesheet" href="css/style.css?v=2.0">
-    <!-- Ionicons for icons -->
+    <link rel="stylesheet" href="css/style.css?v=2.2">
+    <!-- Ionicons -->
     <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
     <link rel="manifest" href="manifest.json">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -19,7 +19,7 @@
         <header>
             <div class="logo">
                 <ion-icon name="videocam"></ion-icon>
-                SafeWatch <span style="font-size: 0.8rem; opacity: 0.5; margin-right: 5px;">v2.0</span>
+                SafeWatch <span style="font-size: 0.8rem; opacity: 0.5; margin-right: 5px;">v2.1</span>
             </div>
             <div class="connection-status" id="connection-status">
                 <span class="status-dot"></span>
@@ -27,25 +27,79 @@
             </div>
         </header>
 
-        <h3>بث مباشر HD</h3>
-        <p style="color: var(--text-muted);">جودة عالية مع استهلاك منخفض للبيانات</p>
-    </div>
-    <div class="feature-card"
-        style="background: var(--bg-card); padding: 30px; border-radius: 16px; text-align: center;">
-        <ion-icon name="shield-checkmark"
-            style="font-size: 3rem; color: var(--accent); margin-bottom: 20px;"></ion-icon>
-        <h3>آمن ومشفر</h3>
-        <p style="color: var(--text-muted);">اتصال مباشر بين الأجهزة (P2P)</p>
-    </div>
-    <div class="feature-card"
-        style="background: var(--bg-card); padding: 30px; border-radius: 16px; text-align: center;">
-        <ion-icon name="battery-charging" style="font-size: 3rem; color: #f59e0b; margin-bottom: 20px;"></ion-icon>
-        <h3>توفير الطاقة</h3>
-        <p style="color: var(--text-muted);">وضع الشاشة السوداء لتوفير البطارية</p>
-    </div>
-    </div>
+        <section class="hero">
+            <h1>حول هاتفك القديم إلى كاميرا مراقبة ذكية</h1>
+            <p>راقب أطفالك، كبار السن، أو المطبخ بسهولة وبأمان تام. بدون تطبيقات، فقط متصفح.</p>
+
+            <button id="install-pwa-btn"
+                style="display: none; background: #3b82f6; border: none; padding: 10px 20px; border-radius: 20px; color: white; margin-bottom: 20px; cursor: pointer;">
+                <ion-icon name="download-outline" style="vertical-align: middle;"></ion-icon>
+                تثبيت التطبيق على الجوال
+            </button>
+
+            <div style="margin: 20px 0;">
+                <input type="text" id="custom-session" placeholder="أدخل اسم للجلسة (اختياري، مثلاً: home)"
+                    style="padding: 15px; border-radius: 50px; border: none; width: 100%; max-width: 300px; text-align: center; margin-bottom: 10px;">
+                <p style="font-size: 0.8rem; color: #94a3b8; margin-top: 5px;">اضغط الزر أدناه للبدء</p>
+            </div>
+
+            <button id="createable" class="btn">
+                <ion-icon name="add-circle-outline" style="vertical-align: middle; margin-left: 8px;"></ion-icon>
+                بدء المراقبة
+            </button>
+        </section>
+
+        <div class="features-grid"
+            style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 30px; margin-top: 50px;">
+            <div class="feature-card"
+                style="background: var(--bg-card); padding: 30px; border-radius: 16px; text-align: center;">
+                <ion-icon name="videocam"
+                    style="font-size: 3rem; color: var(--primary); margin-bottom: 20px;"></ion-icon>
+                <h3>بث مباشر HD</h3>
+                <p style="color: var(--text-muted);">جودة عالية مع استهلاك منخفض للبيانات</p>
+            </div>
+            <div class="feature-card"
+                style="background: var(--bg-card); padding: 30px; border-radius: 16px; text-align: center;">
+                <ion-icon name="shield-checkmark"
+                    style="font-size: 3rem; color: var(--accent); margin-bottom: 20px;"></ion-icon>
+                <h3>آمن ومشفر</h3>
+                <p style="color: var(--text-muted);">اتصال مباشر بين الأجهزة (P2P)</p>
+            </div>
+            <div class="feature-card"
+                style="background: var(--bg-card); padding: 30px; border-radius: 16px; text-align: center;">
+                <ion-icon name="battery-charging"
+                    style="font-size: 3rem; color: #f59e0b; margin-bottom: 20px;"></ion-icon>
+                <h3>توفير الطاقة</h3>
+                <p style="color: var(--text-muted);">وضع الشاشة السوداء لتوفير البطارية</p>
+            </div>
+        </div>
 
     </div>
+
+    <!-- PWA Installation Logic -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/sw.js');
+        }
+
+        let deferredPrompt;
+        const installBtn = document.getElementById('install-pwa-btn');
+
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            installBtn.style.display = 'inline-block';
+        });
+
+        installBtn.addEventListener('click', async () => {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                const { outcome } = await deferredPrompt.userChoice;
+                deferredPrompt = null;
+                installBtn.style.display = 'none';
+            }
+        });
+    </script>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/uuid/8.3.2/uuid.min.js"></script>
     <script>
