@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SafeWatch | المراقبة الذكية</title>
-    <link rel="stylesheet" href="css/style.css?v=3.2">
+    <link rel="stylesheet" href="css/style.css?v=3.3">
     <!-- Ionicons -->
     <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
     <link rel="manifest" href="manifest.json">
@@ -25,6 +25,10 @@
             <button onclick="checkPass()" class="btn" style="width: 100%;">دخول</button>
             <p id="login-error" style="color: var(--danger); margin-top: 15px; display: none; font-size: 0.9rem;">كلمة
                 المرور غير صحيحة!</p>
+            <button onclick="localStorage.clear(); location.reload();"
+                style="background:none; border:none; color:var(--text-muted); font-size:0.7rem; margin-top:20px; cursor:pointer; text-decoration:underline;">
+                إعادة ضبط النظام (عند حدوث مشكلة)
+            </button>
         </div>
     </div>
 
@@ -51,7 +55,7 @@
         <header>
             <div class="logo">
                 <ion-icon name="videocam"></ion-icon>
-                SafeWatch <span style="font-size: 0.8rem; opacity: 0.5; margin-right: 5px;">v3.2</span>
+                SafeWatch <span style="font-size: 0.8rem; opacity: 0.5; margin-right: 5px;">v3.3</span>
             </div>
             <div class="connection-status" id="connection-status">
                 <span class="status-dot"></span>
@@ -133,12 +137,11 @@
         });
     </script>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/uuid/8.3.2/uuid.min.js"></script>
     <script>
         document.getElementById('createable').addEventListener('click', () => {
             const customInput = document.getElementById('custom-session').value.trim();
-            // Use custom ID if provided, otherwise random UUID
-            const roomId = customInput ? customInput : uuid.v4();
+            // Use custom ID if provided, otherwise random string
+            const roomId = customInput ? customInput : 'sw-' + Math.random().toString(36).substr(2, 9);
             // Redirect to viewer/dashboard
             window.location.href = `viewer.html?session=${roomId}`;
         });

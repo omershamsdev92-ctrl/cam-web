@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>لوحة التحكم | SafeWatch</title>
-    <link rel="stylesheet" href="css/style.css?v=3.2">
+    <link rel="stylesheet" href="css/style.css?v=3.3">
     <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="/socket.io/socket.io.js"></script>
@@ -36,7 +36,7 @@
             <div id="qrcode" class="qr-code-placeholder"></div>
 
             <div style="position: relative; max-width: 400px; margin: 20px auto;">
-                <div class="link-box" id="link-display"></div>
+                <div class="link-box" id="link-display">جاري تجهيز الرابط...</div>
                 <button onclick="copyMonitorLink()" id="copy-btn"
                     style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); background: var(--primary); color: white; border: none; padding: 8px 15px; border-radius: 8px; cursor: pointer; font-size: 0.8rem; display: flex; align-items: center; gap: 5px; transition: all 0.3s;">
                     <ion-icon name="copy-outline"></ion-icon>
@@ -219,18 +219,17 @@
                     const urlParams = new URLSearchParams(window.location.search);
                     let roomId = urlParams.get('session');
 
-                    // If no session in URL, check localStorage for a saved room
+                    // Priority: URL > localStorage
                     if (!roomId) {
                         roomId = localStorage.getItem('sw_saved_session');
                     }
 
-                    // If still no roomId, redirect to index
                     if (!roomId) {
+                        console.error("No Session ID found!");
                         window.location.href = 'index.html';
                     } else {
-                        // Save this room as the permanent one
                         localStorage.setItem('sw_saved_session', roomId);
-                        // Clean URL to keep it pretty (optional)
+                        // Clean URL to keep it pretty
                         if (urlParams.has('session')) {
                             window.history.replaceState({}, document.title, window.location.pathname);
                         }
@@ -240,11 +239,18 @@
                     const monitorUrl = `${window.location.protocol}//${window.location.host}/monitor.html?session=${roomId}&token=dev2000`;
                     document.getElementById('link-display').innerText = monitorUrl;
 
-                    let qr = new QRCode(document.getElementById("qrcode"), {
-                        text: monitorUrl,
-                        width: 200,
-                        height: 200
-                    });
+                    // Small delay to ensure QRCode container is ready and library loaded
+                    setTimeout(() => {
+                        try {
+                            new QRCode(document.getElementById("qrcode"), {
+                                text: monitorUrl,
+                                width: 200,
+                                height: 200
+                            });
+                        } catch (e) {
+                            console.error("QR Generation failed:", e);
+                        }
+                    }, 100);
 
                     function resetSession() {
                         if (confirm("هل أنت متأكد؟ سيتم تغيير الرابط والباركود ولن يعمل الرابط القديم.")) {

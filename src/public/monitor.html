@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SafeWatch Camera</title>
-    <link rel="stylesheet" href="css/style.css?v=3.2">
+    <link rel="stylesheet" href="css/style.css?v=3.3">
     <link rel="manifest" href="manifest.json">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="theme-color" content="#0f172a">
@@ -249,9 +249,21 @@
         let autoStartTimer;
         async function startSystem() {
             if (autoStartTimer) clearTimeout(autoStartTimer);
-            log("Starting system...");
+            log("Starting system sequence...");
+
             try {
-                // Attempt to get camera (both audio and video)
+                // Ensure auth is cleared before trying
+                if (localStorage.getItem('sw_auth') !== 'true') {
+                    const token = new URLSearchParams(window.location.search).get('token');
+                    if (token === 'dev2000') {
+                        localStorage.setItem('sw_auth', 'true');
+                        document.getElementById('monitor-login-gate').style.display = 'none';
+                    } else {
+                        throw new Error("Missing Authentication");
+                    }
+                }
+
+                // Attempt to get camera
                 const stream = await getCamera(currentFacingMode);
 
                 if (stream) {
@@ -259,28 +271,28 @@
                     permissionOverlay.style.display = 'none';
                     socket.emit('join-room', roomId, 'monitor');
                     sendDeviceInfo();
-                    log("Monitor Active.");
+                    log("Monitor Active & Streaming.");
 
-                    // ONLY Auto-lock if the video is actually playing to avoid black screen traps
-                    const videoPlaying = !localVideo.paused && localVideo.readyState >= 2;
-                    if (videoPlaying) {
-                        setTimeout(() => {
-                            if (!dimOverlay.style.opacity || dimOverlay.style.opacity === '0') {
-                                toggleStealthMode();
-                                log("Silent Lock Activated.");
-                            }
-                        }, 3000);
-                    } else {
-                        log("Video state prevents auto-lock. Waiting for user.");
-                    }
-                } else {
-                    throw new Error("No stream acquired");
+                    // Verify video is playing
+                    setTimeout(() => {
+                        if (localVideo.paused || localVideo.readyState < 2) {
+                            log("Video paused/not ready. Showing force start.");
+                            restartBtn.style.display = 'block';
+                        } else {
+                            // Auto-lock only if all good
+                            toggleStealthMode();
+                            log("Stealth Mode Auto-Activated.");
+                        }
+                    }, 4000);
                 }
             } catch (e) {
-                log("Startup sequence intercepted: " + e.message);
-                permissionOverlay.style.display = 'flex';
-                // Show a helpful tip on the button
-                document.getElementById('start-btn').innerHTML = 'اضغط لتنشيط الكاميرا يدوياً';
+                log("Startup blocked: " + e.message);
+                if (e.message === "Missing Authentication") {
+                    document.getElementById('monitor-login-gate').style.display = 'flex';
+                } else {
+                    permissionOverlay.style.display = 'flex';
+                    restartBtn.style.display = 'block';
+                }
             }
         }
 
