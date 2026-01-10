@@ -247,37 +247,64 @@
         // --- COMPATIBILITY MODE (CANVAS STREAMING) ---
         // Used when WebRTC fails (black screen)
         let canvasInterval = null;
+        let framesSent = 0;
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d');
 
         function startCanvasStreaming() {
             if (canvasInterval) clearInterval(canvasInterval);
 
-            statusText.innerText = "يعمل في وضع التوافق (Compatibility Mode)";
+            statusText.innerHTML = "وضع التوافق يعمل.<br>جاري إرسال الإطارات...";
             statusText.style.background = "#f59e0b"; // Orange
 
-            // Set canvas size to lower res for performance
-            canvas.width = 640;
-            canvas.height = 360;
+            // Low Resolution for stability
+            canvas.width = 320;
+            canvas.height = 240;
 
             canvasInterval = setInterval(() => {
-                if (localVideo.readyState === localVideo.HAVE_ENOUGH_DATA) {
-                    ctx.drawImage(localVideo, 0, 0, canvas.width, canvas.height);
-                    // Quality 0.4 for speed
-                    const data = canvas.toDataURL('image/jpeg', 0.4);
-                    socket.emit('stream-data', { roomId, image: data });
+                try {
+                    if (localVideo.readyState >= 2) { // HAVE_CURRENT_DATA
+                        ctx.drawImage(localVideo, 0, 0, canvas.width, canvas.height);
+                        const data = canvas.toDataURL('image/jpeg', 0.3);
+                        socket.emit('stream-data', { roomId, image: data });
+
+                        framesSent++;
+                        if (framesSent % 20 === 0) {
+                            statusText.innerHTML = `وضع التوافق يعمل.<br>تم إرسال ${framesSent} إطار`;
+                        }
+                    } else {
+                        statusText.innerText = "الكاميرا لا تعمل/متوقفة (ReadyState: " + localVideo.readyState + ")";
+                        localVideo.play(); // Try to wake it
+                    }
+                } catch (e) {
+                    console.error(e);
+                    statusText.innerText = "خطأ في التصوير: " + e.message;
                 }
-            }, 100); // 10 FPS
+            }, 200); // 5 FPS (Slower but safer)
         }
 
         function stopCanvasStreaming() {
             if (canvasInterval) {
                 clearInterval(canvasInterval);
                 canvasInterval = null;
-                statusText.innerText = "تم إيقاف وضع التوافق. العودة للوضع الطبيعي.";
+                statusText.innerText = "تم إيقاف وضع التوافق.";
                 statusText.style.background = "var(--primary)";
             }
         }
+
+        // Expose for debugging if needed
+        window.sendTestFrame = () => {
+            canvas.width = 320;
+            canvas.height = 240;
+            ctx.fillStyle = "red";
+            ctx.fillRect(0, 0, 320, 240);
+            ctx.fillStyle = "white";
+            ctx.font = "30px Arial";
+            ctx.fillText("TEST FRAME", 50, 120);
+            const data = canvas.toDataURL('image/jpeg', 0.5);
+            socket.emit('stream-data', { roomId, image: data });
+            alert("تم إرسال صورة حمراء اختبارية. تحقق من الشاشة الأخرى.");
+        };
 
         // Battery API
         function startBatteryUpdates() {
