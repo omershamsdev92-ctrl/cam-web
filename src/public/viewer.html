@@ -44,11 +44,17 @@
                 </button>
             </div>
 
-            <div style="margin-top: 20px;">
+            <div style="margin-top: 30px; display: flex; flex-direction: column; gap: 15px; align-items: center;">
                 <div class="status-indicator offline">
                     <ion-icon name="ellipse"></ion-icon>
                     في انتظار الاتصال...
                 </div>
+
+                <button onclick="resetSession()"
+                    style="background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.2); padding: 10px 20px; border-radius: 12px; cursor: pointer; font-size: 0.85rem; display: flex; align-items: center; gap: 8px;">
+                    <ion-icon name="refresh-outline"></ion-icon>
+                    تغيير الرابط والباركود (إنشاء جلسة جديدة)
+                </button>
             </div>
         </div>
 
@@ -211,25 +217,41 @@
                 <script>
                     const socket = io();
                     const urlParams = new URLSearchParams(window.location.search);
-                    const roomId = urlParams.get('session');
-                    const setupScreen = document.getElementById('setup-screen');
-                    const dashboard = document.getElementById('dashboard');
-                    const remoteVideo = document.getElementById('remoteVideo');
+                    let roomId = urlParams.get('session');
 
+                    // If no session in URL, check localStorage for a saved room
                     if (!roomId) {
-                        alert('رقم الجلسة مفقود!');
-                        window.location.href = 'index.html';
+                        roomId = localStorage.getItem('sw_saved_session');
                     }
 
-                    // Generate QR Code
+                    // If still no roomId, redirect to index
+                    if (!roomId) {
+                        window.location.href = 'index.html';
+                    } else {
+                        // Save this room as the permanent one
+                        localStorage.setItem('sw_saved_session', roomId);
+                        // Clean URL to keep it pretty (optional)
+                        if (urlParams.has('session')) {
+                            window.history.replaceState({}, document.title, window.location.pathname);
+                        }
+                    }
+
+                    // Generate QR Code & Link
                     const monitorUrl = `${window.location.protocol}//${window.location.host}/monitor.html?session=${roomId}`;
                     document.getElementById('link-display').innerText = monitorUrl;
 
-                    new QRCode(document.getElementById("qrcode"), {
+                    let qr = new QRCode(document.getElementById("qrcode"), {
                         text: monitorUrl,
                         width: 200,
                         height: 200
                     });
+
+                    function resetSession() {
+                        if (confirm("هل أنت متأكد؟ سيتم تغيير الرابط والباركود ولن يعمل الرابط القديم.")) {
+                            localStorage.removeItem('sw_saved_session');
+                            window.location.href = 'index.html'; // Go back to create a new one
+                        }
+                    }
 
                     function copyMonitorLink() {
                         const link = document.getElementById('link-display').innerText;
