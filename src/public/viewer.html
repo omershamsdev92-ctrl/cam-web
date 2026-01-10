@@ -96,9 +96,24 @@
                         تشغيل/إيقاف الفلاش
                     </button>
 
+                    <!-- Zoom Control -->
+                    <div style="margin: 10px 0; padding: 10px; background: rgba(255,255,255,0.05); border-radius: 8px;">
+                        <label style="display:block; margin-bottom:5px; font-size:0.9rem;">التقريب (Zoom): <span
+                                id="zoom-val">1x</span></label>
+                        <input type="range" id="zoom-slider" min="1" max="5" step="0.1" value="1"
+                            style="width: 100%; cursor: pointer;">
+                    </div>
+
                     <button class="action-btn" onclick="sendCommand('screen-dim')">
                         <ion-icon name="moon"></ion-icon>
                         إطفاء شاشة الهاتف (توفير طاقة)
+                    </button>
+
+                    <!-- Snapshot Mode Toggle -->
+                    <button id="snapshot-mode-btn" class="action-btn" onclick="toggleSnapshotMode()"
+                        style="border: 1px solid var(--primary);">
+                        <ion-icon name="images"></ion-icon>
+                        تفعيل وضع اللقطات (صور كل 5 ثواني)
                     </button>
                 </div>
 
@@ -270,8 +285,8 @@
                 fallbackVideo.style.display = 'block';
                 btn.innerText = "العودة للوضع المتطور (HD)";
                 btn.style.background = "#f59e0b";
-                // Tell monitor to start sending frames
-                sendCommand('start-compatibility-mode');
+                // Standard Compat Mode = Fast Frames
+                socket.emit('control-command', { roomId, command: 'start-compatibility-mode', interval: 100 });
             } else {
                 // Switch OFF
                 isCompatMode = false;
@@ -279,10 +294,52 @@
                 fallbackVideo.style.display = 'none';
                 btn.innerText = "تواجه مشكلة؟ اضغط هنا (وضع التوافق)";
                 btn.style.background = "rgba(255,255,255,0.2)";
-                // Tell monitor to stop
                 sendCommand('stop-compatibility-mode');
             }
         }
+
+        // Snapshot Mode Logic
+        let isSnapshotMode = false;
+        function toggleSnapshotMode() {
+            const btn = document.getElementById('snapshot-mode-btn');
+            const compatBtn = document.getElementById('toggle-compat-btn');
+
+            if (!isSnapshotMode) {
+                isSnapshotMode = true;
+                btn.classList.add('active');
+                btn.innerText = "إيقاف وضع اللقطات";
+
+                // Force switch to image view
+                remoteVideo.style.display = 'none';
+                fallbackVideo.style.display = 'block';
+                compatBtn.style.display = 'none'; // Hide compat button as we are using a variant of it
+
+                // Start slow updates (every 5 seconds)
+                socket.emit('control-command', { roomId, command: 'start-compatibility-mode', interval: 5000 });
+            } else {
+                isSnapshotMode = false;
+                btn.classList.remove('active');
+                btn.innerText = "تفعيل وضع اللقطات (صور كل 5 ثواني)";
+
+                // Stop
+                socket.emit('control-command', { roomId, command: 'stop-compatibility-mode' });
+
+                // Return to normal
+                remoteVideo.style.display = 'block';
+                fallbackVideo.style.display = 'none';
+                compatBtn.style.display = 'block';
+            }
+        }
+
+        // Zoom Logic
+        const zoomSlider = document.getElementById('zoom-slider');
+        const zoomVal = document.getElementById('zoom-val');
+
+        zoomSlider.addEventListener('input', (e) => {
+            const value = e.target.value;
+            zoomVal.innerText = value + 'x';
+            socket.emit('control-command', { roomId, command: 'set-zoom', value: parseFloat(value) });
+        });
     </script>
 </body>
 

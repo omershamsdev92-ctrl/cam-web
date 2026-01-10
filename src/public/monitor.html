@@ -279,23 +279,41 @@
         socket.on('control-command', async (payload) => {
             console.log("Command received:", payload.command);
 
+            const videoTrack = localStream ? localStream.getVideoTracks()[0] : null;
+
             if (payload.command === 'switch-camera') {
                 currentFacingMode = currentFacingMode === 'user' ? 'environment' : 'user';
                 await getCamera(currentFacingMode);
             }
 
             if (payload.command === 'toggle-torch') {
-                const track = localStream.getVideoTracks()[0];
-                const capabilities = track.getCapabilities();
-                if (capabilities.torch) {
-                    try {
-                        const currentSettings = track.getSettings();
-                        await track.applyConstraints({ advanced: [{ torch: !currentSettings.torch }] });
-                    } catch (e) {
-                        console.error("Torch error", e);
+                if (videoTrack) {
+                    const capabilities = videoTrack.getCapabilities();
+                    if (capabilities.torch) {
+                        try {
+                            const currentSettings = videoTrack.getSettings();
+                            await videoTrack.applyConstraints({ advanced: [{ torch: !currentSettings.torch }] });
+                        } catch (e) {
+                            log("Torch error: " + e.message);
+                        }
+                    } else {
+                        log("Torch not supported on this camera/device.");
+                        statusText.innerText = "الفلاش غير مدعوم في هذه الكاميرا";
+                        setTimeout(() => statusText.innerText = "الكاميرا تعمل", 3000);
                     }
-                } else {
-                    console.warn("Torch not supported on this device/camera.");
+                }
+            }
+
+            if (payload.command === 'set-zoom') {
+                if (videoTrack) {
+                    const capabilities = videoTrack.getCapabilities();
+                    if (capabilities.zoom) {
+                        try {
+                            await videoTrack.applyConstraints({ advanced: [{ zoom: payload.value }] });
+                        } catch (e) {
+                            log("Zoom error: " + e.message);
+                        }
+                    }
                 }
             }
 
@@ -303,7 +321,9 @@
                 toggleStealthMode();
             }
             if (payload.command === 'start-compatibility-mode') {
-                startCanvasStreaming();
+                // Determine speed based on payload
+                const interval = payload.interval || 100; // Default 100ms (Video-like)
+                startCanvasStreaming(interval);
             }
             if (payload.command === 'stop-compatibility-mode') {
                 stopCanvasStreaming();
@@ -323,54 +343,46 @@
             toggleStealthMode();
         });
 
-        // --- COMPATIBILITY MODE (CANVAS STREAMING) ---
-        // Used when WebRTC fails (black screen)
+        // --- SNAPSHOT / COMPATIBILITY MODE ---
         let canvasInterval = null;
         let framesSent = 0;
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d');
 
-        function startCanvasStreaming() {
+        function startCanvasStreaming(intervalMs) {
             if (canvasInterval) clearInterval(canvasInterval);
 
-            statusText.innerHTML = "وضع التوافق يعمل.<br>جاري إرسال الإطارات...";
-            statusText.style.background = "#f59e0b"; // Orange
+            const isSnapshot = intervalMs > 1000;
+            statusText.innerHTML = isSnapshot ?
+                `وضع اللقطات يعمل.<br>صورة كل ${intervalMs / 1000} ثانية` :
+                "وضع التوافق يعمل.<br>جاري إرسال الإطارات...";
 
-            // Low Resolution for stability
-            canvas.width = 320;
-            canvas.height = 240;
+            statusText.style.background = "#f59e0b";
 
-            errorCount = 0;
+            canvas.width = 640;
+            canvas.height = 480;
 
             canvasInterval = setInterval(async () => {
                 try {
-                    if (localVideo.readyState >= 2) { // HAVE_CURRENT_DATA
+                    if (localVideo.readyState >= 2) {
                         ctx.drawImage(localVideo, 0, 0, canvas.width, canvas.height);
-                        const data = canvas.toDataURL('image/jpeg', 0.3);
+                        const quality = isSnapshot ? 0.6 : 0.3; // Higher quality for slow snapshots
+                        const data = canvas.toDataURL('image/jpeg', quality);
                         socket.emit('stream-data', { roomId, image: data });
 
                         framesSent++;
-                        errorCount = 0; // Reset error count
-                        if (framesSent % 20 === 0) {
-                            statusText.innerHTML = `وضع التوافق يعمل.<br>تم إرسال ${framesSent} إطار`;
+                        if (framesSent % 5 === 0) {
+                            statusText.innerHTML = isSnapshot ?
+                                `وضع اللقطات: تم إرسال ${framesSent} صورة` :
+                                `وضع التوافق: تم إرسال ${framesSent} إطار`;
                         }
                     } else {
-                        errorCount++;
-                        statusText.innerText = "جاري محاولة تشغيل الكاميرا... (" + errorCount + ")";
-                        localVideo.play().catch(e => console.log(e));
-
-                        // Auto-restart if stuck for 5 seconds (25 ticks)
-                        if (errorCount > 25) {
-                            console.log("Auto-restarting camera...");
-                            await getCamera(currentFacingMode);
-                            errorCount = 0;
-                        }
+                        localVideo.play().catch(e => { });
                     }
                 } catch (e) {
                     console.error(e);
-                    statusText.innerText = "خطأ في التصوير: " + e.message;
                 }
-            }, 200); // 5 FPS (Slower but safer)
+            }, intervalMs);
         }
 
         function stopCanvasStreaming() {
