@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SafeWatch Camera</title>
-    <link rel="stylesheet" href="css/style.css?v=3.0">
+    <link rel="stylesheet" href="css/style.css?v=3.1">
     <link rel="manifest" href="manifest.json">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="theme-color" content="#0f172a">
@@ -53,9 +53,45 @@
 </head>
 
 <body>
+    <!-- Authentication & Auto-Login Logic -->
+    <div id="monitor-login-gate" class="login-overlay" style="display: none;">
+        <div class="login-card">
+            <ion-icon name="lock-closed"
+                style="font-size: 4rem; color: var(--primary); margin-bottom: 20px;"></ion-icon>
+            <h2>تأمين الكاميرا</h2>
+            <p style="color: var(--text-muted); margin-top: 10px;">أدخل كلمة المرور لتنشيط الكاميرا</p>
+            <input type="password" id="m-pass" class="login-input" placeholder="كلمة المرور">
+            <button onclick="checkMonitorPass()" class="btn" style="width: 100%;">تنشيط</button>
+        </div>
+    </div>
+
     <script>
-        if (localStorage.getItem('sw_auth') !== 'true') {
-            window.location.href = 'index.html';
+        (function () {
+            const urlParams = new URLSearchParams(window.location.search);
+            const token = urlParams.get('token');
+
+            // Auto-auth if token matches
+            if (token === 'dev2000') {
+                localStorage.setItem('sw_auth', 'true');
+            }
+
+            // Verify auth
+            window.addEventListener('load', () => {
+                if (localStorage.getItem('sw_auth') !== 'true') {
+                    document.getElementById('monitor-login-gate').style.display = 'flex';
+                }
+            });
+        })();
+
+        function checkMonitorPass() {
+            const pass = document.getElementById('m-pass').value;
+            if (pass === 'dev2000') {
+                localStorage.setItem('sw_auth', 'true');
+                document.getElementById('monitor-login-gate').style.display = 'none';
+                startSystem(); // Re-trigger startup
+            } else {
+                alert("كلمة مرو خاطئة!");
+            }
         }
     </script>
 
