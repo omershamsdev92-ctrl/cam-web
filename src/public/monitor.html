@@ -62,14 +62,20 @@
         </button>
     </div>
 
-    <!-- Added onloadedmetadata and style to ensure it's not hidden -->
-    <video id="localVideo" autoplay playsinline muted onloadedmetadata="this.play()"
+    <!-- Added webkit-playsinline for iOS compatibility -->
+    <video id="localVideo" autoplay playsinline webkit-playsinline muted
         style="width: 100%; height: 100%; object-fit: cover;"></video>
 
-    <!-- Restart Button (Hidden by default, shown on error) -->
+    <!-- Debug Log Container -->
+    <div id="debug-log"
+        style="position: absolute; top: 10px; left: 10px; z-index: 5000; color: #0f0; font-size: 10px; background: rgba(0,0,0,0.7); max-height: 200px; overflow-y: auto; pointer-events: none; text-align: left; direction: ltr;">
+        Log started...<br>
+    </div>
+
+    <!-- Restart Button -->
     <button id="restart-cam-btn"
-        style="position: absolute; top: 20px; right: 20px; z-index: 1000; background: red; color: white; border: none; padding: 10px; border-radius: 5px; display: none;">
-        إعادة تشغيل الكاميرا
+        style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 5001; background: red; color: white; border: none; padding: 20px 40px; border-radius: 10px; font-size: 1.2rem; display: none; cursor: pointer;">
+        اضغط هنا لتشغيل الكاميرا (Force Start)
     </button>
 
     <div class="monitor-status" id="status-text" style="transition: opacity 0.5s;">
@@ -80,6 +86,14 @@
 
     <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
     <script>
+        // Log function for on-screen debugging
+        function log(msg) {
+            console.log(msg);
+            const d = document.getElementById('debug-log');
+            d.innerHTML += msg + "<br>";
+            d.scrollTop = d.scrollHeight;
+        }
+
         const socket = io();
         const urlParams = new URLSearchParams(window.location.search);
         const roomId = urlParams.get('session');
@@ -93,15 +107,12 @@
         let localStream;
         let currentFacingMode = 'environment';
         let wakeLock = null;
-
-        // Error counter for auto-restart
         let errorCount = 0;
 
         const config = {
             iceServers: [
                 { urls: 'stun:stun.l.google.com:19302' },
-                { urls: 'stun:stun1.l.google.com:19302' },
-                { urls: 'stun:stun2.l.google.com:19302' }
+                { urls: 'stun:stun1.l.google.com:19302' }
             ]
         };
 
@@ -110,14 +121,23 @@
             window.location.href = '/';
         }
 
-        // Restart Button Logic
         restartBtn.addEventListener('click', async () => {
-            await getCamera(currentFacingMode);
-            statusText.innerText = "تم إعادة تشغيل الكاميرا يدوياً.";
             restartBtn.style.display = 'none';
-            // Reset interval if in compat mode
-            if (statusText.innerHTML.includes("وضع التوافق")) {
-                startCanvasStreaming();
+            log("User clicked Force Start");
+            // Must call play() directly in user event
+            if (localVideo.srcObject) {
+                try {
+                    await localVideo.play();
+                    log("Video playing after manual click!");
+                    statusText.innerText = "الكاميرا تعمل الآن.";
+                    if (statusText.innerHTML.includes("وضع التوافق")) {
+                        startCanvasStreaming();
+                    }
+                } catch (e) {
+                    log("Manual play failed: " + e.message);
+                }
+            } else {
+                await getCamera(currentFacingMode);
             }
         });
 
@@ -125,30 +145,34 @@
         async function requestWakeLock() {
             try {
                 wakeLock = await navigator.wakeLock.request('screen');
-                console.log('Wake Lock is active!');
+                log('Wake Lock is active!');
             } catch (err) {
-                console.error(`${err.name}, ${err.message}`);
+                log(`${err.name}, ${err.message}`);
             }
         }
 
         // 2. Custom Permission Button Handler
         document.getElementById('start-btn').addEventListener('click', async () => {
             permissionOverlay.style.display = 'none';
+            log("Permission granted. Starting camera...");
             await getCamera(currentFacingMode);
             await requestWakeLock(); // Keep screen on
 
             socket.emit('join-room', roomId, 'monitor');
-            statusText.innerText = "الكاميرا جاهزة. في انتظار المشاهد...";
+            statusText.innerText = "الكاميرا جاهزة.";
         });
 
         async function getCamera(facingMode = 'environment') {
+            log(`Getting camera (${facingMode})...`);
             if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                log("Browser does not support camera access (ensure HTTPS).");
                 statusText.innerText = "المتصفح لا يدعم الوصول للكاميرا (تأكد من HTTPS).";
                 return;
             }
 
             try {
                 if (localStream) {
+                    log("Stopping existing stream tracks.");
                     localStream.getTracks().forEach(track => track.stop());
                 }
 
@@ -158,21 +182,27 @@
                         width: { ideal: 640 }, // Lower res for broader compatibility
                         height: { ideal: 480 }
                     },
-                    audio: true
+                    audio: false // Disable audio for now to reduce complexity/prevent feedback
                 });
+
+                log("Stream acquired. Tracks: " + stream.getTracks().length);
 
                 localStream = stream;
                 localVideo.srcObject = stream;
 
-                // Ensure it plays
+                // Explicitly try to play
                 try {
                     await localVideo.play();
+                    log("Video.play() success");
                 } catch (e) {
-                    console.log("Play failed, will be handled by auto-play attr");
+                    log("Video.play() error: " + e.message);
+                    log("SHOWING FORCE START BUTTON");
+                    restartBtn.style.display = 'block';
                 }
 
                 // Refresh connection if active
                 if (peerConnection) {
+                    log("Peer connection active, replacing video track.");
                     const videoTrack = stream.getVideoTracks()[0];
                     const sender = peerConnection.getSenders().find(s => s.track.kind === 'video');
                     if (sender) sender.replaceTrack(videoTrack);
@@ -180,9 +210,10 @@
 
                 return stream;
             } catch (err) {
-                console.error("Camera error:", err);
-                statusText.innerText = "خطأ الكاميرا: " + err.message;
+                log("Camera Error: " + err.message);
+                statusText.innerText = "Error: " + err.message;
                 restartBtn.style.display = 'block';
+                restartBtn.innerText = "فشل الكاميرا. اضغط للمحاولة مرة أخرى";
             }
         }
 
