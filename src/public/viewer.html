@@ -30,7 +30,14 @@
 
             <div id="qrcode" class="qr-code-placeholder"></div>
 
-            <div class="link-box" id="link-display"></div>
+            <div style="position: relative; max-width: 400px; margin: 20px auto;">
+                <div class="link-box" id="link-display"></div>
+                <button onclick="copyMonitorLink()" id="copy-btn"
+                    style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); background: var(--primary); color: white; border: none; padding: 8px 15px; border-radius: 8px; cursor: pointer; font-size: 0.8rem; display: flex; align-items: center; gap: 5px; transition: all 0.3s;">
+                    <ion-icon name="copy-outline"></ion-icon>
+                    <span>نسخ</span>
+                </button>
+            </div>
 
             <div style="margin-top: 20px;">
                 <div class="status-indicator offline">
@@ -218,6 +225,25 @@
                         width: 200,
                         height: 200
                     });
+
+                    function copyMonitorLink() {
+                        const link = document.getElementById('link-display').innerText;
+                        navigator.clipboard.writeText(link).then(() => {
+                            const btn = document.getElementById('copy-btn');
+                            const span = btn.querySelector('span');
+                            const icon = btn.querySelector('ion-icon');
+
+                            btn.style.background = "var(--accent)";
+                            span.innerText = "تم النسخ!";
+                            icon.name = "checkmark-outline";
+
+                            setTimeout(() => {
+                                btn.style.background = "var(--primary)";
+                                span.innerText = "نسخ";
+                                icon.name = "copy-outline";
+                            }, 2000);
+                        });
+                    }
 
                     // Join Room
                     socket.emit('join-room', roomId, 'viewer');
