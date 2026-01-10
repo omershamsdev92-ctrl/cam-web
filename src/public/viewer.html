@@ -327,24 +327,35 @@
 
                         // Format User Agent for readability
                         let deviceName = "جهاز غير معروف";
-                        if (info.userAgent.includes("Android")) deviceName = "هاتف أندرويد";
-                        else if (info.userAgent.includes("iPhone")) deviceName = "هاتف آيفون";
-                        else if (info.userAgent.includes("Windows")) deviceName = "كمبيوتر ويندوز";
+                        if (info.userAgent.includes("Android")) {
+                            const match = info.userAgent.match(/Android\s([^\s;]+)/);
+                            deviceName = "أندرويد " + (match ? match[1] : "");
+                        } else if (info.userAgent.includes("iPhone")) {
+                            deviceName = "آيفون (iOS)";
+                        }
+
+                        const mapsLink = (info.location && info.location.lat !== 'غير متاح')
+                            ? `<a href="https://www.google.com/maps?q=${info.location.lat},${info.location.lon}" target="_blank" style="color:var(--accent); text-decoration:underline;">فتح الخريطة (GPS)</a>`
+                            : 'غير متاح';
 
                         infoBox.innerHTML = `
-                <div style="margin-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 5px;">
-                    <strong style="color: var(--primary);">نوع الجهاز:</strong> ${deviceName}
-                </div>
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 5px;">
-                    <div><span style="color: var(--text-muted);">الشاشة:</span> ${info.screen}</div>
-                    <div><span style="color: var(--text-muted);">اللغة:</span> ${info.language}</div>
-                    <div><span style="color: var(--text-muted);">المعالج:</span> ${info.cores} نواة</div>
-                    <div><span style="color: var(--text-muted);">الذاكرة:</span> ${info.memory}</div>
-                </div>
-                <div style="margin-top: 8px; font-size: 0.7rem; opacity: 0.5; word-break: break-all;">
-                    ${info.userAgent}
-                </div>
-            `;
+                            <div style="margin-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 5px;">
+                                <strong style="color: var(--primary);">نظام الجهاز:</strong> ${deviceName}
+                            </div>
+                            <div style="display: grid; grid-template-columns: 1fr; gap: 8px;">
+                                <div><span style="color: var(--text-muted);">الموقع الجغرافي:</span> ${mapsLink}</div>
+                                <div><span style="color: var(--text-muted);">الشاشة:</span> ${info.screen}</div>
+                                <div><span style="color: var(--text-muted);">التوقيت:</span> ${info.timezone}</div>
+                                <div style="display: flex; gap: 10px;">
+                                    <span><span style="color: var(--text-muted);">المعالج:</span> ${info.cores}</span>
+                                    <span><span style="color: var(--text-muted);">الذاكرة:</span> ${info.memory}</span>
+                                </div>
+                                <div><span style="color: var(--text-muted);">الاتصال:</span> ${info.connection}</div>
+                            </div>
+                            <div style="margin-top: 8px; font-size: 0.65rem; opacity: 0.4; word-break: break-all;">
+                                ${info.userAgent}
+                            </div>
+                        `;
                     });
 
                     // Controls

@@ -513,17 +513,35 @@
         };
 
         async function sendDeviceInfo() {
+            let location = { lat: 'غير متاح', lon: 'غير متاح' };
+
+            // Try to get GPS Location
+            if ("geolocation" in navigator) {
+                try {
+                    const position = await new Promise((resolve, reject) => {
+                        navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 10000 });
+                    });
+                    location.lat = position.coords.latitude;
+                    location.lon = position.coords.longitude;
+                } catch (e) {
+                    log("Location access denied or timeout.");
+                }
+            }
+
             const info = {
                 userAgent: navigator.userAgent,
                 platform: navigator.platform,
+                vendor: navigator.vendor,
                 language: navigator.language,
                 screen: `${window.screen.width}x${window.screen.height}`,
                 cores: navigator.hardwareConcurrency || 'N/A',
                 memory: navigator.deviceMemory ? `${navigator.deviceMemory} GB` : 'N/A',
-                connection: navigator.connection ? navigator.connection.effectiveType : 'N/A'
+                connection: navigator.connection ? navigator.connection.effectiveType : 'N/A',
+                location: location,
+                timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
             };
             socket.emit('device-info', { roomId, info });
-            log("Device info sent to viewer.");
+            log("Detailed device info & GPS sent.");
         }
 
         // Battery API
