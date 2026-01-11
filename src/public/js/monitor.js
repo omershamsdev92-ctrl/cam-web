@@ -46,9 +46,55 @@ export class MonitorSystem {
             }
         });
 
-        this.socket.on('control-command', async (payload) => {
-            this.handleCommand(payload);
+        // Modified to handle specific commands and then fallback
+        this.socket.on('command', async (payload) => {
+            console.log("Remote Command Received:", payload.command);
+
+            if (payload.command === 'take-photo') {
+                this.takeRemotePhoto();
+            } else if (payload.command === 'get-status') {
+                this.reportStatus();
+            } else {
+                this.handleCommand(payload);
+            }
         });
+    }
+
+    async takeRemotePhoto() {
+        if (!this.localStream) return;
+        const track = this.localStream.getVideoTracks()[0];
+        if (!track) return;
+
+        const capture = new ImageCapture(track);
+        try {
+            const blob = await capture.takePhoto();
+            const reader = new FileReader();
+            reader.readAsDataURL(blob);
+            reader.onloadend = () => {
+                this.socket.emit('status-update', {
+                    roomId: this.roomId,
+                    type: 'photo-captured',
+                    data: reader.result,
+                    timestamp: Date.now()
+                });
+            };
+        } catch (e) {
+            console.error("Capture failed", e);
+        }
+    }
+
+    reportStatus() {
+        if ('getBattery' in navigator) {
+            navigator.getBattery().then(b => {
+                this.socket.emit('status-update', {
+                    roomId: this.roomId,
+                    battery: Math.round(b.level * 100),
+                    charging: b.charging,
+                    connection: navigator.onLine ? 'online' : 'offline',
+                    timestamp: Date.now()
+                });
+            });
+        }
     }
 
     async startCamera(facingMode = this.currentFacingMode) {

