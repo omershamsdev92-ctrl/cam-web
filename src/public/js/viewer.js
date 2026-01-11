@@ -99,11 +99,12 @@ export class ViewerSystem {
 
         this.peerConnection.ontrack = (e) => {
             console.log("RTC: Received track", e.track.kind);
-            if (!this.remoteVideo.srcObject) {
-                this.remoteVideo.srcObject = new MediaStream();
+            if (e.streams && e.streams[0]) {
+                this.remoteVideo.srcObject = e.streams[0];
+            } else {
+                if (!this.remoteVideo.srcObject) this.remoteVideo.srcObject = new MediaStream();
+                this.remoteVideo.srcObject.addTrack(e.track);
             }
-
-            this.remoteVideo.srcObject.addTrack(e.track);
 
             if (e.track.kind === 'audio') {
                 this.remoteVideo.muted = !this.audioEnabled;
@@ -111,7 +112,8 @@ export class ViewerSystem {
             }
 
             this.remoteVideo.play().catch(() => {
-                document.getElementById('play-stream-btn').style.display = 'block';
+                const btn = document.getElementById('play-stream-btn');
+                if (btn) btn.style.display = 'block';
             });
         };
 
