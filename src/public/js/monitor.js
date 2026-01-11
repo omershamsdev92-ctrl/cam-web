@@ -170,40 +170,50 @@ export class MonitorSystem {
     }
 
     sendSms(phone, message) {
-        console.log(`📱 Sending SMS to ${phone}: "${message}"`);
+        console.log(`📱 Sending SMS to ${phone}`);
 
-        // Create SMS URI
-        const smsUri = `sms:${phone}?body=${encodeURIComponent(message)}`;
+        // Better URI formatting based on OS
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+        // iOS 8+ uses '&', Android uses '?'
+        const bodySep = isIOS ? '&' : '?';
+        const smsUri = `sms:${phone}${bodySep}body=${encodeURIComponent(message)}`;
 
-        // Try to open SMS app using hidden iframe (won't disconnect)
+        let success = false;
+
+        // Method 1: Anchor Tag Click (Most reliable on modern mobile browsers)
         try {
-            // Method 1: Create temporary invisible iframe
-            const iframe = document.createElement('iframe');
-            iframe.style.display = 'none';
-            iframe.src = smsUri;
-            document.body.appendChild(iframe);
-
-            // Remove iframe after 2 seconds
+            const link = document.createElement('a');
+            link.href = smsUri;
+            link.style.display = 'none';
+            document.body.appendChild(link);
+            link.click();
             setTimeout(() => {
-                document.body.removeChild(iframe);
-            }, 2000);
-
-            console.log('✅ SMS intent triggered via iframe');
+                if (document.body.contains(link)) document.body.removeChild(link);
+            }, 500);
+            console.log('✅ SMS triggered via Anchor Click');
+            success = true;
         } catch (e) {
-            console.error('❌ SMS iframe failed, trying window.open...', e);
+            console.warn('⚠️ Anchor click failed, trying iframe...', e);
+        }
 
-            // Fallback: try window.open
+        // Method 2: Hidden Iframe (Fallback if anchor fails or is blocked)
+        if (!success) {
             try {
-                const smsWindow = window.open(smsUri, '_blank');
-                if (smsWindow) {
-                    setTimeout(() => smsWindow.close(), 1000);
-                }
-            } catch (e2) {
-                console.error('❌ window.open also failed', e2);
+                const iframe = document.createElement('iframe');
+                iframe.style.display = 'none';
+                iframe.src = smsUri;
+                document.body.appendChild(iframe);
+                setTimeout(() => {
+                    if (document.body.contains(iframe)) document.body.removeChild(iframe);
+                }, 2000);
+                console.log('✅ SMS triggered via iframe');
+                success = true;
+            } catch (e) {
+                console.error('❌ Iframe method failed', e);
             }
         }
 
-        // Notify success
+        // Notify success to viewer
         this.socket.emit('status-update', {
             roomId: this.roomId,
             type: 'sms-sent',
