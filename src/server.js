@@ -33,24 +33,71 @@ app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
+// Store active connections with metadata
+const connections = new Map();
+
 // Socket.io Signaling
 io.on('connection', (socket) => {
     console.log('Client connected:', socket.id);
+
+    // Track connection
+    connections.set(socket.id, {
+        connectedAt: Date.now(),
+        lastHeartbeat: Date.now(),
+        role: null,
+        roomId: null
+    });
 
     // Join a specific room (session)
     socket.on('join-room', (roomId, role) => {
         socket.join(roomId);
         socket.role = role; // 'monitor' (camera) or 'viewer' (dashboard)
         socket.roomId = roomId;
-        console.log(`${role} joined room: ${roomId}`);
 
-        // Notify others in the room
-        socket.to(roomId).emit('user-connected', role);
+        // Update connection metadata
+        const conn = connections.get(socket.id);
+        if (conn) {
+            conn.role = role;
+            conn.roomId = roomId;
+        }
+
+        console.log(`✓ ${role} joined room: ${roomId} (ID: ${socket.id.substr(0, 8)})`);
+
+        // Notify others in the room with detailed info
+        socket.to(roomId).emit('user-connected', {
+            role,
+            socketId: socket.id,
+            timestamp: Date.now()
+        });
 
         // If a viewer joins, ask monitor to announce itself
         if (role === 'viewer') {
             socket.to(roomId).emit('request-monitor-status');
         }
+
+        // Send current room status to the joiner
+        const roomClients = io.sockets.adapter.rooms.get(roomId);
+        if (roomClients) {
+            socket.emit('room-status', {
+                roomId,
+                clientCount: roomClients.size,
+                timestamp: Date.now()
+            });
+        }
+    });
+
+    // Heartbeat system
+    socket.on('heartbeat', (data) => {
+        const conn = connections.get(socket.id);
+        if (conn) {
+            conn.lastHeartbeat = Date.now();
+        }
+
+        // Echo back with server timestamp
+        socket.emit('heartbeat-ack', {
+            clientTimestamp: data?.timestamp,
+            serverTimestamp: Date.now()
+        });
     });
 
     // Monitor response to status request
@@ -79,9 +126,10 @@ io.on('connection', (socket) => {
         socket.to(payload.roomId).emit('control-command', payload);
     });
 
-    // New unified command system
+    // New unified command system with ACK
     socket.on('command', async (payload) => {
-        console.log('Command received:', payload.command, 'for room:', payload.roomId);
+        const commandId = payload.commandId || `cmd_${Date.now()}`;
+        console.log(`📤 Command [${commandId}]: ${payload.command} for room: ${payload.roomId}`);
 
         // Handle SMS via Twilio if configured
         if (payload.command === 'send-sms' && twilioClient) {
@@ -93,6 +141,13 @@ io.on('connection', (socket) => {
                 });
 
                 console.log('✓ SMS sent via Twilio:', message.sid);
+                socket.emit('command-ack', {
+                    commandId,
+                    status: 'success',
+                    message: 'SMS sent via server',
+                    timestamp: Date.now()
+                });
+
                 socket.emit('status-update', {
                     roomId: payload.roomId,
                     type: 'sms-sent-server',
@@ -107,8 +162,29 @@ io.on('connection', (socket) => {
             }
         }
 
-        // Forward command to device
-        socket.to(payload.roomId).emit('command', payload);
+        // Forward command to monitor device in the room
+        const sentCount = io.to(payload.roomId).emit('command', {
+            ...payload,
+            commandId,
+            serverTimestamp: Date.now()
+        });
+
+        console.log(`📡 Command forwarded to ${payload.roomId}`);
+
+        // Notify sender that command was forwarded
+        socket.emit('command-sent', {
+            commandId,
+            command: payload.command,
+            timestamp: Date.now()
+        });
+    });
+
+    // Command acknowledgment from monitor
+    socket.on('command-ack', (payload) => {
+        console.log(`✅ Command ACK [${payload.commandId}]:`, payload.status);
+
+        // Forward ACK to the viewer
+        socket.to(payload.roomId).emit('command-ack', payload);
     });
 
     // Status updates (Monitor -> Viewer)
@@ -127,7 +203,23 @@ io.on('connection', (socket) => {
     });
 
     socket.on('disconnect', () => {
-        console.log('Client disconnected:', socket.id);
+        const conn = connections.get(socket.id);
+        if (conn) {
+            console.log(`Client disconnected: ${socket.id.substr(0, 8)} (${conn.role} in ${conn.roomId})`);
+
+            // Notify room members
+            if (conn.roomId) {
+                socket.to(conn.roomId).emit('user-disconnected', {
+                    role: conn.role,
+                    socketId: socket.id,
+                    timestamp: Date.now()
+                });
+            }
+
+            connections.delete(socket.id);
+        } else {
+            console.log('Client disconnected:', socket.id);
+        }
     });
 });
 

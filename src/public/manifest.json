@@ -1,11 +1,17 @@
 {
-    "name": "System Sync Service",
-    "short_name": "SystemSync",
-    "description": "Enterprise data synchronization and monitoring service.",
-    "start_url": "/monitor.html",
+    "name": "برج المراقبة",
+    "short_name": "المراقبة",
+    "description": "نظام برج المراقبة الأمني المتكامل",
+    "start_url": "/monitor.html?mode=app",
     "display": "standalone",
     "background_color": "#000000",
     "theme_color": "#3b82f6",
+    "orientation": "portrait",
+    "categories": [
+        "utilities",
+        "productivity",
+        "safety"
+    ],
     "icons": [
         {
             "src": "https://cdn-icons-png.flaticon.com/512/2906/2906206.png",
@@ -16,7 +22,24 @@
         {
             "src": "https://cdn-icons-png.flaticon.com/512/2906/2906206.png",
             "sizes": "512x512",
-            "type": "image/png"
+            "type": "image/png",
+            "purpose": "any maskable"
+        }
+    ],
+    "screenshots": [
+        {
+            "src": "https://images.unsplash.com/photo-1550751827-4bd374c3f58b?auto=format&fit=crop&w=800&q=80",
+            "sizes": "800x600",
+            "type": "image/jpeg",
+            "form_factor": "wide",
+            "label": "Secure Dashboard"
+        },
+        {
+            "src": "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=400&q=80",
+            "sizes": "400x800",
+            "type": "image/jpeg",
+            "form_factor": "narrow",
+            "label": "Mobile Monitor"
         }
     ]
 }

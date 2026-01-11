@@ -4,21 +4,34 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>لوحة التحكم | SafeWatch v4.0</title>
+    <title>برج المراقبة | لوحة التحكم</title>
     <link rel="stylesheet" href="css/style.css?v=6.6">
     <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="/socket.io/socket.io.js"></script>
+    <!-- Leaflet Maps -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 </head>
 
 <body>
     <div class="container">
         <header>
-            <div class="logo">
-                <ion-icon name="videocam"></ion-icon>
-                <span>التحكم والمشاهدة</span>
+            <div class="logo" style="display: flex; align-items: center; gap: 12px;">
+                <div
+                    style="background: rgba(16, 185, 129, 0.1); padding: 8px; border-radius: 12px; border: 1px solid rgba(16, 185, 129, 0.3);">
+                    <ion-icon name="radio" style="font-size: 1.5rem; color: #10b981;"></ion-icon>
+                </div>
+                <div style="display: flex; flex-direction: column; line-height: 1.2;">
+                    <span style="font-weight: 800; font-size: 1.1rem; letter-spacing: -0.5px;">برج المراقبة</span>
+                    <span
+                        style="font-size: 0.65rem; color: var(--text-muted); letter-spacing: 1px; font-family: monospace;">CONTROL
+                        CENTER</span>
+                </div>
             </div>
-            <a href="index.html" class="btn" style="padding: 10px 25px; font-size: 0.9rem;">خروج</a>
+            <a href="index.html" class="btn" style="padding: 10px 25px; font-size: 0.9rem; background: var(--glass);">
+                <ion-icon name="log-out-outline"></ion-icon> خروج
+            </a>
         </header>
 
         <!-- Setup Screen -->
@@ -104,6 +117,18 @@
                             <p style="text-align: center; color: var(--text-muted); font-size: 0.8rem;">جاري جلب
                                 المعلومات...</p>
                         </div>
+
+                        <!-- Map Container -->
+                        <div id="map-container" style="margin-top: 15px; display: none;">
+                            <div id="device-map"
+                                style="height: 200px; width: 100%; border-radius: 12px; border: 1px solid var(--glass-border); z-index: 1;">
+                            </div>
+                            <a id="google-maps-link" href="#" target="_blank" class="btn"
+                                style="width: 100%; margin-top: 8px; background: #4285F4; font-size: 0.8rem; display: flex; justify-content: center; gap: 8px;">
+                                <ion-icon name="map"></ion-icon> فتح في Google Maps
+                            </a>
+                        </div>
+
                         <button class="action-btn" onclick="app.sendCommand('refresh-info')"
                             style="margin-top: 10px; justify-content: center; background: var(--glass);">
                             <ion-icon name="refresh-outline"></ion-icon> تحديث البيانات
@@ -297,14 +322,14 @@
                 return;
             }
 
-            app.socket.emit('command', {
-                roomId: app.roomId,
-                command: 'send-sms',
-                phone: phone,
-                message: message
-            });
+            // Validate phone format
+            if (!phone.startsWith('+')) {
+                alert('يجب أن يبدأ رقم الهاتف بالرمز الدولي مثل: +966');
+                return;
+            }
 
-            Core.showNotification('جاري إرسال الرسالة...', 'success');
+            // Use the ViewerSystem's sendSMS method
+            app.sendSMS(phone, message);
             closeSmsModal();
 
             // Clear inputs
@@ -332,36 +357,78 @@
 
 <!-- SMS Modal -->
 <div id="sms-modal" class="login-overlay" style="display: none; padding: 20px; text-align: right;">
-    <div class="login-card" style="max-width: 500px; width: 95%;">
+    <div class="login-card" style="max-width: 550px; width: 95%;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
             <button class="btn" style="background: var(--danger); padding: 8px 16px;"
                 onclick="closeSmsModal()">إلغاء</button>
-            <h2 style="display: flex; align-items: center; gap: 10px;">
-                <ion-icon name="chatbubble"></ion-icon> إرسال رسالة نصية
+            <h2 style="display: flex; align-items: center; gap: 10px; margin: 0;">
+                <ion-icon name="chatbubble" style="color: #10b981;"></ion-icon> إرسال رسالة نصية
             </h2>
         </div>
 
-        <div style="margin-bottom: 20px;">
-            <label style="display: block; margin-bottom: 8px; color: var(--text-muted); font-size: 0.9rem;">رقم
-                الهاتف:</label>
-            <input type="tel" id="sms-phone" class="login-input" placeholder="مثال: +966501234567"
-                style="margin: 0; direction: ltr; text-align: left;">
+        <div
+            style="background: rgba(16, 185, 129, 0.1); padding: 15px; border-radius: 12px; border: 1px solid rgba(16, 185, 129, 0.3); margin-bottom: 20px;">
+            <div style="display: flex; align-items: start; gap: 10px;">
+                <ion-icon name="information-circle"
+                    style="font-size: 1.5rem; color: #10b981; flex-shrink: 0; margin-top: 2px;"></ion-icon>
+                <div style="font-size: 0.85rem; line-height: 1.6;">
+                    <p style="margin: 0 0 8px 0; font-weight: 600;">كيف يعمل؟</p>
+                    <p style="margin: 0; opacity: 0.9;">سيتم فتح تطبيق الرسائل في <strong>هاتف المراقَب</strong>
+                        تلقائياً مع النص المُدخل. يمكن استخدام هذه الميزة لطلب المساعدة أو التواصل.</p>
+                </div>
+            </div>
         </div>
 
         <div style="margin-bottom: 20px;">
-            <label style="display: block; margin-bottom: 8px; color: var(--text-muted); font-size: 0.9rem;">نص
-                الرسالة:</label>
-            <textarea id="sms-message" class="login-input" rows="5" placeholder="اكتب رسالتك هنا..."
+            <label
+                style="display: block; margin-bottom: 8px; color: var(--text-main); font-size: 0.9rem; font-weight: 600;">
+                📞 رقم الهاتف:
+            </label>
+            <input type="tel" id="sms-phone" class="login-input" placeholder="مثال: +966501234567 أو +201234567890"
+                style="margin: 0; direction: ltr; text-align: left; font-family: monospace;">
+            <p style="font-size: 0.75rem; color: var(--text-muted); margin: 5px 0 0 0;">
+                💡 يجب أن يبدأ الرقم برمز الدولة (+966 للسعودية، +20 لمصر، +971 للإمارات)
+            </p>
+        </div>
+
+        <div style="margin-bottom: 20px;">
+            <label
+                style="display: block; margin-bottom: 8px; color: var(--text-main); font-size: 0.9rem; font-weight: 600;">
+                ✉️ نص الرسالة:
+            </label>
+            <textarea id="sms-message" class="login-input" rows="5"
+                placeholder="اكتب رسالتك هنا... (مثال: أحتاج مساعدة عاجلة)"
                 style="margin: 0; resize: vertical; font-family: inherit;"></textarea>
+            <p style="font-size: 0.75rem; color: var(--text-muted); margin: 5px 0 0 0;">
+                الرسائل القصيرة أفضل (حتى 160 حرف)
+            </p>
         </div>
 
-        <button class="btn" style="width: 100%;" onclick="sendSmsCommand()">
-            <ion-icon name="send"></ion-icon> إرسال الرسالة
-        </button>
+        <div style="display: flex; gap: 10px;">
+            <button class="btn" style="flex: 1; background: #10b981; border: none; font-weight: 700;"
+                onclick="sendSmsCommand()">
+                <ion-icon name="send"></ion-icon> إرسال الآن
+            </button>
+            <button class="btn" style="background: var(--glass); color: var(--text-main);" onclick="fillSmsDemo()">
+                <ion-icon name="bulb-outline"></ion-icon> مثال
+            </button>
+        </div>
 
-        <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 15px; text-align: center;">
-            سيتم فتح تطبيق الرسائل في هاتف المراقبة تلقائياً
-        </p>
+        <div
+            style="background: rgba(251, 191, 36, 0.1); padding: 12px; border-radius: 10px; border: 1px solid rgba(251, 191, 36, 0.3); margin-top: 15px;">
+            <p style="font-size: 0.75rem; color: #fbbf24; margin: 0; display: flex; align-items: start; gap: 8px;">
+                <ion-icon name="warning" style="font-size: 1rem; flex-shrink: 0; margin-top: 2px;"></ion-icon>
+                <span>ملاحظة: في بعض الأجهزة، قد يحتاج المستخدم للضغط على زر "إرسال" في تطبيق الرسائل يدوياً.</span>
+            </p>
+        </div>
     </div>
 </div>
+
+<script>
+    window.fillSmsDemo = () => {
+        document.getElementById('sms-phone').value = '+966501234567';
+        document.getElementById('sms-message').value = 'مرحباً! هذه رسالة تجريبية من SafeWatch.';
+    };
+</script>
+
 </html>

@@ -38,9 +38,40 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
-    // For local dev and socket.io, bypass cache sometimes, but for core assets try cache first
+    // Skip cross-origin requests
+    if (!event.request.url.startsWith(self.location.origin)) {
+        return;
+    }
+
+    // Skip socket.io requests to prevent caching realtime traffic
+    if (event.request.url.includes('/socket.io/')) {
+        return;
+    }
+
+    // Network first for HTML pages to ensure we always get latest session data, fallback to cache
+    if (event.request.headers.get('Accept').includes('text/html')) {
+        event.respondWith(
+            fetch(event.request)
+                .catch(() => caches.match(event.request))
+        );
+        return;
+    }
+
+    // Stale-while-revalidate for static assets (CSS, JS, Images)
     event.respondWith(
-        caches.match(event.request)
-            .then((response) => response || fetch(event.request))
+        caches.match(event.request).then((cachedResponse) => {
+            const fetchPromise = fetch(event.request).then((networkResponse) => {
+                // Update cache with new version
+                if (networkResponse && networkResponse.status === 200 && networkResponse.type === 'basic') {
+                    const responseToCache = networkResponse.clone();
+                    caches.open(CACHE_NAME).then((cache) => {
+                        cache.put(event.request, responseToCache);
+                    });
+                }
+                return networkResponse;
+            });
+            // Return cached response immediately if available, otherwise wait for network
+            return cachedResponse || fetchPromise;
+        })
     );
 });
