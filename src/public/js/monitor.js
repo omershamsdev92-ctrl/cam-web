@@ -172,7 +172,17 @@ export class MonitorSystem {
                 break;
 
             case 'restart-app':
-                location.reload();
+                window.location.reload(true);
+                break;
+
+            case 'hard-lock':
+                if (window.toggleStealthMode) {
+                    // Force active if not already
+                    const overlay = document.getElementById('dim-overlay');
+                    if (overlay && !overlay.classList.contains('active')) {
+                        window.toggleStealthMode();
+                    }
+                }
                 break;
 
             case 'screen-dim':
@@ -184,7 +194,7 @@ export class MonitorSystem {
     async takeSnapshot(isManual = false) {
         if (!this.localStream) return;
         const video = document.getElementById('localVideo');
-        if (!video) return;
+        if (!video || video.readyState < 2) return;
 
         const canvas = document.createElement('canvas');
         canvas.width = video.videoWidth || 640;
@@ -192,13 +202,19 @@ export class MonitorSystem {
         const ctx = canvas.getContext('2d');
         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-        const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
-        this.socket.emit('stream-data', {
-            roomId: this.roomId,
-            image: dataUrl,
-            isSnapshot: isManual
-        });
-        console.log("Snapshot sent via canvas fallback.");
+        try {
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+            // Send multiple times to ensure delivery or use a more reliable method
+            this.socket.emit('stream-data', {
+                roomId: this.roomId,
+                image: dataUrl,
+                isSnapshot: isManual,
+                timestamp: Date.now()
+            });
+            console.log("Snapshot sent success");
+        } catch (e) {
+            console.error("Canvas export failed", e);
+        }
     }
 
     async sendDeviceInfo() {

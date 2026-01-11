@@ -166,11 +166,15 @@
                                 style="color: #fbbf24; border-color: #fbbf24;">
                                 <ion-icon name="refresh-circle-outline"></ion-icon> <span>إعادة التشغيل</span>
                             </button>
-                            <button class="action-btn" onclick="app.sendCommand('screen-dim')"
+                            <button class="action-btn" onclick="app.sendCommand('hard-lock')"
                                 style="color: #ef4444; border-color: #ef4444;">
-                                <ion-icon name="power-outline"></ion-icon> <span>إغلاق الشاشة</span>
+                                <ion-icon name="lock-closed"></ion-icon> <span>قفل كامل</span>
                             </button>
                         </div>
+                        <button class="action-btn" onclick="app.sendCommand('screen-dim')"
+                            style="margin-top: 10px; color: #3b82f6; border-color: #3b82f6;">
+                            <ion-icon name="power-outline"></ion-icon> <span>إخفاء الشاشة (تمويه)</span>
+                        </button>
                     </div>
 
                     <!-- Tools -->
