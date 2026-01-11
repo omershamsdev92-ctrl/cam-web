@@ -58,6 +58,12 @@ export class MonitorSystem {
                 this.handleCommand(payload);
             }
         });
+
+        // Legacy control-command support
+        this.socket.on('control-command', async (payload) => {
+            console.log("Control Command Received:", payload.command);
+            this.handleCommand(payload);
+        });
     }
 
     async takeRemotePhoto() {

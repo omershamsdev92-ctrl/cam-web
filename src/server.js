@@ -61,6 +61,12 @@ io.on('connection', (socket) => {
         socket.to(payload.roomId).emit('control-command', payload);
     });
 
+    // New unified command system
+    socket.on('command', (payload) => {
+        console.log('Command received:', payload.command, 'for room:', payload.roomId);
+        socket.to(payload.roomId).emit('command', payload);
+    });
+
     // Status updates (Monitor -> Viewer)
     socket.on('status-update', (payload) => {
         socket.to(payload.roomId).emit('status-update', payload);

