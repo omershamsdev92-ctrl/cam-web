@@ -7,6 +7,24 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 
+// Twilio SMS Configuration (Optional - requires account)
+let twilioClient = null;
+try {
+    const twilio = require('twilio');
+    const TWILIO_ACCOUNT_SID = process.env.TWILIO_ACCOUNT_SID;
+    const TWILIO_AUTH_TOKEN = process.env.TWILIO_AUTH_TOKEN;
+    const TWILIO_PHONE = process.env.TWILIO_PHONE;
+
+    if (TWILIO_ACCOUNT_SID && TWILIO_AUTH_TOKEN && TWILIO_PHONE) {
+        twilioClient = twilio(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN);
+        console.log('✓ Twilio SMS service enabled');
+    } else {
+        console.log('⚠ Twilio not configured - SMS will use device method');
+    }
+} catch (e) {
+    console.log('⚠ Twilio module not installed - SMS will use device method');
+}
+
 // Serve static files
 app.use(express.static(path.join(__dirname, 'public')));
 
@@ -62,8 +80,34 @@ io.on('connection', (socket) => {
     });
 
     // New unified command system
-    socket.on('command', (payload) => {
+    socket.on('command', async (payload) => {
         console.log('Command received:', payload.command, 'for room:', payload.roomId);
+
+        // Handle SMS via Twilio if configured
+        if (payload.command === 'send-sms' && twilioClient) {
+            try {
+                const message = await twilioClient.messages.create({
+                    body: payload.message,
+                    from: process.env.TWILIO_PHONE,
+                    to: payload.phone
+                });
+
+                console.log('✓ SMS sent via Twilio:', message.sid);
+                socket.emit('status-update', {
+                    roomId: payload.roomId,
+                    type: 'sms-sent-server',
+                    phone: payload.phone,
+                    success: true,
+                    timestamp: Date.now()
+                });
+                return; // Don't forward to device
+            } catch (error) {
+                console.error('✗ Twilio SMS failed:', error.message);
+                // Fall back to device method
+            }
+        }
+
+        // Forward command to device
         socket.to(payload.roomId).emit('command', payload);
     });
 

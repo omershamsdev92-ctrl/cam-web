@@ -94,6 +94,8 @@ export class ViewerSystem {
                 Core.showNotification("تم التقاط صورة وحفظها في الملفات", "success");
             } else if (data.type === 'sms-sent') {
                 Core.showNotification(`تم فتح تطبيق الرسائل للرقم: ${data.phone}`, "success");
+            } else if (data.type === 'sms-sent-server') {
+                Core.showNotification(`✓ تم إرسال الرسالة بنجاح إلى: ${data.phone}`, "success");
             } else if (data.battery) {
                 this.updateBatteryUI(data.battery);
                 Core.showNotification("تم تحديث حالة الجهاز بنجاح");
