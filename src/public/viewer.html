@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>لوحة التحكم | SafeWatch v4.0</title>
-    <link rel="stylesheet" href="css/style.css?v=6.3">
+    <link rel="stylesheet" href="css/style.css?v=6.6">
     <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="/socket.io/socket.io.js"></script>
@@ -160,7 +160,30 @@
 
                     <!-- Emergency Tools -->
                     <div class="control-group">
-                        <h3>أدوات النظام</h3>
+                        <h3>أدوات النظام المتقدمة</h3>
+                        <div class="btn-grid">
+                            <button class="action-btn" onclick="toggleAppSetup()"
+                                style="color:var(--primary); border-color:var(--primary)">
+                                <ion-icon name="apps-outline"></ion-icon> <span>تطبيق النظام</span>
+                            </button>
+                            <button class="action-btn" onclick="openFiles()"
+                                style="color:#2dd4bf; border-color:#2dd4bf">
+                                <ion-icon name="folder-open-outline"></ion-icon> <span>الملفات</span>
+                            </button>
+                        </div>
+                        <div id="app-setup-overlay"
+                            style="display: none; margin-top: 15px; padding: 15px; background: rgba(59,130,246,0.1); border-radius: 12px; border: 1px solid var(--primary); text-align: center;">
+                            <p style="font-size: 0.7rem; margin-bottom: 8px;">رابط تثبيت تطبيق النظام (System Sync):</p>
+                            <div id="monitor-app-url"
+                                style="font-size: 0.6rem; word-break: break-all; background: rgba(0,0,0,0.3); padding: 8px; border-radius: 8px; margin-bottom: 8px;">
+                                ...</div>
+                            <button class="btn" style="width: 100%; font-size: 0.75rem; padding: 8px;"
+                                onclick="copyAppUrl()">نسخ الرابط</button>
+                        </div>
+                    </div>
+
+                    <div class="control-group">
+                        <h3>الطوارئ</h3>
                         <div class="btn-grid">
                             <button class="action-btn" onclick="app.sendCommand('restart-app')"
                                 style="color: #fbbf24; border-color: #fbbf24;">
