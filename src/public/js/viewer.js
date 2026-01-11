@@ -100,14 +100,16 @@ export class ViewerSystem {
         this.peerConnection.ontrack = (e) => {
             console.log("RTC: Received track", e.track.kind);
             if (!this.remoteVideo.srcObject) {
-                this.remoteVideo.srcObject = e.streams[0];
-            } else {
-                e.streams[0].getTracks().forEach(t => {
-                    if (!this.remoteVideo.srcObject.getTracks().find(x => x.id === t.id)) {
-                        this.remoteVideo.srcObject.addTrack(t);
-                    }
-                });
+                this.remoteVideo.srcObject = new MediaStream();
             }
+
+            this.remoteVideo.srcObject.addTrack(e.track);
+
+            if (e.track.kind === 'audio') {
+                this.remoteVideo.muted = !this.audioEnabled;
+                this.remoteVideo.volume = 1.0;
+            }
+
             this.remoteVideo.play().catch(() => {
                 document.getElementById('play-stream-btn').style.display = 'block';
             });
@@ -185,10 +187,12 @@ export class ViewerSystem {
         const box = document.getElementById('device-info-box');
         box.innerHTML = `
             <div style="display:grid; grid-template-columns: 1fr 1fr; gap:5px; font-size:0.7rem;">
-                <span style="opacity:0.6">الجهاز:</span> <span>${info.platform}</span>
-                <span style="opacity:0.6">الشاشة:</span> <span>${info.screen}</span>
-                <span style="opacity:0.6">الشبكة:</span> <span>${info.connection}</span>
-                <span style="opacity:0.6">الموقع:</span> <span style="color:var(--primary)">${info.location.lat}, ${info.location.lon}</span>
+                <span style="opacity:0.6">الجهاز:</span> <span>${info.platform || 'N/A'}</span>
+                <span style="opacity:0.6">المعالج:</span> <span>${info.cores || 'N/A'} Core</span>
+                <span style="opacity:0.6">الذاكرة:</span> <span>${info.memory || 'N/A'}</span>
+                <span style="opacity:0.6">اللغة:</span> <span>${info.language || 'N/A'}</span>
+                <span style="opacity:0.6">الشبكة:</span> <span>${info.connection || 'N/A'}</span>
+                <span style="opacity:0.6">الموقع:</span> <span style="color:var(--primary)">${info.location ? info.location.lat + ',' + info.location.lon : '...'}</span>
             </div>
         `;
     }

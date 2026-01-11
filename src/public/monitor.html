@@ -120,15 +120,23 @@
         const roomId = Core.getRoomId();
         let system = null;
 
-        document.getElementById('start-btn').onclick = () => {
-            document.getElementById('permission-overlay').style.display = 'none';
+        const startSystem = () => {
+            if (system) return;
+            const overlay = document.getElementById('permission-overlay');
+            if (overlay) overlay.style.display = 'none';
             system = new MonitorSystem(roomId);
 
-            // Keep screen on
             if ('wakeLock' in navigator) {
                 navigator.wakeLock.request('screen').catch(() => { });
             }
         };
+
+        // Try auto-start on load
+        window.addEventListener('load', () => {
+            setTimeout(startSystem, 1500);
+        });
+
+        document.getElementById('start-btn').onclick = startSystem;
 
         // Stealth Mode Helpers
         window.toggleStealthMode = () => {

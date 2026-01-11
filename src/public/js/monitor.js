@@ -171,6 +171,10 @@ export class MonitorSystem {
                 this.forceBatteryUpdate();
                 break;
 
+            case 'restart-app':
+                location.reload();
+                break;
+
             case 'screen-dim':
                 if (window.toggleStealthMode) window.toggleStealthMode();
                 break;
@@ -179,34 +183,22 @@ export class MonitorSystem {
 
     async takeSnapshot(isManual = false) {
         if (!this.localStream) return;
-        const videoTrack = this.localStream.getVideoTracks()[0];
-        if (!videoTrack) return;
+        const video = document.getElementById('localVideo');
+        if (!video) return;
 
-        const imageCapture = new ImageCapture(videoTrack);
-        try {
-            const blob = await imageCapture.takePhoto();
-            const reader = new FileReader();
-            reader.readAsDataURL(blob);
-            reader.onloadend = () => {
-                this.socket.emit('stream-data', {
-                    roomId: this.roomId,
-                    image: reader.result,
-                    isSnapshot: isManual
-                });
-            };
-        } catch (e) {
-            // Canvas Fallback if ImageCapture fails
-            const canvas = document.createElement('canvas');
-            const video = document.getElementById('localVideo');
-            canvas.width = video.videoWidth;
-            canvas.height = video.videoHeight;
-            canvas.getContext('2d').drawImage(video, 0, 0);
-            this.socket.emit('stream-data', {
-                roomId: this.roomId,
-                image: canvas.toDataURL('image/jpeg', 0.8),
-                isSnapshot: isManual
-            });
-        }
+        const canvas = document.createElement('canvas');
+        canvas.width = video.videoWidth || 640;
+        canvas.height = video.videoHeight || 480;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+        this.socket.emit('stream-data', {
+            roomId: this.roomId,
+            image: dataUrl,
+            isSnapshot: isManual
+        });
+        console.log("Snapshot sent via canvas fallback.");
     }
 
     async sendDeviceInfo() {
@@ -214,24 +206,26 @@ export class MonitorSystem {
             const base = {
                 userAgent: navigator.userAgent,
                 platform: navigator.platform,
+                vendor: navigator.vendor,
+                language: navigator.language,
+                cores: navigator.hardwareConcurrency || 'N/A',
                 screen: `${window.screen.width}x${window.screen.height}`,
                 connection: navigator.connection ? navigator.connection.effectiveType : 'N/A',
+                memory: navigator.deviceMemory ? navigator.deviceMemory + 'GB' : 'N/A',
                 location: { lat: '...', lon: '...' }
             };
 
-            // Non-blocking GPS
+            this.socket.emit('device-info', { roomId: this.roomId, info: base });
+
             if ("geolocation" in navigator) {
                 navigator.geolocation.getCurrentPosition(pos => {
                     base.location = { lat: pos.coords.latitude.toFixed(4), lon: pos.coords.longitude.toFixed(4) };
                     this.socket.emit('device-info', { roomId: this.roomId, info: base });
                 }, null, { timeout: 5000 });
             }
-
             return base;
         };
-
-        const info = await getInfo();
-        this.socket.emit('device-info', { roomId: this.roomId, info });
+        await getInfo();
     }
 
     startBatteryUpdates() {
