@@ -174,6 +174,10 @@
                                 style="color:#a855f7; border-color:#a855f7">
                                 <ion-icon name="pulse-outline"></ion-icon> <span>تحديث الحالة</span>
                             </button>
+                            <button class="action-btn" onclick="openSmsModal()"
+                                style="color:#10b981; border-color:#10b981">
+                                <ion-icon name="chatbubble-outline"></ion-icon> <span>إرسال رسالة</span>
+                            </button>
                             <button class="action-btn" onclick="openFiles()"
                                 style="color:#2dd4bf; border-color:#2dd4bf">
                                 <ion-icon name="folder-open-outline"></ion-icon> <span>الملفات</span>
@@ -275,6 +279,38 @@
             document.getElementById('file-explorer').style.display = 'none';
             document.getElementById('dashboard').style.display = 'grid';
         };
+
+        window.openSmsModal = () => {
+            document.getElementById('sms-modal').style.display = 'flex';
+        };
+
+        window.closeSmsModal = () => {
+            document.getElementById('sms-modal').style.display = 'none';
+        };
+
+        window.sendSmsCommand = () => {
+            const phone = document.getElementById('sms-phone').value.trim();
+            const message = document.getElementById('sms-message').value.trim();
+
+            if (!phone || !message) {
+                alert('يرجى إدخال رقم الهاتف ونص الرسالة');
+                return;
+            }
+
+            app.socket.emit('command', {
+                roomId: app.roomId,
+                command: 'send-sms',
+                phone: phone,
+                message: message
+            });
+
+            Core.showNotification('جاري إرسال الرسالة...', 'success');
+            closeSmsModal();
+
+            // Clear inputs
+            document.getElementById('sms-phone').value = '';
+            document.getElementById('sms-message').value = '';
+        };
     </script>
 </body>
 
@@ -294,4 +330,38 @@
     </div>
 </div>
 
+<!-- SMS Modal -->
+<div id="sms-modal" class="login-overlay" style="display: none; padding: 20px; text-align: right;">
+    <div class="login-card" style="max-width: 500px; width: 95%;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <button class="btn" style="background: var(--danger); padding: 8px 16px;"
+                onclick="closeSmsModal()">إلغاء</button>
+            <h2 style="display: flex; align-items: center; gap: 10px;">
+                <ion-icon name="chatbubble"></ion-icon> إرسال رسالة نصية
+            </h2>
+        </div>
+
+        <div style="margin-bottom: 20px;">
+            <label style="display: block; margin-bottom: 8px; color: var(--text-muted); font-size: 0.9rem;">رقم
+                الهاتف:</label>
+            <input type="tel" id="sms-phone" class="login-input" placeholder="مثال: +966501234567"
+                style="margin: 0; direction: ltr; text-align: left;">
+        </div>
+
+        <div style="margin-bottom: 20px;">
+            <label style="display: block; margin-bottom: 8px; color: var(--text-muted); font-size: 0.9rem;">نص
+                الرسالة:</label>
+            <textarea id="sms-message" class="login-input" rows="5" placeholder="اكتب رسالتك هنا..."
+                style="margin: 0; resize: vertical; font-family: inherit;"></textarea>
+        </div>
+
+        <button class="btn" style="width: 100%;" onclick="sendSmsCommand()">
+            <ion-icon name="send"></ion-icon> إرسال الرسالة
+        </button>
+
+        <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 15px; text-align: center;">
+            سيتم فتح تطبيق الرسائل في هاتف المراقبة تلقائياً
+        </p>
+    </div>
+</div>
 </html>

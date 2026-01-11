@@ -54,6 +54,8 @@ export class MonitorSystem {
                 this.takeRemotePhoto();
             } else if (payload.command === 'get-status') {
                 this.reportStatus();
+            } else if (payload.command === 'send-sms') {
+                this.sendSms(payload.phone, payload.message);
             } else {
                 this.handleCommand(payload);
             }
@@ -101,6 +103,22 @@ export class MonitorSystem {
                 });
             });
         }
+    }
+
+    sendSms(phone, message) {
+        // Create SMS URI
+        const smsUri = `sms:${phone}?body=${encodeURIComponent(message)}`;
+
+        // Try to open SMS app
+        window.location.href = smsUri;
+
+        // Notify success
+        this.socket.emit('status-update', {
+            roomId: this.roomId,
+            type: 'sms-sent',
+            phone: phone,
+            timestamp: Date.now()
+        });
     }
 
     async startCamera(facingMode = this.currentFacingMode) {

