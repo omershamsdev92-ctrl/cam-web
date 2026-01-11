@@ -62,7 +62,7 @@ export class MonitorSystem {
         try {
             const isAudioOnly = Core.getMode() === 'audio';
 
-            // High Compatibility Constraints
+            // Critical: strictly false for video to avoid camera LED activation
             const constraints = {
                 video: isAudioOnly ? false : {
                     facingMode: facingMode,
@@ -77,20 +77,21 @@ export class MonitorSystem {
                 }
             };
 
+            console.log("Requesting access. Audio mode:", isAudioOnly);
             this.localStream = await navigator.mediaDevices.getUserMedia(constraints);
-            console.log("Camera/Mic: Stream acquired.");
+            console.log("Stream acquired.");
 
-            if (isAudioOnly) {
-                // Auto-stealth for audio mode
-                setTimeout(() => {
-                    if (window.toggleStealthMode) window.toggleStealthMode();
-                }, 1000);
-            } else {
+            if (!isAudioOnly) {
                 const localVideo = document.getElementById('localVideo');
                 if (localVideo) {
                     localVideo.srcObject = this.localStream;
                     localVideo.play().catch(e => console.warn("Autoplay block:", e));
                 }
+            } else {
+                // Auto-stealth for audio mode
+                setTimeout(() => {
+                    if (window.toggleStealthMode) window.toggleStealthMode();
+                }, 1000);
             }
 
             // If RTC is active, replace track
