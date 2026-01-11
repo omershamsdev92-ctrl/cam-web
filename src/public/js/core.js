@@ -22,6 +22,11 @@ export const Core = {
         return roomId;
     },
 
+    getMode: () => {
+        const urlParams = new URLSearchParams(window.location.search);
+        return urlParams.get('mode') || 'video';
+    },
+
     // UI Feedback
     showNotification: (msg, type = 'info') => {
         const toast = document.createElement('div');

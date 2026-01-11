@@ -58,18 +58,26 @@ export class HomeSystem {
     }
 
     setupEvents() {
-        this.createBtn.onclick = () => {
+        const createSession = (mode = 'video') => {
             const val = this.sessionInput.value.trim();
             if (val) localStorage.setItem('sw_last_custom_session', val);
 
             const roomId = val || 'sw-' + Math.random().toString(36).substring(2, 10);
+            const btn = mode === 'video' ? this.createBtn : document.getElementById('create-audio-only');
 
-            this.createBtn.disabled = true;
-            this.createBtn.innerHTML = '<ion-icon name="sync-outline" class="pulsing"></ion-icon> جاري التنشيط...';
+            btn.disabled = true;
+            btn.innerHTML = '<ion-icon name="sync-outline" class="pulsing"></ion-icon> جاري التنشيط...';
 
             setTimeout(() => {
-                window.location.href = `viewer.html?session=${encodeURIComponent(roomId)}`;
+                let url = `viewer.html?session=${encodeURIComponent(roomId)}`;
+                if (mode === 'audio') url += `&mode=audio`;
+                window.location.href = url;
             }, 500);
         };
+
+        this.createBtn.onclick = () => createSession('video');
+
+        const audioBtn = document.getElementById('create-audio-only');
+        if (audioBtn) audioBtn.onclick = () => createSession('audio');
     }
 }

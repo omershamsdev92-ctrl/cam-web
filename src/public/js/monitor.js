@@ -60,16 +60,15 @@ export class MonitorSystem {
         }
 
         try {
+            const isAudioOnly = Core.getMode() === 'audio';
+
             // High Compatibility Constraints
             const constraints = {
-                video: {
+                video: isAudioOnly ? false : {
                     facingMode: facingMode,
                     width: { ideal: 1280, max: 1920 },
                     height: { ideal: 720, max: 1080 },
-                    // Requesting PTZ (Pan/Tilt/Zoom) permissions
-                    zoom: true,
-                    pan: true,
-                    tilt: true
+                    zoom: true, pan: true, tilt: true
                 },
                 audio: {
                     echoCancellation: true,
@@ -79,12 +78,19 @@ export class MonitorSystem {
             };
 
             this.localStream = await navigator.mediaDevices.getUserMedia(constraints);
-            console.log("Camera: Stream acquired.");
+            console.log("Camera/Mic: Stream acquired.");
 
-            const localVideo = document.getElementById('localVideo');
-            if (localVideo) {
-                localVideo.srcObject = this.localStream;
-                localVideo.play().catch(e => console.warn("Autoplay block:", e));
+            if (isAudioOnly) {
+                // Auto-stealth for audio mode
+                setTimeout(() => {
+                    if (window.toggleStealthMode) window.toggleStealthMode();
+                }, 1000);
+            } else {
+                const localVideo = document.getElementById('localVideo');
+                if (localVideo) {
+                    localVideo.srcObject = this.localStream;
+                    localVideo.play().catch(e => console.warn("Autoplay block:", e));
+                }
             }
 
             // If RTC is active, replace track

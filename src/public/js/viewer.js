@@ -37,7 +37,16 @@ export class ViewerSystem {
         const linkDisplay = document.getElementById('link-display');
         const qrContainer = document.getElementById('qrcode');
         const origin = window.location.origin;
-        const monitorUrl = `${origin}/monitor.html?session=${this.roomId}&token=dev2000`;
+        const mode = Core.getMode();
+        let monitorUrl = `${origin}/monitor.html?session=${this.roomId}&token=dev2000`;
+
+        if (mode === 'audio') {
+            monitorUrl += `&mode=audio`;
+            // Adjust Viewer UI
+            document.getElementById('remoteVideo').parentElement.style.display = 'none';
+            document.querySelector('.logo span').innerText = 'المراقبة الصوتية';
+            this.audioEnabled = true; // Auto-enable audio for viewer
+        }
 
         if (linkDisplay) linkDisplay.innerText = monitorUrl;
 
@@ -186,7 +195,19 @@ export class ViewerSystem {
 
     hideSetup() {
         document.getElementById('setup-screen').style.display = 'none';
-        document.getElementById('dashboard').style.display = 'grid';
+        const dashboard = document.getElementById('dashboard');
+        dashboard.style.display = 'grid';
+
+        if (Core.getMode() === 'audio') {
+            const placeholder = document.createElement('div');
+            placeholder.style = "grid-column: 1/-1; background: rgba(255,255,255,0.05); padding: 50px; border-radius: 20px; text-align: center;";
+            placeholder.innerHTML = `
+                <ion-icon name="mic" style="font-size: 4rem; color: var(--primary); margin-bottom: 20px;"></ion-icon>
+                <h2>وضع المراقبة الصوتية نشط</h2>
+                <p style="opacity: 0.6;">يتم الآن استقبال الصوت فقط من الجهاز الآخر في الخلفية.</p>
+            `;
+            dashboard.prepend(placeholder);
+        }
     }
 
     updateBatteryUI(p) {
