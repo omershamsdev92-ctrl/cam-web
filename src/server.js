@@ -23,10 +23,21 @@ io.on('connection', (socket) => {
     socket.on('join-room', (roomId, role) => {
         socket.join(roomId);
         socket.role = role; // 'monitor' (camera) or 'viewer' (dashboard)
+        socket.roomId = roomId;
         console.log(`${role} joined room: ${roomId}`);
 
         // Notify others in the room
         socket.to(roomId).emit('user-connected', role);
+
+        // If a viewer joins, ask monitor to announce itself
+        if (role === 'viewer') {
+            socket.to(roomId).emit('request-monitor-status');
+        }
+    });
+
+    // Monitor response to status request
+    socket.on('monitor-announcement', (payload) => {
+        socket.to(payload.roomId).emit('monitor-ready', payload);
     });
 
     // WebRTC Signaling
@@ -62,7 +73,7 @@ io.on('connection', (socket) => {
     // Fallback Stream Relay (Images via WebSocket)
     socket.on('stream-data', (payload) => {
         // payload: { roomId, image: 'base64...', isSnapshot: true/false }
-        socket.volatile.to(payload.roomId).emit('stream-data', payload);
+        socket.to(payload.roomId).emit('stream-data', payload);
     });
 
     socket.on('disconnect', () => {

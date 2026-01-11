@@ -1,0 +1,238 @@
+/**
+ * SafeWatch v4.0 - Viewer Module
+ * Handles dashboard control and stream reception
+ */
+
+import { Core } from './core.js';
+
+export class ViewerSystem {
+    constructor(roomId) {
+        this.roomId = roomId;
+        this.socket = io();
+        this.peerConnection = null;
+        this.remoteVideo = document.getElementById('remoteVideo');
+        this.audioEnabled = false;
+        this.isRecording = false;
+        this.mediaRecorder = null;
+        this.recordedChunks = [];
+
+        this.init();
+    }
+
+    init() {
+        console.log("Initializing Viewer System...");
+        this.setupSocket();
+        this.setupUIListeners();
+        this.socket.emit('join-room', this.roomId, 'viewer');
+
+        // Populate UI
+        document.getElementById('session-name-display').innerText = this.roomId;
+        document.getElementById('session-start-time').innerText = new Date().toLocaleTimeString('ar-EG');
+    }
+
+    setupSocket() {
+        this.socket.on('monitor-ready', () => {
+            this.startWebRTC();
+            this.hideSetup();
+        });
+
+        this.socket.on('user-connected', (role) => {
+            if (role === 'monitor') {
+                this.startWebRTC();
+                this.hideSetup();
+            }
+        });
+
+        this.socket.on('answer', async (payload) => {
+            if (this.peerConnection) {
+                await this.peerConnection.setRemoteDescription(new RTCSessionDescription(payload.sdp));
+            }
+        });
+
+        this.socket.on('ice-candidate', async (payload) => {
+            if (this.peerConnection && this.peerConnection.remoteDescription) {
+                await this.peerConnection.addIceCandidate(new RTCIceCandidate(payload.candidate));
+            }
+        });
+
+        this.socket.on('status-update', (payload) => {
+            if (payload.type === 'battery') this.updateBatteryUI(payload);
+        });
+
+        this.socket.on('device-info', (payload) => this.updateDeviceInfoUI(payload.info));
+
+        this.socket.on('stream-data', (payload) => {
+            if (payload.image && payload.isSnapshot) this.addToGallery(payload.image);
+        });
+    }
+
+    async startWebRTC() {
+        if (this.peerConnection) this.peerConnection.close();
+
+        this.peerConnection = new RTCPeerConnection(Core.rtcConfig);
+
+        this.peerConnection.onicecandidate = (e) => {
+            if (e.candidate) this.socket.emit('ice-candidate', { roomId: this.roomId, candidate: e.candidate });
+        };
+
+        this.peerConnection.ontrack = (e) => {
+            console.log("RTC: Received track", e.track.kind);
+            if (!this.remoteVideo.srcObject) {
+                this.remoteVideo.srcObject = e.streams[0];
+            } else {
+                e.streams[0].getTracks().forEach(t => {
+                    if (!this.remoteVideo.srcObject.getTracks().find(x => x.id === t.id)) {
+                        this.remoteVideo.srcObject.addTrack(t);
+                    }
+                });
+            }
+            this.remoteVideo.play().catch(() => {
+                document.getElementById('play-stream-btn').style.display = 'block';
+            });
+        };
+
+        // Add Transceivers for Recv Only
+        this.peerConnection.addTransceiver('video', { direction: 'recvonly' });
+        this.peerConnection.addTransceiver('audio', { direction: 'recvonly' });
+
+        const offer = await this.peerConnection.createOffer();
+        await this.peerConnection.setLocalDescription(offer);
+        this.socket.emit('offer', { roomId: this.roomId, sdp: offer });
+    }
+
+    setupUIListeners() {
+        // Zoom
+        const zoomSlider = document.getElementById('zoom-slider');
+        if (zoomSlider) {
+            zoomSlider.oninput = (e) => {
+                const val = e.target.value;
+                document.getElementById('zoom-val').innerText = val + 'x';
+                this.sendCommand('set-zoom', parseFloat(val));
+            };
+        }
+
+        // Play Button
+        const playBtn = document.getElementById('play-stream-btn');
+        if (playBtn) {
+            playBtn.onclick = () => {
+                this.remoteVideo.play();
+                playBtn.style.display = 'none';
+            };
+        }
+    }
+
+    sendCommand(command, value = null) {
+        this.socket.emit('control-command', { roomId: this.roomId, command, value });
+    }
+
+    toggleAudio() {
+        this.audioEnabled = !this.audioEnabled;
+        this.remoteVideo.muted = !this.audioEnabled;
+        this.remoteVideo.volume = 1.0;
+
+        const btn = document.getElementById('toggle-audio-btn');
+        const icon = btn.querySelector('ion-icon');
+        const span = btn.querySelector('span');
+
+        if (this.audioEnabled) {
+            icon.name = "volume-high";
+            span.innerText = "صوت: تشغيل";
+            btn.classList.add('active');
+            this.remoteVideo.play().catch(() => { });
+        } else {
+            icon.name = "volume-mute";
+            span.innerText = "صوت: كتم";
+            btn.classList.remove('active');
+        }
+    }
+
+    hideSetup() {
+        document.getElementById('setup-screen').style.display = 'none';
+        document.getElementById('dashboard').style.display = 'grid';
+    }
+
+    updateBatteryUI(p) {
+        const lvl = document.getElementById('battery-level');
+        lvl.innerText = p.level + '%';
+        const icon = lvl.parentElement.querySelector('ion-icon');
+        icon.name = p.level > 80 ? 'battery-full' : (p.level > 20 ? 'battery-half' : 'battery-dead');
+        icon.style.color = p.charging ? '#fbbf24' : '';
+    }
+
+    updateDeviceInfoUI(info) {
+        const box = document.getElementById('device-info-box');
+        box.innerHTML = `
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:5px; font-size:0.7rem;">
+                <span style="opacity:0.6">الجهاز:</span> <span>${info.platform}</span>
+                <span style="opacity:0.6">الشاشة:</span> <span>${info.screen}</span>
+                <span style="opacity:0.6">الشبكة:</span> <span>${info.connection}</span>
+                <span style="opacity:0.6">الموقع:</span> <span style="color:var(--primary)">${info.location.lat}, ${info.location.lon}</span>
+            </div>
+        `;
+    }
+
+    addToGallery(img) {
+        const gallery = document.getElementById('photo-gallery');
+        const noMsg = document.getElementById('no-photos-msg');
+        if (noMsg) noMsg.remove();
+
+        const div = document.createElement('div');
+        div.className = 'gallery-item';
+        div.innerHTML = `
+            <img src="${img}" onclick="window.open(this.src)">
+            <div class="gallery-info">
+                <span>${new Date().toLocaleTimeString('ar-EG')}</span>
+                <a href="${img}" download="SafeWatch_${Date.now()}.jpg"><ion-icon name="download-outline"></ion-icon></a>
+            </div>
+        `;
+        gallery.prepend(div);
+    }
+
+    toggleRecording() {
+        if (!this.isRecording) {
+            const stream = this.remoteVideo.srcObject;
+            if (!stream) return alert("لا يوجد بث حالياً!");
+
+            this.isRecording = true;
+            this.recordedChunks = [];
+            this.mediaRecorder = new MediaRecorder(stream, { mimeType: 'video/webm' });
+
+            this.mediaRecorder.ondataavailable = (e) => {
+                if (e.data.size > 0) this.recordedChunks.push(e.data);
+            };
+
+            this.mediaRecorder.onstop = () => {
+                const blob = new Blob(this.recordedChunks, { type: 'video/webm' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `SafeWatch_Video_${Date.now()}.webm`;
+                a.click();
+            };
+
+            this.mediaRecorder.start();
+            this.updateRecordingUI(true);
+        } else {
+            this.isRecording = false;
+            this.mediaRecorder.stop();
+            this.updateRecordingUI(false);
+        }
+    }
+
+    updateRecordingUI(active) {
+        const btn = document.getElementById('record-btn');
+        const icon = btn.querySelector('ion-icon');
+        const span = btn.querySelector('span');
+        if (active) {
+            btn.style.background = '#ef4444';
+            btn.style.color = 'white';
+            span.innerText = "إيقاف التسجيل";
+            icon.classList.add('pulsing');
+        } else {
+            btn.style.background = '';
+            btn.style.color = '';
+            span.innerText = "تسجيل فيديو";
+            icon.classList.remove('pulsing');
+        }
+    }
+}

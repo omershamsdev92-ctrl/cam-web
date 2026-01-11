@@ -4,361 +4,206 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>لوحة التحكم | SafeWatch</title>
-    <link rel="stylesheet" href="css/style.css?v=4.0">
+    <title>لوحة التحكم | SafeWatch v4.0</title>
+    <link rel="stylesheet" href="css/style.css?v=5.0">
     <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="/socket.io/socket.io.js"></script>
 </head>
 
 <body>
-    <script>
-        if (localStorage.getItem('sw_auth') !== 'true') {
-            window.location.href = 'index.html';
-        }
-    </script>
     <div class="container">
-
         <header>
             <div class="logo">
-                <ion-icon name="eye"></ion-icon>
+                <ion-icon name="videocam"></ion-icon>
                 <span>التحكم والمشاهدة</span>
             </div>
-            <a href="index.html" style="color:white; text-decoration:none;">خروج</a>
+            <a href="index.html" class="btn" style="padding: 10px 25px; font-size: 0.9rem;">خروج</a>
         </header>
 
-        <!-- Connection Wait Screen -->
+        <!-- Setup Screen -->
         <div id="setup-screen" class="setup-screen">
-            <h2>امسح الرمز بواسطة الهاتف "الكاميرا"</h2>
-            <p style="color: var(--text-muted); margin-bottom: 20px;">قم بفتح الرابط التالي في الهاتف الذي تريد استخدامه
-                ككاميرا مراقبة</p>
+            <h2 style="margin-bottom: 20px;">تفعيل جهاز الكاميرا</h2>
+            <p style="color: var(--text-muted);">امسح الرمز التالي بالهاتف الذي تريد استخدامه كـ "كاميرا":</p>
 
             <div id="qrcode" class="qr-code-placeholder"></div>
 
-            <div style="position: relative; max-width: 400px; margin: 20px auto;">
-                <div class="link-box" id="link-display">جاري تجهيز الرابط...</div>
-                <button onclick="copyMonitorLink()" id="copy-btn"
-                    style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); background: var(--primary); color: white; border: none; padding: 8px 15px; border-radius: 8px; cursor: pointer; font-size: 0.8rem; display: flex; align-items: center; gap: 5px; transition: all 0.3s;">
-                    <ion-icon name="copy-outline"></ion-icon>
-                    <span>نسخ</span>
-                </button>
+            <div style="max-width: 450px; margin: 0 auto;">
+                <div class="link-box" id="link-display">جاري توليد الرابط...</div>
+                <div style="display: flex; gap: 10px; margin-top: 20px; justify-content: center;">
+                    <button class="btn" style="padding: 10px 20px; font-size: 0.85rem;" onclick="copyMonitorLink()">
+                        <ion-icon name="copy-outline"></ion-icon> نسخ الرابط
+                    </button>
+                    <button class="btn" style="padding: 10px 20px; font-size: 0.85rem; background: var(--danger);"
+                        onclick="resetSession()">
+                        <ion-icon name="refresh-outline"></ion-icon> جلسة جديدة
+                    </button>
+                </div>
             </div>
 
-            <div style="margin-top: 30px; display: flex; flex-direction: column; gap: 15px; align-items: center;">
-                <div class="status-indicator offline">
-                    <ion-icon name="ellipse"></ion-icon>
-                    في انتظار الاتصال...
-                </div>
-
-                <button onclick="resetSession()"
-                    style="background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.2); padding: 10px 20px; border-radius: 12px; cursor: pointer; font-size: 0.85rem; display: flex; align-items: center; gap: 8px;">
-                    <ion-icon name="refresh-outline"></ion-icon>
-                    تغيير الرابط والباركود (إنشاء جلسة جديدة)
-                </button>
+            <div class="status-indicator offline" style="margin-top: 40px; padding: 15px 30px;">
+                <ion-icon name="sync" class="pulsing"></ion-icon> في انتظار اتصال الهاتف...
             </div>
         </div>
 
-        <!-- Dashboard (Hidden initially) -->
+        <!-- Dashboard -->
         <div id="dashboard" class="dashboard-grid" style="display: none;">
 
-            <!-- Video Feed -->
-            <div class="video-container" style="position: relative;">
-                <video id="remoteVideo" autoplay playsinline muted></video>
-                <img id="fallback-video" style="display: none; width: 100%; height: 100%; object-fit: contain;" />
+            <!-- Main View -->
+            <div class="main-view">
+                <div class="video-container">
+                    <video id="remoteVideo" autoplay playsinline muted></video>
 
-                <div
-                    style="position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 100; text-align: center; width: 100%;">
-                    <button id="toggle-compat-btn" onclick="toggleCompatibilityMode()"
-                        style="background: rgba(255,255,255,0.2); backdrop-filter: blur(5px); border: 1px solid white; color: white; padding: 5px 15px; border-radius: 20px; font-size: 0.8rem; cursor: pointer;">
-                        تواجه مشكلة؟ اضغط هنا (وضع التوافق)
+                    <div
+                        style="position: absolute; top: 20px; right: 20px; background: rgba(0,0,0,0.5); padding: 5px 15px; border-radius: 50px; color: #ef4444; display: flex; align-items: center; gap: 8px; font-weight: bold;">
+                        <span
+                            style="width: 8px; height: 8px; background: #ef4444; border-radius: 50%; box-shadow: 0 0 10px #ef4444;"></span>
+                        مباشر
+                    </div>
+
+                    <button id="play-stream-btn" class="btn"
+                        style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); display: none; z-index: 100;">
+                        <ion-icon name="play-circle-outline" style="font-size: 1.5rem;"></ion-icon> تشغيل البث
                     </button>
                 </div>
 
-                <button id="play-stream-btn"
-                    style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); display: none; background: var(--primary); color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; z-index: 20;">
-                    <ion-icon name="play-circle" style="vertical-align: middle; margin-right: 5px;"></ion-icon>
-                    تشغيل البث يدوياً
-                </button>
-                <div
-                    style="position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.5); padding: 5px 10px; border-radius: 5px; color: red; display: flex; align-items: center; gap: 5px;">
-                    <ion-icon name="radio-button-on"></ion-icon> مباشر
+                <!-- Gallery Section -->
+                <div class="controls-panel" style="margin-top: 25px;">
+                    <div
+                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                        <h3 style="color: var(--text-main); font-size: 1.1rem;">
+                            <ion-icon name="images-outline"
+                                style="vertical-align: middle; margin-left: 8px;"></ion-icon>
+                            اللقطات المحفوظة
+                        </h3>
+                        <button class="btn" style="padding: 8px 15px; font-size: 0.75rem; background: var(--glass);"
+                            onclick="clearGallery()">مسح الكل</button>
+                    </div>
+                    <div id="photo-gallery" class="gallery-grid">
+                        <p id="no-photos-msg"
+                            style="grid-column: 1/-1; text-align: center; color: var(--text-muted); padding: 40px;">لا
+                            توجد صور ملتقطة حالياً</p>
+                    </div>
                 </div>
             </div>
 
-            <!-- Controls -->
-            <div class="controls-panel">
-                <div class="control-group">
-                    <div
-                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                        <h3 style="margin:0;">الجهاز المراقب</h3>
-                        <div style="display: flex; gap: 5px;">
-                            <div class="status-indicator" style="padding: 4px 10px; font-size: 0.7rem;">
-                                <ion-icon name="battery-full"></ion-icon>
-                                <span id="battery-level">--%</span>
-                            </div>
-                            <div class="status-indicator" style="padding: 4px 10px; font-size: 0.7rem;">
-                                <ion-icon name="wifi"></ion-icon>
-                                اونلاين
-                            </div>
-                        </div>
-                    </div>
-                    <div id="device-info-box"
-                        style="font-size: 0.75rem; background: rgba(0,0,0,0.2); padding: 12px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05);">
-                        <p style="color: var(--text-muted); text-align: center;">جاري جلب تفاصيل الجهاز...</p>
-                    </div>
-                </div>
-
-                <div class="control-group">
-                    <h3>التحكم المباشر</h3>
-                    <div class="btn-grid">
-                        <button class="action-btn" onclick="sendCommand('switch-camera')">
-                            <ion-icon name="sync-outline"></ion-icon>
-                            <span>تبديل العدسة</span>
-                        </button>
-
-                        <button class="action-btn" onclick="sendCommand('toggle-torch')">
-                            <ion-icon name="flash-outline"></ion-icon>
-                            <span>الكشاف</span>
-                        </button>
-
-                        <button id="toggle-audio-btn" class="action-btn" onclick="toggleAudio()">
-                            <ion-icon name="volume-mute-outline"></ion-icon>
-                            <span>سماع الصوت</span>
-                        </button>
-
-                        <button class="action-btn" onclick="sendCommand('screen-dim')"
-                            style="border-color: var(--primary);">
-                            <ion-icon name="lock-closed-outline"></ion-icon>
-                            <span>الوضع الأمني</span>
-                        </button>
-                    </div>
-
-                    <div
-                        style="margin: 10px 0 20px; padding: 15px; background: rgba(255,255,255,0.05); border-radius: 12px;">
-                        <label
-                            style="display:flex; justify-content: space-between; margin-bottom:10px; font-size:0.9rem;">
-                            <span>درجة التقريب (Zoom)</span>
-                            <span id="zoom-val" style="color: var(--primary); font-weight: bold;">1x</span>
-                        </label>
-                        <input type="range" id="zoom-slider" min="1" max="5" step="0.1" value="1"
-                            style="width: 100%; cursor: pointer;">
-                    </div>
-
-                    <button class="action-btn" onclick="sendCommand('switch-to-screen')"
-                        style="background: #ef4444; border: none; margin-bottom: 20px;">
-                        <ion-icon name="tv-outline"></ion-icon>
-                        <span>بث شاشة الموبايل (Screen Share)</span>
-                    </button>
-                </div>
-
-                <div class="control-group">
-                    <h3>أدوات المراقبة والصور</h3>
-                    <div class="btn-grid">
-                        <button class="action-btn" onclick="sendCommand('capture-photo')"
-                            style="background: var(--accent); border: none;">
-                            <ion-icon name="camera-outline"></ion-icon>
-                            <span>التقاط صورة</span>
-                        </button>
-
-                        <button id="snapshot-mode-btn" class="action-btn" onclick="toggleSnapshotMode()"
-                            style="border: 1px solid var(--primary);">
-                            <ion-icon name="images-outline"></ion-icon>
-                            <span>وضع اللقطات</span>
-                        </button>
-                    </div>
-
-                    <div
-                        style="margin: 10px 0; padding: 15px; background: rgba(16, 185, 129, 0.1); border-radius: 12px; border: 1px solid var(--accent);">
+            <!-- Sidebar Controls -->
+            <div class="sidebar">
+                <div class="controls-panel">
+                    <!-- Monitor Info -->
+                    <div class="control-group">
                         <div
-                            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                            <span style="font-weight: 700;">التحديث التلقائي الدورى</span>
-                            <label class="switch">
-                                <input type="checkbox" id="auto-snap-toggle" onchange="toggleAutoSnapshot()">
-                                <span class="slider round"></span>
-                            </label>
+                            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                            <h3 style="margin: 0;">الجهاز المراقب</h3>
+                            <div class="status-indicator">
+                                <ion-icon name="battery-full"></ion-icon> <span id="battery-level">--%</span>
+                            </div>
                         </div>
-                        <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 10px;">إرسال لقطة كل:</p>
-                        <select id="snap-interval" onchange="updateSnapshotInterval()"
-                            style="width: 100%; padding: 8px; border-radius: 5px; background: var(--bg-dark); color: white; border: 1px solid rgba(255,255,255,0.2);">
-                            <option value="1">دقيقة واحدة</option>
-                            <option value="5" selected>5 دقائق</option>
-                            <option value="15">15 دقيقة</option>
-                            <option value="30">30 دقيقة</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div class="control-group">
-                    <h3>جودة وكفاءة</h3>
-                </div>
-
-                <!-- Gallery / History Section -->
-                <div class="controls-panel" style="margin-top: 20px;">
-                    <div
-                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                        <h3 style="margin:0;"><ion-icon name="images-outline"
-                                style="vertical-align: middle; margin-left: 5px;"></ion-icon> سجل الصور الملتقطة
-                        </h3>
-                        <button onclick="clearGallery()"
-                            style="background: none; border: 1px solid var(--danger); color: var(--danger); padding: 5px 15px; border-radius: 5px; cursor: pointer; font-size: 0.8rem;">مسح
-                            السجل</button>
+                        <div id="device-info-box"
+                            style="background: rgba(0,0,0,0.2); padding: 15px; border-radius: 12px; border: 1px solid var(--glass-border);">
+                            <p style="text-align: center; color: var(--text-muted); font-size: 0.8rem;">جاري جلب
+                                المعلومات...</p>
+                        </div>
+                        <button class="action-btn" onclick="app.sendCommand('refresh-info')"
+                            style="margin-top: 10px; justify-content: center; background: var(--glass);">
+                            <ion-icon name="refresh-outline"></ion-icon> تحديث البيانات
+                        </button>
                     </div>
 
-                    <div id="photo-gallery"
-                        style="display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 15px;">
-                        <!-- Photos will appear here -->
-                        <div id="no-photos-msg"
-                            style="grid-column: 1/-1; text-align: center; color: var(--text-muted); padding: 40px;">
-                            لم يتم التقاط أي صور بعد...
+                    <!-- Session Info -->
+                    <div class="control-group">
+                        <h3>بيانات الجلسة</h3>
+                        <div
+                            style="background: rgba(59, 130, 246, 0.05); padding: 15px; border-radius: 12px; border: 1px solid rgba(59, 130, 246, 0.2); font-size: 0.85rem;">
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                                <span style="color: var(--text-muted);">رقم الغرفة:</span> <span
+                                    id="session-name-display" style="font-weight: 700;">--</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between;">
+                                <span style="color: var(--text-muted);">وقت البدء:</span> <span
+                                    id="session-start-time">--</span>
+                            </div>
                         </div>
                     </div>
+
+                    <!-- Direct Controls -->
+                    <div class="control-group">
+                        <h3>التحكم المباشر</h3>
+                        <div class="btn-grid">
+                            <button class="action-btn" onclick="app.sendCommand('switch-camera')">
+                                <ion-icon name="sync-outline"></ion-icon> <span>العدسة</span>
+                            </button>
+                            <button class="action-btn" onclick="app.sendCommand('toggle-torch')">
+                                <ion-icon name="flashlight-outline"></ion-icon> <span>الكشاف</span>
+                            </button>
+                            <button id="toggle-audio-btn" class="action-btn" onclick="app.toggleAudio()">
+                                <ion-icon name="volume-mute-outline"></ion-icon> <span>الصوت</span>
+                            </button>
+                            <button class="action-btn" onclick="app.sendCommand('screen-dim')"
+                                style="border-color: var(--primary);">
+                                <ion-icon name="lock-closed-outline"></ion-icon> <span>التخفي</span>
+                            </button>
+                        </div>
+
+                        <!-- Zoom Slider -->
+                        <div
+                            style="margin-top: 20px; padding: 15px; background: var(--glass); border-radius: 12px; border: 1px solid var(--glass-border);">
+                            <div
+                                style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                                <span style="font-size: 0.85rem; font-weight: 700;">درجة التقريب</span>
+                                <span id="zoom-val" style="color: var(--primary); font-weight: 900;">1x</span>
+                            </div>
+                            <input type="range" id="zoom-slider" min="1" max="10" step="0.1" value="1"
+                                style="width: 100%; cursor: pointer; height: 6px; border-radius: 5px; appearance: none; background: #334155;">
+                        </div>
+                    </div>
+
+                    <!-- Tools -->
+                    <div class="control-group">
+                        <h3>أدوات المراقبة</h3>
+                        <button class="action-btn" onclick="app.sendCommand('capture-photo')"
+                            style="background: var(--accent); color: white; border: none; font-weight: 700;">
+                            <ion-icon name="camera-outline"></ion-icon> التقاط صورة الآن
+                        </button>
+                        <button id="record-btn" class="action-btn" onclick="app.toggleRecording()"
+                            style="border-color: #ef4444; color: #ef4444;">
+                            <ion-icon name="radio-button-on-outline"></ion-icon> تسجيل فيديو
+                        </button>
+                    </div>
+
                 </div>
+            </div>
+        </div>
+    </div>
 
-                <script>
-                    (function () {
-                        const socket = io();
-                        const urlParams = new URLSearchParams(window.location.search);
-                        const setupScreen = document.getElementById('setup-screen');
-                        const dashboard = document.getElementById('dashboard');
-                        const remoteVideo = document.getElementById('remoteVideo');
-                        const linkDisplay = document.getElementById('link-display');
-                        const qrContainer = document.getElementById('qrcode');
+    <!-- Scripts -->
+    <script type="module">
+        import { Core } from './js/core.js';
+        import { ViewerSystem } from './js/viewer.js';
 
-                        let roomId = urlParams.get('session');
-                        if (!roomId) roomId = localStorage.getItem('sw_saved_session');
+        if (Core.checkAuth()) {
+            const roomId = Core.getRoomId();
+            window.app = new ViewerSystem(roomId);
 
-                        if (!roomId) {
-                            window.location.href = 'index.html';
-                            return;
-                        }
-
-                        localStorage.setItem('sw_saved_session', roomId);
-                        const monitorUrl = window.location.origin + '/monitor.html?session=' + roomId + '&token=dev2000';
-                        if (linkDisplay) linkDisplay.innerText = monitorUrl;
-
-                        function generateQR() {
-                            if (typeof QRCode !== 'undefined' && qrContainer) {
-                                qrContainer.innerHTML = '';
-                                new QRCode(qrContainer, { text: monitorUrl, width: 200, height: 200 });
-                            } else {
-                                setTimeout(generateQR, 200);
-                            }
-                        }
-                        generateQR();
-
-                        socket.emit('join-room', roomId, 'viewer');
-
-                        // Global functions needed by HTML
-                        window.resetSession = function () {
-                            if (confirm("هل أنت متأكد؟ سيتم تغيير الرابط والباركود ولن يعمل الرابط القديم.")) {
-                                localStorage.removeItem('sw_saved_session');
-                                window.location.href = 'index.html';
-                            }
-                        };
-
-                        window.copyMonitorLink = function () {
-                            const link = linkDisplay.innerText;
-                            navigator.clipboard.writeText(link).then(() => {
-                                const btn = document.getElementById('copy-btn');
-                                const span = btn.querySelector('span');
-                                const icon = btn.querySelector('ion-icon');
-                                btn.style.background = "var(--accent)";
-                                span.innerText = "تم النسخ!";
-                                icon.name = "checkmark-outline";
-                                setTimeout(() => {
-                                    btn.style.background = "var(--primary)";
-                                    span.innerText = "نسخ";
-                                    icon.name = "copy-outline";
-                                }, 2000);
-                            });
-                        };
-
-                        // WebRTC & Socket Events
-                        let peerConnection;
-                        const rtcConfig = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] };
-
-                        socket.on('user-connected', async (role) => {
-                            if (role === 'monitor') {
-                                console.log('Monitor connected!');
-                                startConnection();
-                                setupScreen.style.display = 'none';
-                                dashboard.style.display = 'grid';
-                            }
-                        });
-
-                        async function startConnection() {
-                            peerConnection = new RTCPeerConnection(rtcConfig);
-                            peerConnection.onicecandidate = (e) => {
-                                if (e.candidate) socket.emit('ice-candidate', { roomId, candidate: e.candidate });
-                            };
-                            peerConnection.ontrack = (e) => {
-                                remoteVideo.srcObject = e.streams[0];
-                                remoteVideo.play().catch(() => {
-                                    document.getElementById('play-stream-btn').style.display = 'block';
-                                });
-                            };
-                            peerConnection.addTransceiver('video', { direction: 'recvonly' });
-                            peerConnection.addTransceiver('audio', { direction: 'recvonly' });
-                            const offer = await peerConnection.createOffer();
-                            await peerConnection.setLocalDescription(offer);
-                            socket.emit('offer', { roomId, sdp: offer });
-                        }
-
-                        socket.on('answer', async (payload) => {
-                            await peerConnection.setRemoteDescription(new RTCSessionDescription(payload.sdp));
-                        });
-
-                        socket.on('ice-candidate', async (payload) => {
-                            if (peerConnection && peerConnection.remoteDescription) {
-                                await peerConnection.addIceCandidate(new RTCIceCandidate(payload.candidate));
-                            }
-                        });
-
-                        window.sendCommand = function (command) {
-                            socket.emit('control-command', { roomId, command });
-                        };
-
-                        // Additional UI handlers
-                        const fallbackVideo = document.getElementById('fallback-video');
-                        socket.on('stream-data', (payload) => {
-                            fallbackVideo.src = payload.image;
-                            if (payload.isSnapshot) addToGallery(payload.image);
-                        });
-
-                        window.toggleCompatibilityMode = function () {
-                            const btn = document.getElementById('toggle-compat-btn');
-                            const isCompat = remoteVideo.style.display === 'none';
-                            if (!isCompat) {
-                                remoteVideo.style.display = 'none';
-                                fallbackVideo.style.display = 'block';
-                                btn.innerText = "العودة للوضع المتطور (HD)";
-                                socket.emit('control-command', { roomId, command: 'start-compatibility-mode', interval: 100 });
-                            } else {
-                                remoteVideo.style.display = 'block';
-                                fallbackVideo.style.display = 'none';
-                                btn.innerText = "تواجه مشكلة؟ اضغط هنا (وضع التوافق)";
-                                sendCommand('stop-compatibility-mode');
-                            }
-                        };
-
-                        function addToGallery(data) {
-                            const gallery = document.getElementById('photo-gallery');
-                            const noMsg = document.getElementById('no-photos-msg');
-                            if (noMsg) noMsg.remove();
-                            const item = document.createElement('div');
-                            item.style = "background: #0f172a; border-radius: 10px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1);";
-                            item.innerHTML = `<img src="${data}" style="width: 100%; height: 120px; object-fit: cover;"><div style="padding: 10px; display: flex; justify-content: space-between;"><span style="font-size: 0.7rem; color: #94a3b8;">${new Date().toLocaleTimeString('ar-EG')}</span><a href="${data}" download style="color: var(--accent);"><ion-icon name="download-outline"></ion-icon></a></div>`;
-                            gallery.prepend(item);
-                        }
-
-                        window.clearGallery = function () {
-                            if (confirm("مسح السجل؟")) {
-                                document.getElementById('photo-gallery').innerHTML = '<div id="no-photos-msg" style="grid-column: 1/-1; text-align: center; color: var(--text-muted); padding: 40px;">لا يوجد صور</div>';
-                            }
-                        };
-                    })();
-                </script>
-                </script>
+            // Expose basic UI helper globally
+            window.copyMonitorLink = () => {
+                const link = document.getElementById('link-display').innerText;
+                navigator.clipboard.writeText(link).then(() => alert("تم النسخ!"));
+            };
+            window.resetSession = () => {
+                if (confirm("هل أنت متأكد؟ سيتم إنشاء جلسة جديدة كلياً.")) {
+                    localStorage.removeItem('sw_saved_session');
+                    window.location.href = 'index.html';
+                }
+            };
+            window.clearGallery = () => {
+                if (confirm("مسح كافة الصور؟")) {
+                    document.getElementById('photo-gallery').innerHTML = '';
+                    app.addToGallery = (img) => { /* override to handle empty state */ };
+                }
+            };
+        }
+    </script>
 </body>
 
 </html>
