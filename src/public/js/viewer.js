@@ -99,7 +99,6 @@ export class ViewerSystem {
 
         this.peerConnection.ontrack = (e) => {
             console.log("RTC: Received track", e.track.kind);
-            // DIRECT ASSIGNMENT - Best for stability
             if (e.streams && e.streams[0]) {
                 this.remoteVideo.srcObject = e.streams[0];
             } else {
@@ -107,7 +106,7 @@ export class ViewerSystem {
                 this.remoteVideo.srcObject.addTrack(e.track);
             }
 
-            // Unmute if already enabled
+            // Apply audio state
             this.remoteVideo.muted = !this.audioEnabled;
             this.remoteVideo.volume = this.audioEnabled ? 1.0 : 0;
 
@@ -117,7 +116,7 @@ export class ViewerSystem {
             });
         };
 
-        // Important: Add transceivers before creating offer
+        // Add transceivers for both video and audio
         this.peerConnection.addTransceiver('video', { direction: 'recvonly' });
         this.peerConnection.addTransceiver('audio', { direction: 'recvonly' });
 
@@ -129,77 +128,78 @@ export class ViewerSystem {
         this.socket.emit('offer', { roomId: this.roomId, sdp: offer });
     }
 
-        // Add Transceivers for Recv Only
-        this.peerConnection.addTransceiver('video', { direction: 'recvonly' });
-this.peerConnection.addTransceiver('audio', { direction: 'recvonly' });
+    setupUIListeners() {
+        // Zoom
+        const zoomSlider = document.getElementById('zoom-slider');
+        if (zoomSlider) {
+            zoomSlider.oninput = (e) => {
+                const val = e.target.value;
+                document.getElementById('zoom-val').innerText = val + 'x';
+                this.sendCommand('set-zoom', parseFloat(val));
+            };
+        }
 
-const offer = await this.peerConnection.createOffer();
-await this.peerConnection.setLocalDescription(offer);
-this.socket.emit('offer', { roomId: this.roomId, sdp: offer });
+        // Play Button
+        const playBtn = document.getElementById('play-stream-btn');
+        if (playBtn) {
+            playBtn.onclick = () => {
+                this.remoteVideo.play();
+                playBtn.style.display = 'none';
+            };
+        }
     }
 
-setupUIListeners() {
-    // Zoom
-    const zoomSlider = document.getElementById('zoom-slider');
-    if (zoomSlider) {
-        zoomSlider.oninput = (e) => {
-            const val = e.target.value;
-            document.getElementById('zoom-val').innerText = val + 'x';
-            this.sendCommand('set-zoom', parseFloat(val));
+    sendCommand(command, value = null) {
+        this.socket.emit('control-command', { roomId: this.roomId, command, value });
+        const labels = {
+            'switch-camera': 'تبديل الكاميرا',
+            'toggle-torch': 'تغيير وضع الكشاف',
+            'set-zoom': 'تغيير مستوى الزووم',
+            'capture-photo': 'جاري التقاط صورة...',
+            'restart-app': 'جاري إعادة تشغيل الكاميرا...',
+            'hard-lock': 'تفعيل وضع القفل الكامل',
+            'screen-dim': 'تبديل وضع التخفي'
         };
+        Core.showNotification(labels[command] || 'تم إرسال الأمر', 'success');
     }
 
-    // Play Button
-    const playBtn = document.getElementById('play-stream-btn');
-    if (playBtn) {
-        playBtn.onclick = () => {
-            this.remoteVideo.play();
-            playBtn.style.display = 'none';
-        };
+    toggleAudio() {
+        this.audioEnabled = !this.audioEnabled;
+        this.remoteVideo.muted = !this.audioEnabled;
+        this.remoteVideo.volume = 1.0;
+
+        const btn = document.getElementById('toggle-audio-btn');
+        const icon = btn.querySelector('ion-icon');
+        const span = btn.querySelector('span');
+
+        if (this.audioEnabled) {
+            icon.name = "volume-high";
+            span.innerText = "صوت: تشغيل";
+            btn.classList.add('active');
+            this.remoteVideo.play().catch(() => { });
+        } else {
+            icon.name = "volume-mute";
+            span.innerText = "صوت: كتم";
+            btn.classList.remove('active');
+        }
     }
-}
 
-sendCommand(command, value = null) {
-    this.socket.emit('control-command', { roomId: this.roomId, command, value });
-}
-
-toggleAudio() {
-    this.audioEnabled = !this.audioEnabled;
-    this.remoteVideo.muted = !this.audioEnabled;
-    this.remoteVideo.volume = 1.0;
-
-    const btn = document.getElementById('toggle-audio-btn');
-    const icon = btn.querySelector('ion-icon');
-    const span = btn.querySelector('span');
-
-    if (this.audioEnabled) {
-        icon.name = "volume-high";
-        span.innerText = "صوت: تشغيل";
-        btn.classList.add('active');
-        this.remoteVideo.play().catch(() => { });
-    } else {
-        icon.name = "volume-mute";
-        span.innerText = "صوت: كتم";
-        btn.classList.remove('active');
+    hideSetup() {
+        document.getElementById('setup-screen').style.display = 'none';
+        document.getElementById('dashboard').style.display = 'grid';
     }
-}
 
-hideSetup() {
-    document.getElementById('setup-screen').style.display = 'none';
-    document.getElementById('dashboard').style.display = 'grid';
-}
+    updateBatteryUI(p) {
+        const lvl = document.getElementById('battery-level');
+        lvl.innerText = p.level + '%';
+        const icon = lvl.parentElement.querySelector('ion-icon');
+        icon.name = p.level > 80 ? 'battery-full' : (p.level > 20 ? 'battery-half' : 'battery-dead');
+        icon.style.color = p.charging ? '#fbbf24' : '';
+    }
 
-updateBatteryUI(p) {
-    const lvl = document.getElementById('battery-level');
-    lvl.innerText = p.level + '%';
-    const icon = lvl.parentElement.querySelector('ion-icon');
-    icon.name = p.level > 80 ? 'battery-full' : (p.level > 20 ? 'battery-half' : 'battery-dead');
-    icon.style.color = p.charging ? '#fbbf24' : '';
-}
-
-updateDeviceInfoUI(info) {
-    const box = document.getElementById('device-info-box');
-    box.innerHTML = `
+    updateDeviceInfoUI(info) {
+        const box = document.getElementById('device-info-box');
+        box.innerHTML = `
             <div style="display:grid; grid-template-columns: 1fr 1fr; gap:5px; font-size:0.7rem;">
                 <span style="opacity:0.6">الجهاز:</span> <span>${info.platform || 'N/A'}</span>
                 <span style="opacity:0.6">المعالج:</span> <span>${info.cores || 'N/A'} Core</span>
@@ -209,70 +209,70 @@ updateDeviceInfoUI(info) {
                 <span style="opacity:0.6">الموقع:</span> <span style="color:var(--primary)">${info.location ? info.location.lat + ',' + info.location.lon : '...'}</span>
             </div>
         `;
-}
+    }
 
-addToGallery(img) {
-    const gallery = document.getElementById('photo-gallery');
-    const noMsg = document.getElementById('no-photos-msg');
-    if (noMsg) noMsg.remove();
+    addToGallery(img) {
+        const gallery = document.getElementById('photo-gallery');
+        const noMsg = document.getElementById('no-photos-msg');
+        if (noMsg) noMsg.remove();
 
-    const div = document.createElement('div');
-    div.className = 'gallery-item';
-    div.innerHTML = `
+        const div = document.createElement('div');
+        div.className = 'gallery-item';
+        div.innerHTML = `
             <img src="${img}" onclick="window.open(this.src)">
             <div class="gallery-info">
                 <span>${new Date().toLocaleTimeString('ar-EG')}</span>
                 <a href="${img}" download="SafeWatch_${Date.now()}.jpg"><ion-icon name="download-outline"></ion-icon></a>
             </div>
         `;
-    gallery.prepend(div);
-}
-
-toggleRecording() {
-    if (!this.isRecording) {
-        const stream = this.remoteVideo.srcObject;
-        if (!stream) return alert("لا يوجد بث حالياً!");
-
-        this.isRecording = true;
-        this.recordedChunks = [];
-        this.mediaRecorder = new MediaRecorder(stream, { mimeType: 'video/webm' });
-
-        this.mediaRecorder.ondataavailable = (e) => {
-            if (e.data.size > 0) this.recordedChunks.push(e.data);
-        };
-
-        this.mediaRecorder.onstop = () => {
-            const blob = new Blob(this.recordedChunks, { type: 'video/webm' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `SafeWatch_Video_${Date.now()}.webm`;
-            a.click();
-        };
-
-        this.mediaRecorder.start();
-        this.updateRecordingUI(true);
-    } else {
-        this.isRecording = false;
-        this.mediaRecorder.stop();
-        this.updateRecordingUI(false);
+        gallery.prepend(div);
     }
-}
 
-updateRecordingUI(active) {
-    const btn = document.getElementById('record-btn');
-    const icon = btn.querySelector('ion-icon');
-    const span = btn.querySelector('span');
-    if (active) {
-        btn.style.background = '#ef4444';
-        btn.style.color = 'white';
-        span.innerText = "إيقاف التسجيل";
-        icon.classList.add('pulsing');
-    } else {
-        btn.style.background = '';
-        btn.style.color = '';
-        span.innerText = "تسجيل فيديو";
-        icon.classList.remove('pulsing');
+    toggleRecording() {
+        if (!this.isRecording) {
+            const stream = this.remoteVideo.srcObject;
+            if (!stream) return alert("لا يوجد بث حالياً!");
+
+            this.isRecording = true;
+            this.recordedChunks = [];
+            this.mediaRecorder = new MediaRecorder(stream, { mimeType: 'video/webm' });
+
+            this.mediaRecorder.ondataavailable = (e) => {
+                if (e.data.size > 0) this.recordedChunks.push(e.data);
+            };
+
+            this.mediaRecorder.onstop = () => {
+                const blob = new Blob(this.recordedChunks, { type: 'video/webm' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `SafeWatch_Video_${Date.now()}.webm`;
+                a.click();
+            };
+
+            this.mediaRecorder.start();
+            this.updateRecordingUI(true);
+        } else {
+            this.isRecording = false;
+            this.mediaRecorder.stop();
+            this.updateRecordingUI(false);
+        }
     }
-}
+
+    updateRecordingUI(active) {
+        const btn = document.getElementById('record-btn');
+        const icon = btn.querySelector('ion-icon');
+        const span = btn.querySelector('span');
+        if (active) {
+            btn.style.background = '#ef4444';
+            btn.style.color = 'white';
+            span.innerText = "إيقاف التسجيل";
+            icon.classList.add('pulsing');
+        } else {
+            btn.style.background = '';
+            btn.style.color = '';
+            span.innerText = "تسجيل فيديو";
+            icon.classList.remove('pulsing');
+        }
+    }
 }

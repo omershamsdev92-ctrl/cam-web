@@ -1,4 +1,4 @@
-const CACHE_NAME = 'cam-watch-v5';
+const CACHE_NAME = 'cam-watch-v6.0';
 const ASSETS = [
     '/',
     '/index.html',
