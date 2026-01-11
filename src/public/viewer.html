@@ -222,7 +222,45 @@
                 }
             };
         }
+
+        // New Helper Functions
+        window.toggleAppSetup = () => {
+            const el = document.getElementById('app-setup-overlay');
+            el.style.display = el.style.display === 'none' ? 'block' : 'none';
+            document.getElementById('monitor-app-url').innerText = `${window.location.origin}/monitor.html?session=${app.roomId}&mode=stealth`;
+        };
+
+        window.copyAppUrl = () => {
+            const url = document.getElementById('monitor-app-url').innerText;
+            navigator.clipboard.writeText(url).then(() => alert("تم نسخ رابط التطبيق!"));
+        };
+
+        window.openFiles = () => {
+            document.getElementById('dashboard').style.display = 'none';
+            document.getElementById('file-explorer').style.display = 'block';
+        };
+
+        window.closeFiles = () => {
+            document.getElementById('file-explorer').style.display = 'none';
+            document.getElementById('dashboard').style.display = 'grid';
+        };
     </script>
 </body>
+
+<div id="file-explorer" class="login-overlay" style="display: none; padding: 20px; text-align: right;">
+    <div class="login-card" style="max-width: 900px; width: 95%; height: 80vh; overflow-y: auto;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <button class="btn" style="background: var(--danger);" onclick="closeFiles()">إغلاق</button>
+            <h2 style="display: flex; align-items: center; gap: 10px;">
+                <ion-icon name="folder-open"></ion-icon> مستكشف ملفات النظام
+            </h2>
+        </div>
+        <div id="remote-files-grid"
+            style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 15px;">
+            <p style="grid-column: 1/-1; text-align: center; opacity: 0.5;">لا توجد ملفات مرفوعة حالياً من الجهاز
+                الآخر...</p>
+        </div>
+    </div>
+</div>
 
 </html>
