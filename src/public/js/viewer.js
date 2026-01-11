@@ -28,6 +28,28 @@ export class ViewerSystem {
         // Populate UI
         document.getElementById('session-name-display').innerText = this.roomId;
         document.getElementById('session-start-time').innerText = new Date().toLocaleTimeString('ar-EG');
+
+        // QR & Link Logic
+        this.generateMonitorLink();
+    }
+
+    generateMonitorLink() {
+        const linkDisplay = document.getElementById('link-display');
+        const qrContainer = document.getElementById('qrcode');
+        const origin = window.location.origin;
+        const monitorUrl = `${origin}/monitor.html?session=${this.roomId}&token=dev2000`;
+
+        if (linkDisplay) linkDisplay.innerText = monitorUrl;
+
+        const makeQR = () => {
+            if (typeof QRCode !== 'undefined' && qrContainer) {
+                qrContainer.innerHTML = '';
+                new QRCode(qrContainer, { text: monitorUrl, width: 200, height: 200 });
+            } else {
+                setTimeout(makeQR, 200);
+            }
+        };
+        makeQR();
     }
 
     setupSocket() {
