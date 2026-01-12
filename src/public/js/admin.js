@@ -178,12 +178,18 @@ window.openConfirmModal = (id, name, email) => {
         const p = document.getElementById('send-pass').value;
 
         // Prepare email link
-        const subject = encodeURIComponent("تفعيل اشتراكك في برج المراقبة");
-        const body = encodeURIComponent(`مرحباً ${name}،\n\nتم تأكيد دفع اشتراكك بنجاح. إليك بيانات الدخول الخاصة بك:\n\nاسم المستخدم: ${u}\nكلمة المرور: ${p}\n\nيمكنك تسجيل الدخول الآن عبر الرابط: ${window.location.origin}\n\nشكراً لثقتكم بنا.`);
+        const subject = encodeURIComponent("تفعيل اشتراكك في برج المراقبة 🛡️");
+        const msgBody = `مرحباً ${name}،\n\nتم تأكيد دفع اشتراكك بنجاح في منظومة برج المراقبة.\n\nإليك بيانات الدخول الخاصة بك:\n--------------------------\nاسم المستخدم: ${u}\nكلمة المرور: ${p}\n--------------------------\n\nيمكنك تسجيل الدخول الآن عبر الرابط التالي:\n${window.location.origin}\n\nشكراً لثقتكم بنا.\nإدارة برج المراقبة`;
 
-        window.open(`mailto:${email}?subject=${subject}&body=${body}`);
+        const mailtoLink = `mailto:${email}?subject=${subject}&body=${encodeURIComponent(msgBody)}`;
 
+        // Trigger the email client
+        window.location.href = mailtoLink;
+
+        // Update status in database
         await admin.updateSubStatus(id, 'confirmed');
+
+        alert(`تم تفعيل الحساب وإرسال البيانات إلى الإيميل: ${email}\n\nيرجى التحقق من تطبيق البريد الإلكتروني لديك لإكمال عملية الإرسال.`);
         modal.style.display = 'none';
     };
 };
