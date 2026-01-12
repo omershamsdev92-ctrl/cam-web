@@ -12,6 +12,7 @@ export class HomeSystem {
         this.userInput = document.getElementById('user-input');
         this.passInput = document.getElementById('pass-input');
         this.logoutBtn = document.getElementById('logout-home-btn');
+        this.loginTriggerBtn = document.getElementById('login-trigger-btn');
         this.deferredPrompt = null;
 
         this.init();
@@ -54,9 +55,12 @@ export class HomeSystem {
         if (localStorage.getItem('sw_auth') === 'true') {
             document.getElementById('login-gate').style.display = 'none';
             if (this.logoutBtn) this.logoutBtn.style.display = 'inline-flex';
+            if (this.loginTriggerBtn) this.loginTriggerBtn.style.display = 'none';
         } else {
-            document.getElementById('login-gate').style.display = 'flex';
+            // Keep it hidden by default, or show logic only when needed
+            document.getElementById('login-gate').style.display = 'none';
             if (this.logoutBtn) this.logoutBtn.style.display = 'none';
+            if (this.loginTriggerBtn) this.loginTriggerBtn.style.display = 'inline-flex';
         }
 
         if (this.logoutBtn) {
@@ -86,6 +90,7 @@ export class HomeSystem {
                 localStorage.setItem('sw_user_name', data.name);
                 document.getElementById('login-gate').style.display = 'none';
                 if (this.logoutBtn) this.logoutBtn.style.display = 'inline-flex';
+                if (this.loginTriggerBtn) this.loginTriggerBtn.style.display = 'none';
             } else {
                 alert(data.message || "بيانات الدخول غير صحيحة");
             }
@@ -113,6 +118,12 @@ export class HomeSystem {
 
     setupEvents() {
         const createSession = (mode = 'video') => {
+            // Check authentication first
+            if (localStorage.getItem('sw_auth') !== 'true') {
+                document.getElementById('login-gate').style.display = 'flex';
+                return;
+            }
+
             const val = this.sessionInput.value.trim();
             if (val) localStorage.setItem('sw_last_custom_session', val);
 

@@ -16,9 +16,14 @@
 
 <body>
     <!-- Login Gate -->
-    <div id="login-gate" class="login-overlay">
+    <div id="login-gate" class="login-overlay" style="display: none;">
         <div class="login-card"
-            style="border-top: 5px solid var(--primary); background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(20px);">
+            style="border-top: 5px solid var(--primary); background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(20px); position: relative;">
+
+            <button onclick="document.getElementById('login-gate').style.display='none'"
+                style="position: absolute; left: 15px; top: 15px; background: none; border: none; color: white; cursor: pointer; font-size: 1.5rem;">
+                <ion-icon name="close-outline"></ion-icon>
+            </button>
             <div style="position: relative; margin-bottom: 25px;">
                 <div
                     style="background: var(--primary); width: 80px; height: 80px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto; box-shadow: 0 0 30px rgba(59, 130, 246, 0.4);">
@@ -74,7 +79,12 @@
                 </div>
             </div>
 
-            <div style="display: flex; gap: 10px;">
+            <div style="display: flex; gap: 10px; align-items: center;">
+                <button id="login-trigger-btn" class="btn"
+                    onclick="document.getElementById('login-gate').style.display='flex'"
+                    style="background: none; border: 1px solid var(--primary); color: var(--primary); padding: 8px 15px; font-size: 0.85rem;">
+                    <ion-icon name="lock-open-outline"></ion-icon> دخول
+                </button>
                 <button id="logout-home-btn" class="btn"
                     style="padding: 10px 20px; font-size: 0.85rem; background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.2); display: none;">
                     <ion-icon name="log-out-outline"></ion-icon> خروج
