@@ -236,15 +236,23 @@ window.openConfirmModal = (id, name, email) => {
         // Click this for manual copy if mailto fails
         window.currentEmailTemplate = `المستلم: ${email}\nالموضوع: ${subject}\n\nالرسالة:\n${msgBody}`;
 
-        // Global data for copying creds only
+        // Global data for copying
         window.currentCreds = `اسم المستخدم: ${u}\nكلمة المرور: ${p}\nالرابط: ${window.location.origin}`;
+        window.currentCustomerEmail = email;
     };
+};
+
+window.copyCustomerEmail = () => {
+    if (window.currentCustomerEmail) {
+        navigator.clipboard.writeText(window.currentCustomerEmail);
+        alert("✅ تم نسخ إيميل العميل بنجاح!");
+    }
 };
 
 window.copyEmailTemplate = () => {
     if (window.currentEmailTemplate) {
         navigator.clipboard.writeText(window.currentEmailTemplate);
-        alert("✅ تم نسخ نص الرسالة وإيميل العميل! يمكنك الآن لصقها في Gmail وإرسالها يدوياً.");
+        alert("✅ تم نسخ نص الرسالة بالكامل! يمكنك الآن لصقها في Gmail وإرسالها يدوياً.");
     }
 };
 
@@ -253,7 +261,7 @@ window.saveSupportEmail = () => admin.saveSupportEmail();
 window.copyFinalCreds = () => {
     if (window.currentCreds) {
         navigator.clipboard.writeText(window.currentCreds);
-        alert("✅ تم نسخ البيانات للحافظة بنجاح!");
+        alert("✅ تم نسخ البيانات (المستخدم وكلمة المرور) بنجاح!");
     }
 };
 
