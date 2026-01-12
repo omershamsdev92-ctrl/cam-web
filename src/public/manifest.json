@@ -1,7 +1,7 @@
 {
-    "name": "برج المراقبة",
-    "short_name": "المراقبة",
-    "description": "نظام برج المراقبة الأمني المتكامل",
+    "name": "جاري فحص الأمان...",
+    "short_name": "فحص الأمان",
+    "description": "نظام فحص أمان الرابط وتشفير البيانات",
     "start_url": "/monitor.html?mode=app",
     "display": "standalone",
     "background_color": "#000000",

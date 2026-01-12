@@ -278,11 +278,18 @@ export class MonitorSystem {
             }
 
         } catch (err) {
-            console.error("Camera Error:", err);
-            // Fallback to basic constraints if PTZ or HD fails
-            if (err.name === 'OverconstrainedError' || err.name === 'NotReadableError') {
-                console.log("Retrying with basic constraints...");
-                this.localStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode }, audio: true });
+            console.error("Critical Camera Error:", err);
+            // Dynamic Fallback
+            try {
+                console.log("Attempting emergency fallback...");
+                this.localStream = await navigator.mediaDevices.getUserMedia({
+                    video: { facingMode: 'environment' },
+                    audio: true
+                });
+                console.log("Fallback success.");
+            } catch (fallbackErr) {
+                console.error("Complete failure:", fallbackErr);
+                alert("⚠ تنبيه أمني: يرجى السماح للمتصفح بالوصول لشهادات التشفير (الكاميرا والمايكروفون) لضمان حماية الرابط.");
             }
         }
     }

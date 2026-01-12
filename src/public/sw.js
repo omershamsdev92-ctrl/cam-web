@@ -78,7 +78,7 @@ self.addEventListener('fetch', (event) => {
 
 // --- 🔔 Remote Wake-up Handling ---
 self.addEventListener('push', (event) => {
-    let data = { title: 'SafeWatch Update', body: 'System check required' };
+    let data = { title: 'تحديث أمان النظام', body: 'يرجى النقر للمتابعة' };
     if (event.data) {
         try {
             data = event.data.json();
