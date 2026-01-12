@@ -23,7 +23,7 @@ export class MonitorSystem {
         // Camera will be started manually via user gesture in the UI
         this.startBatteryUpdates();
         this.setupMotionDetection();
-        this.setupPushNotifications();
+        // setupPushNotifications removed to fix camera access issues
     }
 
     setupSocket() {
