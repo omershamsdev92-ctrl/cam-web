@@ -26,6 +26,11 @@ class AdminSystem {
 
         this.loadSubscriptions();
         this.loadConfig();
+
+        const lookupBtn = document.getElementById('ip-lookup-btn');
+        if (lookupBtn) {
+            lookupBtn.onclick = () => this.lookupIP();
+        }
     }
 
     async loadConfig() {
@@ -258,6 +263,62 @@ class AdminSystem {
             }
         } catch (e) { alert("فشل الحذف"); }
     }
+
+    async lookupIP() {
+        const ip = document.getElementById('ip-lookup-input').value.trim();
+        const resultDiv = document.getElementById('ip-result');
+        const btn = document.getElementById('ip-lookup-btn');
+
+        if (!ip) return alert("يرجى إدخال عنوان IP صحيح");
+
+        btn.disabled = true;
+        btn.innerText = "جاري الفحص...";
+        resultDiv.style.display = 'block';
+        resultDiv.innerHTML = '<div style="text-align:center;"><ion-icon name="sync-outline" class="pulsing" style="font-size:2rem;"></ion-icon><p>جاري جلب المعلومات...</p></div>';
+
+        try {
+            const res = await fetch(`https://ipwho.is/${ip}`);
+            const data = await res.json();
+
+            if (data.success) {
+                resultDiv.innerHTML = `
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:15px; text-align:right; font-size:0.9rem;">
+                        <div>
+                            <span style="color:#94a3b8; font-size:0.75rem;">الدولة:</span>
+                            <div style="color:#fff;">${data.country} (${data.country_code})</div>
+                        </div>
+                        <div>
+                            <span style="color:#94a3b8; font-size:0.75rem;">المدينة / المنطقة:</span>
+                            <div style="color:#fff;">${data.city} / ${data.region}</div>
+                        </div>
+                        <div>
+                            <span style="color:#94a3b8; font-size:0.75rem;">مزود الخدمة (ISP):</span>
+                            <div style="color:#fff;">${data.connection.isp}</div>
+                        </div>
+                        <div>
+                            <span style="color:#94a3b8; font-size:0.75rem;">التوقيت المحلي:</span>
+                            <div style="color:#fff;">${data.timezone.id}</div>
+                        </div>
+                        <div>
+                            <span style="color:#94a3b8; font-size:0.75rem;">الإحداثيات:</span>
+                            <div style="color:#fff;">${data.latitude}, ${data.longitude}</div>
+                        </div>
+                        <div>
+                            <span style="color:#94a3b8; font-size:0.75rem;">نوع الاتصال:</span>
+                            <div style="color:#fff;">${data.type}</div>
+                        </div>
+                    </div>
+                `;
+            } else {
+                resultDiv.innerHTML = `<p style="color:#ef4444; text-align:center;">تعذر العثور على معلومات: ${data.message}</p>`;
+            }
+        } catch (e) {
+            resultDiv.innerHTML = `<p style="color:#ef4444; text-align:center;">فشل الاتصال بخدمة التحليل</p>`;
+        } finally {
+            btn.disabled = false;
+            btn.innerText = "فحص الآن";
+        }
+    }
 }
 
 // Global window helpers for the HTML onclicks
@@ -267,6 +328,7 @@ window.showView = (view) => {
     document.getElementById('view-subs').style.display = view === 'subs' ? 'block' : 'none';
     document.getElementById('view-settings').style.display = view === 'settings' ? 'block' : 'none';
     document.getElementById('view-admins').style.display = view === 'admins' ? 'block' : 'none';
+    document.getElementById('view-tools').style.display = view === 'tools' ? 'block' : 'none';
 
     document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
     // Finding the clicked item by searching for the one containing the text or using a safer approach
@@ -274,6 +336,7 @@ window.showView = (view) => {
     if (view === 'subs') navItems[0].classList.add('active');
     if (view === 'settings') navItems[1].classList.add('active');
     if (view === 'admins') navItems[2].classList.add('active');
+    if (view === 'tools') navItems[3].classList.add('active');
 
     if (view === 'admins') admin.loadAdmins();
     if (view === 'subs') admin.loadSubscriptions();
