@@ -17,6 +17,11 @@ if (!fs.existsSync(ADMIN_DATA_PATH)) {
     fs.writeFileSync(ADMIN_DATA_PATH, JSON.stringify([{ username: 'admin', password: 'password2026' }]));
 }
 
+const CONFIG_PATH = path.join(__dirname, 'config.json');
+if (!fs.existsSync(CONFIG_PATH)) {
+    fs.writeFileSync(CONFIG_PATH, JSON.stringify({ supportEmail: 'support@safewatch.com' }));
+}
+
 // Increase limit for base64 images (receipts)
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ limit: '10mb', extended: true }));
@@ -95,6 +100,20 @@ app.post('/api/subscribe', async (req, res) => {
 });
 
 // 🔐 Admin Auth & Panel Routes
+app.get('/api/admin/config', (req, res) => {
+    if (fs.existsSync(CONFIG_PATH)) {
+        res.json(JSON.parse(fs.readFileSync(CONFIG_PATH, 'utf8')));
+    } else {
+        res.json({ supportEmail: 'support@safewatch.com' });
+    }
+});
+
+app.post('/api/admin/config', (req, res) => {
+    const config = req.body;
+    fs.writeFileSync(CONFIG_PATH, JSON.stringify(config, null, 2));
+    res.json({ success: true });
+});
+
 app.post('/api/admin/login', (req, res) => {
     const { username, password } = req.body;
     const admins = JSON.parse(fs.readFileSync(ADMIN_DATA_PATH, 'utf8'));

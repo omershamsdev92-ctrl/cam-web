@@ -20,10 +20,24 @@ export class HomeSystem {
         this.setupPWA();
         this.setupEvents();
         this.setupSubscriptionForm();
+        this.loadConfig();
 
         // Restore last session name
         const last = localStorage.getItem('sw_last_custom_session');
         if (last) this.sessionInput.value = last;
+    }
+
+    async loadConfig() {
+        try {
+            const res = await fetch('/api/admin/config');
+            const data = await res.json();
+            if (data.supportEmail) {
+                const footerLink = document.getElementById('footer-support-email');
+                const footerText = document.getElementById('footer-support-text');
+                if (footerLink) footerLink.href = `mailto:${data.supportEmail}`;
+                if (footerText) footerText.innerText = `للدعم والاستفسارات: ${data.supportEmail}`;
+            }
+        } catch (e) { console.log("Config load failed"); }
     }
 
     setupAuth() {

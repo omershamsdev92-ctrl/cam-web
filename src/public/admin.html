@@ -281,6 +281,19 @@
             <div id="view-settings" style="display: none;">
                 <h1 style="font-size: 1.5rem; font-weight: 800; margin-bottom: 30px;">إعدادات المسؤول</h1>
 
+                <div class="payment-form-container" style="margin: 0; max-width: 500px; margin-bottom: 30px;">
+                    <h3>إيميل دعم العملاء</h3>
+                    <p style="font-size: 0.8rem; color: #94a3b8; margin-bottom: 15px;">سيظهر هذا الإيميل للزوار أسفل
+                        الصفحة للمراسلة.</p>
+                    <div class="form-group">
+                        <label>الإيميل العام:</label>
+                        <input type="email" id="support-email-input" class="form-input"
+                            placeholder="support@yourdomain.com">
+                    </div>
+                    <button class="submit-btn" onclick="saveSupportEmail()" style="background: var(--accent);">حفظ إيميل
+                        الدعم</button>
+                </div>
+
                 <div class="payment-form-container" style="margin: 0; max-width: 500px;">
                     <h3>تغيير كلمة المرور</h3>
                     <div class="form-group">
@@ -330,19 +343,22 @@
                             style="color: var(--primary); font-size: 1.1rem;"></strong></div>
                 </div>
 
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
                     <button class="btn" onclick="window.copyFinalCreds()"
                         style="background: var(--accent); padding: 12px;">
-                        <ion-icon name="copy-outline"></ion-icon> نسخ
+                        <ion-icon name="copy-outline"></ion-icon> نسخ البيانات
                     </button>
-                    <button class="btn" id="open-mail-final"
-                        style="padding: 12px; display: flex; align-items: center; justify-content: center; gap: 8px; background: #3b82f6;">
-                        <ion-icon name="mail-outline"></ion-icon> <span>إيميل</span>
+                    <button class="btn" onclick="window.copyEmailTemplate()"
+                        style="background: #e11d48; padding: 12px;">
+                        <ion-icon name="clipboard-outline"></ion-icon> نسخ الرسالة
                     </button>
                 </div>
+                <button class="btn" id="open-mail-final"
+                    style="width: 100%; padding: 12px; margin-bottom: 15px; background: #3b82f6;">
+                    <ion-icon name="mail-outline"></ion-icon> <span>فتح تطبيق الإيميل</span>
+                </button>
                 <button class="btn" onclick="closeModal()"
-                    style="width: 100%; background: none; margin-top: 20px; border: 1px solid var(--glass-border);">إغلاق
-                    التنبيه</button>
+                    style="width: 100%; background: none; border: 1px solid var(--glass-border);">إغلاق التنبيه</button>
             </div>
         </div>
     </div>

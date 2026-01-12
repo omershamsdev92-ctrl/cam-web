@@ -6,16 +6,42 @@ class AdminSystem {
     constructor() {
         this.token = sessionStorage.getItem('admin_token');
         this.currentUser = 'admin';
+        this.supportEmail = '';
         this.init();
     }
 
-    init() {
+    async init() {
         if (this.token) {
             this.showApp();
         }
 
         document.getElementById('admin-login-btn').onclick = () => this.login();
         this.loadSubscriptions();
+        this.loadConfig();
+    }
+
+    async loadConfig() {
+        try {
+            const res = await fetch('/api/admin/config');
+            const data = await res.json();
+            this.supportEmail = data.supportEmail;
+            if (document.getElementById('support-email-input')) {
+                document.getElementById('support-email-input').value = this.supportEmail;
+            }
+        } catch (e) { console.error("Config load error", e); }
+    }
+
+    async saveSupportEmail() {
+        const email = document.getElementById('support-email-input').value;
+        try {
+            await fetch('/api/admin/config', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ supportEmail: email })
+            });
+            this.supportEmail = email;
+            alert("تم حفظ إيميل الدعم بنجاح");
+        } catch (e) { alert("فشل الحفظ"); }
     }
 
     async login() {
@@ -196,20 +222,33 @@ window.openConfirmModal = (id, name, email) => {
         step1.style.display = 'none';
         stepSuccess.style.display = 'block';
 
-        // Update the email button (Button element)
+        const subject = "تفعيل اشتراكك في برج المراقبة 🛡️";
+        const msgBody = `مرحباً ${name}،\n\nتم تأكيد دفع اشتراكك بنجاح في منظومة برج المراقبة.\n\nإليك بيانات الدخول الخاصة بك:\n--------------------------\nاسم المستخدم: ${u}\nكلمة المرور: ${p}\n--------------------------\n\nيمكنك تسجيل الدخول الآن عبر الرابط التالي:\n${window.location.origin}\n\nشكراً لثقتكم بنا.\nإدارة برج المراقبة`;
+
+        // Update the email button
         const mailBtn = document.getElementById('open-mail-final');
-        mailBtn.querySelector('span').innerText = `إيميل (${email})`;
+        mailBtn.querySelector('span').innerText = `فتح تطبيق الإيميل لإرسال البيانات (${email})`;
 
         mailBtn.onclick = () => {
-            const subject = encodeURIComponent("تفعيل اشتراكك في برج المراقبة 🛡️");
-            const msgBody = `مرحباً ${name}،\n\nتم تأكيد دفع اشتراكك بنجاح في منظومة برج المراقبة.\n\nإليك بيانات الدخول الخاصة بك:\n--------------------------\nاسم المستخدم: ${u}\nكلمة المرور: ${p}\n--------------------------\n\nيمكنك تسجيل الدخول الآن عبر الرابط التالي:\n${window.location.origin}\n\nشكراً لثقتكم بنا.\nإدارة برج المراقبة`;
-            window.location.href = `mailto:${email}?subject=${subject}&body=${encodeURIComponent(msgBody)}`;
+            window.location.href = `mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(msgBody)}`;
         };
 
-        // Global data for copying
+        // Click this for manual copy if mailto fails
+        window.currentEmailTemplate = `المستلم: ${email}\nالموضوع: ${subject}\n\nالرسالة:\n${msgBody}`;
+
+        // Global data for copying creds only
         window.currentCreds = `اسم المستخدم: ${u}\nكلمة المرور: ${p}\nالرابط: ${window.location.origin}`;
     };
 };
+
+window.copyEmailTemplate = () => {
+    if (window.currentEmailTemplate) {
+        navigator.clipboard.writeText(window.currentEmailTemplate);
+        alert("✅ تم نسخ نص الرسالة وإيميل العميل! يمكنك الآن لصقها في Gmail وإرسالها يدوياً.");
+    }
+};
+
+window.saveSupportEmail = () => admin.saveSupportEmail();
 
 window.copyFinalCreds = () => {
     if (window.currentCreds) {
