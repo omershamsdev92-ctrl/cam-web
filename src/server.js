@@ -8,6 +8,15 @@ require('dotenv').config();
 const app = express();
 const server = http.createServer(app);
 
+// Data Initialization
+const receiptsDir = path.join(__dirname, 'receipts');
+if (!fs.existsSync(receiptsDir)) fs.mkdirSync(receiptsDir);
+
+const ADMIN_DATA_PATH = path.join(__dirname, 'admins.json');
+if (!fs.existsSync(ADMIN_DATA_PATH)) {
+    fs.writeFileSync(ADMIN_DATA_PATH, JSON.stringify([{ username: 'admin', password: 'password2026' }]));
+}
+
 // Increase limit for base64 images (receipts)
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ limit: '10mb', extended: true }));
@@ -36,6 +45,7 @@ try {
 
 // Serve static files
 app.use(express.static(path.join(__dirname, 'public')));
+app.use('/receipts', express.static(path.join(__dirname, 'receipts')));
 
 // Routes
 app.get('/', (req, res) => {
@@ -50,10 +60,6 @@ app.post('/api/subscribe', async (req, res) => {
     try {
         if (!data.receipt) throw new Error("Missing receipt data");
 
-        // Ensure receipts directory exists
-        const receiptsDir = path.join(__dirname, 'receipts');
-        if (!fs.existsSync(receiptsDir)) fs.mkdirSync(receiptsDir);
-
         // Save receipt image
         const base64Data = data.receipt.replace(/^data:image\/\w+;base64,/, "");
         const fileName = `receipt_${Date.now()}_${data.name.replace(/\s+/g, '_')}.png`;
@@ -61,9 +67,24 @@ app.post('/api/subscribe', async (req, res) => {
 
         fs.writeFileSync(filePath, base64Data, 'base64');
 
-        // Log details to a text file
-        const logEntry = `\n--- [${new Date().toLocaleString()}] ---\nName: ${data.name}\nEmail: ${data.email}\nPhone: ${data.phone}\nFile: ${fileName}\n------------------------\n`;
-        fs.appendFileSync(path.join(receiptsDir, 'subscriptions.log'), logEntry);
+        // Save to JSON for Admin Panel
+        const subDataPath = path.join(receiptsDir, 'subscriptions.json');
+        let subscriptions = [];
+        if (fs.existsSync(subDataPath)) {
+            subscriptions = JSON.parse(fs.readFileSync(subDataPath, 'utf8'));
+        }
+
+        const newSub = {
+            id: Date.now(),
+            name: data.name,
+            email: data.email,
+            phone: data.phone,
+            receiptFileName: fileName,
+            timestamp: new Date().toISOString(),
+            status: 'pending' // pending, confirmed, rejected
+        };
+        subscriptions.push(newSub);
+        fs.writeFileSync(subDataPath, JSON.stringify(subscriptions, null, 2));
 
         console.log(`✓ Receipt saved via API: ${fileName}`);
         res.json({ success: true });
@@ -71,6 +92,57 @@ app.post('/api/subscribe', async (req, res) => {
         console.error('✗ Failed to save subscription via API:', err.message);
         res.status(500).json({ success: false, error: err.message });
     }
+});
+
+// 🔐 Admin Auth & Panel Routes
+app.post('/api/admin/login', (req, res) => {
+    const { username, password } = req.body;
+    const admins = JSON.parse(fs.readFileSync(ADMIN_DATA_PATH, 'utf8'));
+    const admin = admins.find(a => a.username === username && a.password === password);
+
+    if (admin) {
+        // In a real app we'd use JWT/Sessions. For simplicity, we'll use a plain success
+        res.json({ success: true, token: 'admin-token-' + Date.now() });
+    } else {
+        res.status(401).json({ success: false, message: 'خطأ في اسم المستخدم أو كلمة المرور' });
+    }
+});
+
+app.get('/api/admin/subscriptions', (req, res) => {
+    // Basic auth check would go here
+    const subPath = path.join(__dirname, 'receipts', 'subscriptions.json');
+    if (fs.existsSync(subPath)) {
+        res.json(JSON.parse(fs.readFileSync(subPath, 'utf8')));
+    } else {
+        res.json([]);
+    }
+});
+
+app.post('/api/admin/change-password', (req, res) => {
+    const { username, newPassword } = req.body;
+    const admins = JSON.parse(fs.readFileSync(ADMIN_DATA_PATH, 'utf8'));
+    const idx = admins.findIndex(a => a.username === username);
+    if (idx !== -1) {
+        admins[idx].password = newPassword;
+        fs.writeFileSync(ADMIN_DATA_PATH, JSON.stringify(admins, null, 2));
+        res.json({ success: true });
+    } else {
+        res.status(404).json({ success: false });
+    }
+});
+
+app.post('/api/admin/update-status', (req, res) => {
+    const { id, status } = req.body;
+    const subPath = path.join(__dirname, 'receipts', 'subscriptions.json');
+    if (fs.existsSync(subPath)) {
+        let subs = JSON.parse(fs.readFileSync(subPath, 'utf8'));
+        const idx = subs.findIndex(s => s.id == id);
+        if (idx !== -1) {
+            subs[idx].status = status;
+            fs.writeFileSync(subPath, JSON.stringify(subs, null, 2));
+            res.json({ success: true });
+        } else res.status(404).json({ success: false });
+    } else res.status(404).json({ success: false });
 });
 
 // Store active connections with metadata
