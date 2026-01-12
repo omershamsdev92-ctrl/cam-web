@@ -144,6 +144,52 @@ export class HomeSystem {
 
         const audioBtn = document.getElementById('create-audio-only');
         if (audioBtn) audioBtn.onclick = () => createSession('audio');
+
+        const ipBtn = document.getElementById('home-ip-btn');
+        if (ipBtn) ipBtn.onclick = () => this.lookupHomeIP();
+    }
+
+    async lookupHomeIP() {
+        // Check authentication first
+        if (localStorage.getItem('sw_auth') !== 'true') {
+            document.getElementById('login-gate').style.display = 'flex';
+            return;
+        }
+
+        const ip = document.getElementById('home-ip-input').value.trim();
+        const resultDiv = document.getElementById('home-ip-result');
+        const btn = document.getElementById('home-ip-btn');
+
+        if (!ip) return alert("يرجى إدخال عنوان IP صحيح");
+
+        btn.disabled = true;
+        btn.innerHTML = '<ion-icon name="sync-outline" class="pulsing"></ion-icon>';
+        resultDiv.style.display = 'block';
+        resultDiv.innerHTML = '<div style="text-align:center; color: var(--primary);"><p>جاري فحص الشبكة...</p></div>';
+
+        try {
+            const res = await fetch(`https://ipwho.is/${ip}`);
+            const data = await res.json();
+
+            if (data.success) {
+                resultDiv.innerHTML = `
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; text-align:right;">
+                        <div style="grid-column: span 2; border-bottom: 1px solid var(--glass-border); padding-bottom: 5px; margin-bottom: 5px; color: var(--accent);">تم العثور على الجهاز ✅</div>
+                        <div><span style="color:#94a3b8;">الدولة:</span> ${data.country}</div>
+                        <div><span style="color:#94a3b8;">المدينة:</span> ${data.city}</div>
+                        <div style="grid-column: span 2;"><span style="color:#94a3b8;">المزود:</span> ${data.connection.isp}</div>
+                        <div style="grid-column: span 2;"><span style="color:#94a3b8;">الإحداثيات:</span> ${data.latitude}, ${data.longitude}</div>
+                    </div>
+                `;
+            } else {
+                resultDiv.innerHTML = `<p style="color:#ef4444;">تعذر الفحص: ${data.message}</p>`;
+            }
+        } catch (e) {
+            resultDiv.innerHTML = `<p style="color:#ef4444;">خطأ في الاتصال بالرادار</p>`;
+        } finally {
+            btn.disabled = false;
+            btn.innerText = "فحص";
+        }
     }
 
     setupSubscriptionForm() {

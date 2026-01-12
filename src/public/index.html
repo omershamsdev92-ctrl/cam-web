@@ -125,9 +125,27 @@
                 <button id="createable" class="btn" style="width: 100%; margin-bottom: 12px;">
                     <ion-icon name="play-circle" style="font-size: 1.4rem;"></ion-icon> ابدأ المراقبة بالفيديو
                 </button>
-                <button id="create-audio-only" class="btn" style="width: 100%; background: var(--accent);">
+                <button id="create-audio-only" class="btn"
+                    style="width: 100%; background: var(--accent); margin-bottom: 25px;">
                     <ion-icon name="mic-circle" style="font-size: 1.4rem;"></ion-icon> إنشاء رابط مراقبة صوتية فقط
                 </button>
+
+                <!-- IP Lookup Tool for Members -->
+                <div style="border-top: 1px solid var(--glass-border); margin-top: 20px; padding-top: 25px;">
+                    <label
+                        style="display: block; text-align: right; margin-bottom: 10px; color: var(--text-muted); font-size: 0.9rem;">أداة
+                        كشف معلومات الجهاز (بواسطة IP):</label>
+                    <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                        <input type="text" id="home-ip-input" class="login-input" style="margin: 0; font-size: 0.9rem;"
+                            placeholder="مثال: 8.8.8.8">
+                        <button id="home-ip-btn" class="btn"
+                            style="padding: 0 20px; font-size: 0.9rem; white-space: nowrap; background: #6366f1;">فحص</button>
+                    </div>
+                    <div id="home-ip-result"
+                        style="display: none; background: rgba(0,0,0,0.3); padding: 15px; border-radius: 15px; border: 1px solid var(--glass-border); text-align: right; font-size: 0.8rem;">
+                        <!-- Results -->
+                    </div>
+                </div>
             </div>
         </section>
 
