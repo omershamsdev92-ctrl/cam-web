@@ -1,3 +1,4 @@
+// SafeWatch Server - Triggering redeploy after Render timeout
 const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
