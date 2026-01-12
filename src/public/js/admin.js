@@ -269,7 +269,11 @@ window.showView = (view) => {
     document.getElementById('view-admins').style.display = view === 'admins' ? 'block' : 'none';
 
     document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
-    if (event) event.currentTarget.classList.add('active');
+    // Finding the clicked item by searching for the one containing the text or using a safer approach
+    const navItems = document.querySelectorAll('.nav-item');
+    if (view === 'subs') navItems[0].classList.add('active');
+    if (view === 'settings') navItems[1].classList.add('active');
+    if (view === 'admins') navItems[2].classList.add('active');
 
     if (view === 'admins') admin.loadAdmins();
     if (view === 'subs') admin.loadSubscriptions();

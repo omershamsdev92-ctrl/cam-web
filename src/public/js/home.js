@@ -11,6 +11,7 @@ export class HomeSystem {
         this.sessionInput = document.getElementById('custom-session');
         this.userInput = document.getElementById('user-input');
         this.passInput = document.getElementById('pass-input');
+        this.logoutBtn = document.getElementById('logout-home-btn');
         this.deferredPrompt = null;
 
         this.init();
@@ -52,6 +53,17 @@ export class HomeSystem {
     setupAuth() {
         if (localStorage.getItem('sw_auth') === 'true') {
             document.getElementById('login-gate').style.display = 'none';
+            if (this.logoutBtn) this.logoutBtn.style.display = 'inline-flex';
+        } else {
+            document.getElementById('login-gate').style.display = 'flex';
+            if (this.logoutBtn) this.logoutBtn.style.display = 'none';
+        }
+
+        if (this.logoutBtn) {
+            this.logoutBtn.onclick = () => {
+                localStorage.removeItem('sw_auth');
+                location.reload();
+            };
         }
     }
 
@@ -73,6 +85,7 @@ export class HomeSystem {
                 localStorage.setItem('sw_auth', 'true');
                 localStorage.setItem('sw_user_name', data.name);
                 document.getElementById('login-gate').style.display = 'none';
+                if (this.logoutBtn) this.logoutBtn.style.display = 'inline-flex';
             } else {
                 alert(data.message || "بيانات الدخول غير صحيحة");
             }
