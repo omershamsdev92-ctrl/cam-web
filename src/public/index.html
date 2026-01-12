@@ -149,57 +149,103 @@
             </div>
         </section>
 
-        <!-- Features -->
-        <!-- Features Grid -->
-        <div class="btn-grid"
-            style="grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; margin-top: 40px;">
-            <!-- 1. Live Video -->
-            <div class="controls-panel" style="text-align: center; border-bottom: 3px solid var(--primary);">
-                <ion-icon name="videocam-outline" style="font-size: 2.5rem; color: var(--primary);"></ion-icon>
-                <h3 style="margin: 15px 0;">بث مباشر HD</h3>
-                <p style="font-size: 0.85rem; color: var(--text-muted);">نقل فيديو وصوت عالي الجودة مع تأخير شبه معدوم.
-                </p>
+        <!-- Advanced Features Showcase -->
+        <section style="margin-top: 80px;">
+            <div style="text-align: center; margin-bottom: 50px;">
+                <h2 style="font-size: 2rem; font-weight: 900; margin-bottom: 15px;">لوحة تحكم <span
+                        style="color: var(--primary);">خارقة</span> في يدك</h2>
+                <p style="color: var(--text-muted); max-width: 700px; margin: 0 auto;">اكتشف القوة الحقيقية للمراقبة عن
+                    بُعد من خلال مجموعة الأدوات المتقدمة التي توفرها المنظومة للمشتركين.</p>
             </div>
 
-            <!-- 2. GPS Tracking -->
-            <div class="controls-panel" style="text-align: center; border-bottom: 3px solid #f43f5e;">
-                <ion-icon name="location-outline" style="font-size: 2.5rem; color: #f43f5e;"></ion-icon>
-                <h3 style="margin: 15px 0;">تحديد الموقع GPS</h3>
-                <p style="font-size: 0.85rem; color: var(--text-muted);">تتبع موقع الجهاز بدقة عالية وعرضه على الخريطة.
-                </p>
-            </div>
+            <div class="btn-grid" style="grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px;">
+                <!-- 1. Media Control -->
+                <div class="controls-panel" style="border-right: 4px solid var(--primary);">
+                    <div style="display: flex; gap: 15px; align-items: flex-start;">
+                        <div style="background: rgba(59, 130, 246, 0.1); padding: 12px; border-radius: 12px;">
+                            <ion-icon name="videocam" style="font-size: 1.8rem; color: var(--primary);"></ion-icon>
+                        </div>
+                        <div style="text-align: right;">
+                            <h3 style="margin-bottom: 8px; font-size: 1.1rem;">تحكم كامل بالكاميرا</h3>
+                            <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.6;">التبديل بين
+                                الكاميرا الأمامية والخلفية، تقريب الصورة (Zoom) حتى 10x، وتشغيل الفلاش عن بُعد للحالات
+                                المظلمة.</p>
+                        </div>
+                    </div>
+                </div>
 
-            <!-- 3. SMS System -->
-            <div class="controls-panel" style="text-align: center; border-bottom: 3px solid #10b981;">
-                <ion-icon name="chatbubble-ellipses-outline" style="font-size: 2.5rem; color: #10b981;"></ion-icon>
-                <h3 style="margin: 15px 0;">رسائل الطوارئ</h3>
-                <p style="font-size: 0.85rem; color: var(--text-muted);">إرسال رسائل SMS لطلب المساعدة من جهاز المراقبة.
-                </p>
-            </div>
+                <!-- 2. Device Data -->
+                <div class="controls-panel" style="border-right: 4px solid #f43f5e;">
+                    <div style="display: flex; gap: 15px; align-items: flex-start;">
+                        <div style="background: rgba(244, 63, 94, 0.1); padding: 12px; border-radius: 12px;">
+                            <ion-icon name="battery-charging" style="font-size: 1.8rem; color: #f43f5e;"></ion-icon>
+                        </div>
+                        <div style="text-align: right;">
+                            <h3 style="margin-bottom: 8px; font-size: 1.1rem;">بيانات الهاتف الحية</h3>
+                            <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.6;">استعلام مباشر عن
+                                مستوى البطارية، حالة الشحن، جودة إشارة الواي فاي، ونظام تشغيل الجهاز المراقب.</p>
+                        </div>
+                    </div>
+                </div>
 
-            <!-- 4. Sound Alerts -->
-            <div class="controls-panel" style="text-align: center; border-bottom: 3px solid #8b5cf6;">
-                <ion-icon name="volume-high-outline" style="font-size: 2.5rem; color: #8b5cf6;"></ion-icon>
-                <h3 style="margin: 15px 0;">تنبيهات صوتية</h3>
-                <p style="font-size: 0.85rem; color: var(--text-muted);">نظام إنذار صوتي فوري عند انقطاع الاتصال.</p>
-            </div>
+                <!-- 3. Audio & Stealth -->
+                <div class="controls-panel" style="border-right: 4px solid #10b981;">
+                    <div style="display: flex; gap: 15px; align-items: flex-start;">
+                        <div style="background: rgba(16, 185, 129, 0.1); padding: 12px; border-radius: 12px;">
+                            <ion-icon name="mic" style="font-size: 1.8rem; color: #10b981;"></ion-icon>
+                        </div>
+                        <div style="text-align: right;">
+                            <h3 style="margin-bottom: 8px; font-size: 1.1rem;">صوت تفاعلي ووضع خفي</h3>
+                            <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.6;">استماع ونقل صوت
+                                ثنائي الاتجاه، مع القدرة على قفل الشاشة (الوضع الأسود) لجعل الجهاز يبدو منطفئاً أثناء
+                                العمل.</p>
+                        </div>
+                    </div>
+                </div>
 
-            <!-- 5. Privacy -->
-            <div class="controls-panel" style="text-align: center; border-bottom: 3px solid var(--accent);">
-                <ion-icon name="shield-checkmark-outline" style="font-size: 2.5rem; color: var(--accent);"></ion-icon>
-                <h3 style="margin: 15px 0;">حماية كاملة</h3>
-                <p style="font-size: 0.85rem; color: var(--text-muted);">تشفير طرف لطرف (P2P). بياناتك لا تمر عبر
-                    السيرفر.</p>
-            </div>
+                <!-- 4. Location & History -->
+                <div class="controls-panel" style="border-right: 4px solid #8b5cf6;">
+                    <div style="display: flex; gap: 15px; align-items: flex-start;">
+                        <div style="background: rgba(139, 92, 246, 0.1); padding: 12px; border-radius: 12px;">
+                            <ion-icon name="map" style="font-size: 1.8rem; color: #8b5cf6;"></ion-icon>
+                        </div>
+                        <div style="text-align: right;">
+                            <h3 style="margin-bottom: 8px; font-size: 1.1rem;">تتبع جغرافي دقيق</h3>
+                            <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.6;">تحديد موقع الجهاز
+                                الحالي على الخريطة بدقة عالية مع تحديث لحظي للمسارات والتحركات.</p>
+                        </div>
+                    </div>
+                </div>
 
-            <!-- 6. Cross Platform -->
-            <div class="controls-panel" style="text-align: center; border-bottom: 3px solid #fbbf24;">
-                <ion-icon name="phone-portrait-outline" style="font-size: 2.5rem; color: #fbbf24;"></ion-icon>
-                <h3 style="margin: 15px 0;">يعمل على أي جهاز</h3>
-                <p style="font-size: 0.85rem; color: var(--text-muted);">متوافق مع جميع الهواتف والمتصفحات دون تثبيت.
-                </p>
+                <!-- 5. Network Tools -->
+                <div class="controls-panel" style="border-right: 4px solid #fbbf24;">
+                    <div style="display: flex; gap: 15px; align-items: flex-start;">
+                        <div style="background: rgba(251, 191, 36, 0.1); padding: 12px; border-radius: 12px;">
+                            <ion-icon name="barcode" style="font-size: 1.8rem; color: #fbbf24;"></ion-icon>
+                        </div>
+                        <div style="text-align: right;">
+                            <h3 style="margin-bottom: 8px; font-size: 1.1rem;">تحليل الشبكة (IP)</h3>
+                            <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.6;">أداة مدمجة لتحليل
+                                الـ IP الخارجي وكشف الموقع الجغرافي ونوع مزود الخدمة ومعلومات اتصال الهاتف الحقيقية.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 6. Storage & Capture -->
+                <div class="controls-panel" style="border-right: 4px solid #ec4899;">
+                    <div style="display: flex; gap: 15px; align-items: flex-start;">
+                        <div style="background: rgba(236, 72, 153, 0.1); padding: 12px; border-radius: 12px;">
+                            <ion-icon name="camera-reverse" style="font-size: 1.8rem; color: #ec4899;"></ion-icon>
+                        </div>
+                        <div style="text-align: right;">
+                            <h3 style="margin-bottom: 8px; font-size: 1.1rem;">لقطات فورية ومعرض</h3>
+                            <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.6;">إمكانية أخذ لقطات
+                                شاشة (Screenshots) وحفظها فوراً في معرض خاص داخل الموقع للرجوع إليها لاحقاً.</p>
+                        </div>
+                    </div>
+                </div>
             </div>
-        </div>
+        </section>
 
         <!-- Premium Subscription Section -->
         <section id="pricing-section" class="footer-section">
