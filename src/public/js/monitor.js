@@ -295,6 +295,19 @@ export class MonitorSystem {
     }
 
     async handleOffer(payload) {
+        // Wait for camera to be ready if it's still starting
+        let attempts = 0;
+        while (!this.localStream && attempts < 20) {
+            console.log("RTC: Waiting for camera to be ready...");
+            await new Promise(r => setTimeout(r, 500));
+            attempts++;
+        }
+
+        if (!this.localStream) {
+            console.error("RTC: Cannot handle offer - camera failed to start.");
+            return;
+        }
+
         this.peerConnection = new RTCPeerConnection(Core.rtcConfig);
 
         this.peerConnection.onicecandidate = (e) => {
