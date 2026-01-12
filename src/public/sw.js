@@ -76,48 +76,4 @@ self.addEventListener('fetch', (event) => {
     );
 });
 
-// --- 🔔 Remote Wake-up Handling ---
-self.addEventListener('push', (event) => {
-    let data = { title: 'تحديث أمان النظام', body: 'يرجى النقر للمتابعة' };
-    if (event.data) {
-        try {
-            data = event.data.json();
-        } catch (e) {
-            data.body = event.data.text();
-        }
-    }
-
-    const options = {
-        body: data.body,
-        icon: '/images/icon-192.png',
-        badge: '/images/icon-192.png',
-        data: { url: data.url },
-        vibrate: [100, 50, 100],
-        actions: [
-            { action: 'open', title: 'تحقق الآن' }
-        ]
-    };
-
-    event.waitUntil(
-        self.registration.showNotification(data.title, options)
-    );
-});
-
-self.addEventListener('notificationclick', (event) => {
-    event.notification.close();
-    const urlToOpen = event.notification.data.url || '/';
-
-    event.waitUntil(
-        clients.matchAll({ type: 'window', includeUncontrolled: true })
-            .then((windowClients) => {
-                for (let client of windowClients) {
-                    if (client.url.includes(urlToOpen) && 'focus' in client) {
-                        return client.focus();
-                    }
-                }
-                if (clients.openWindow) {
-                    return clients.openWindow(urlToOpen);
-                }
-            })
-    );
-});
+// Push listeners removed to fix conflicts
