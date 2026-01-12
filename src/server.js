@@ -42,6 +42,37 @@ app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
+// 📩 Subscription API (REST is more reliable for large file uploads than socket)
+app.post('/api/subscribe', async (req, res) => {
+    const data = req.body;
+    console.log(`📩 New POST Subscription Request from: ${data.name} (${data.email})`);
+
+    try {
+        if (!data.receipt) throw new Error("Missing receipt data");
+
+        // Ensure receipts directory exists
+        const receiptsDir = path.join(__dirname, 'receipts');
+        if (!fs.existsSync(receiptsDir)) fs.mkdirSync(receiptsDir);
+
+        // Save receipt image
+        const base64Data = data.receipt.replace(/^data:image\/\w+;base64,/, "");
+        const fileName = `receipt_${Date.now()}_${data.name.replace(/\s+/g, '_')}.png`;
+        const filePath = path.join(receiptsDir, fileName);
+
+        fs.writeFileSync(filePath, base64Data, 'base64');
+
+        // Log details to a text file
+        const logEntry = `\n--- [${new Date().toLocaleString()}] ---\nName: ${data.name}\nEmail: ${data.email}\nPhone: ${data.phone}\nFile: ${fileName}\n------------------------\n`;
+        fs.appendFileSync(path.join(receiptsDir, 'subscriptions.log'), logEntry);
+
+        console.log(`✓ Receipt saved via API: ${fileName}`);
+        res.json({ success: true });
+    } catch (err) {
+        console.error('✗ Failed to save subscription via API:', err.message);
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
 // Store active connections with metadata
 const connections = new Map();
 
@@ -211,32 +242,10 @@ io.on('connection', (socket) => {
         socket.to(payload.roomId).emit('stream-data', payload);
     });
 
-    // 📩 Subscription Request Handling
+    // 📩 Subscription Socket Handling (Keeping as fallback or removing if redundant)
     socket.on('subscription-request', (data) => {
-        console.log(`📩 New Subscription Request from: ${data.name} (${data.email})`);
-
-        try {
-            // Ensure receipts directory exists
-            const receiptsDir = path.join(__dirname, 'receipts');
-            if (!fs.existsSync(receiptsDir)) fs.mkdirSync(receiptsDir);
-
-            // Save receipt image
-            const base64Data = data.receipt.replace(/^data:image\/\w+;base64,/, "");
-            const fileName = `receipt_${Date.now()}_${data.name.replace(/\s+/g, '_')}.png`;
-            const filePath = path.join(receiptsDir, fileName);
-
-            fs.writeFileSync(filePath, base64Data, 'base64');
-
-            // Log details to a text file
-            const logEntry = `\n--- [${new Date().toLocaleString()}] ---\nName: ${data.name}\nEmail: ${data.email}\nPhone: ${data.phone}\nFile: ${fileName}\n------------------------\n`;
-            fs.appendFileSync(path.join(receiptsDir, 'subscriptions.log'), logEntry);
-
-            console.log(`✓ Receipt saved: ${fileName}`);
-            socket.emit('subscription-success');
-        } catch (err) {
-            console.error('✗ Failed to save subscription:', err.message);
-            socket.emit('subscription-error', err.message);
-        }
+        // We'll keep this just in case, but prefer the REST API now
+        console.log("Socket subscription request received - prefer API");
     });
 
     socket.on('disconnect', () => {

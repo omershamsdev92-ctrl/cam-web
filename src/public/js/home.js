@@ -129,31 +129,38 @@ export class HomeSystem {
             status.innerText = "جاري معالجة الطلب...";
             status.style.color = "var(--primary)";
 
-            // Emit to server via socket (or you can use fetch if you prefer, but we already have socket.io)
-            const socket = io();
-            socket.emit('subscription-request', {
-                name,
-                email,
-                phone,
-                receipt: this.receiptData,
-                timestamp: new Date().toISOString()
-            });
+            // 🚀 Use Fetch API instead of Socket for reliability
+            try {
+                const response = await fetch('/api/subscribe', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        name,
+                        email,
+                        phone,
+                        receipt: this.receiptData
+                    })
+                });
 
-            socket.on('subscription-success', () => {
-                status.innerText = "✅ تم إرسال طلبك بنجاح! سنقوم بمراجعته وإرسال البيانات لبريدك قريباً.";
-                status.style.color = "var(--accent)";
-                form.reset();
-                preview.style.display = 'none';
-                label.innerText = "اضغط لرفع صورة الإيصال أو التحويل";
-                btn.style.display = 'none';
-            });
+                const result = await response.json();
 
-            socket.on('subscription-error', (err) => {
-                status.innerText = "❌ حدث خطأ أثناء الإرسال. يرجى المحاولة مرة أخرى.";
+                if (result.success) {
+                    status.innerText = "✅ تم إرسال طلبك بنجاح! سنقوم بمراجعته وإرسال البيانات لبريدك قريباً.";
+                    status.style.color = "var(--accent)";
+                    form.reset();
+                    preview.style.display = 'none';
+                    label.innerText = "اضغط لرفع صورة الإيصال أو التحويل";
+                    btn.style.display = 'none';
+                } else {
+                    throw new Error(result.error || "خطأ غير معروف");
+                }
+            } catch (err) {
+                console.error('Fetch error:', err);
+                status.innerText = "❌ حدث خطأ أثناء الإرسال. يرجى المحاولة مرة أخرى أو مراسلتنا مباشرة.";
                 status.style.color = "var(--danger)";
                 btn.disabled = false;
                 btn.innerText = "إرسال طلب التفعيل";
-            });
+            }
         };
     }
 }
