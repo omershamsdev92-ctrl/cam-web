@@ -32,11 +32,19 @@ export class HomeSystem {
         try {
             const res = await fetch('/api/admin/config');
             const data = await res.json();
+
+            // Update Support Email
             if (data.supportEmail) {
                 const footerLink = document.getElementById('footer-support-email');
                 const footerText = document.getElementById('footer-support-text');
                 if (footerLink) footerLink.href = `mailto:${data.supportEmail}`;
                 if (footerText) footerText.innerText = `للدعم والاستفسارات: ${data.supportEmail}`;
+            }
+
+            // Update Payment Info
+            if (data.paymentInfo) {
+                const payDisplay = document.getElementById('payment-info-display');
+                if (payDisplay) payDisplay.innerText = data.paymentInfo;
             }
         } catch (e) { console.log("Config load failed"); }
     }

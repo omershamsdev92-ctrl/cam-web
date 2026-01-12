@@ -7,6 +7,7 @@ class AdminSystem {
         this.token = sessionStorage.getItem('admin_token');
         this.currentUser = 'admin';
         this.supportEmail = '';
+        this.paymentInfo = '';
         this.init();
     }
 
@@ -25,23 +26,32 @@ class AdminSystem {
             const res = await fetch('/api/admin/config');
             const data = await res.json();
             this.supportEmail = data.supportEmail;
-            if (document.getElementById('support-email-input')) {
-                document.getElementById('support-email-input').value = this.supportEmail;
-            }
+            this.paymentInfo = data.paymentInfo || '';
+
+            const emailInput = document.getElementById('support-email-input');
+            const paymentInput = document.getElementById('payment-info-input');
+
+            if (emailInput) emailInput.value = this.supportEmail;
+            if (paymentInput) paymentInput.value = this.paymentInfo;
         } catch (e) { console.error("Config load error", e); }
     }
 
-    async saveSupportEmail() {
+    async saveAdminSettings() {
         const email = document.getElementById('support-email-input').value;
+        const payment = document.getElementById('payment-info-input').value;
         try {
             await fetch('/api/admin/config', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ supportEmail: email })
+                body: JSON.stringify({
+                    supportEmail: email,
+                    paymentInfo: payment
+                })
             });
             this.supportEmail = email;
-            alert("تم حفظ إيميل الدعم بنجاح");
-        } catch (e) { alert("فشل الحفظ"); }
+            this.paymentInfo = payment;
+            alert("✅ تم حفظ الإعدادات بنجاح");
+        } catch (e) { alert("❌ فشل الحفظ"); }
     }
 
     async login() {
@@ -256,7 +266,7 @@ window.copyEmailTemplate = () => {
     }
 };
 
-window.saveSupportEmail = () => admin.saveSupportEmail();
+window.saveAdminSettings = () => admin.saveAdminSettings();
 
 window.copyFinalCreds = () => {
     if (window.currentCreds) {

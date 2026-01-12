@@ -290,8 +290,20 @@
                         <input type="email" id="support-email-input" class="form-input"
                             placeholder="support@yourdomain.com">
                     </div>
-                    <button class="submit-btn" onclick="saveSupportEmail()" style="background: var(--accent);">حفظ إيميل
-                        الدعم</button>
+                </div>
+
+                <div class="payment-form-container" style="margin: 0; max-width: 500px; margin-bottom: 30px;">
+                    <h3>بيانات الدفع والتحويل</h3>
+                    <p style="font-size: 0.8rem; color: #94a3b8; margin-bottom: 15px;">اكتب هنا بيانات حسابك البنكي أو
+                        طرق الدفع التي ستظهر للعملاء.</p>
+                    <div class="form-group">
+                        <label>تعليمات الدفع:</label>
+                        <textarea id="payment-info-input" class="form-input"
+                            style="height: 100px; padding: 10px; resize: vertical;"
+                            placeholder="مثال: البنك الراجحي - رقم الحساب: xxxx - الآيبان: xxxx"></textarea>
+                    </div>
+                    <button class="submit-btn" onclick="saveAdminSettings()" style="background: var(--accent);">حفظ جميع
+                        الإعدادات العامة</button>
                 </div>
 
                 <div class="payment-form-container" style="margin: 0; max-width: 500px;">

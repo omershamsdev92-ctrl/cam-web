@@ -20,7 +20,10 @@ if (!fs.existsSync(ADMIN_DATA_PATH)) {
 
 const CONFIG_PATH = path.join(__dirname, 'config.json');
 if (!fs.existsSync(CONFIG_PATH)) {
-    fs.writeFileSync(CONFIG_PATH, JSON.stringify({ supportEmail: 'support@safewatch.com' }));
+    fs.writeFileSync(CONFIG_PATH, JSON.stringify({
+        supportEmail: 'support@safewatch.com',
+        paymentInfo: 'يرجى التواصل معنا عبر البريد لإرسال بيانات الحساب البنكي.'
+    }));
 }
 
 // Increase limit for base64 images (receipts)
