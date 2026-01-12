@@ -4,12 +4,27 @@ const http = require('http');
 const { Server } = require('socket.io');
 const path = require('path');
 const fs = require('fs');
+const webpush = require('web-push');
 require('dotenv').config();
 
 const app = express();
 const server = http.createServer(app);
 
+// WEB PUSH CONFIGURATION
+const vapidKeys = {
+    publicKey: process.env.VAPID_PUBLIC_KEY || "BKnh3vnuJzFCZsU3JJMpmKEgPhyhu3PhJwnkO6aDIun2giDN1YHxCFSKtt6VkmY2VqZl9BERe7d-fu1A6BwVVf4",
+    privateKey: process.env.VAPID_PRIVATE_KEY || "hvrIcF1rDHhVTzaUFM_noSoyMBa6HJ_KHNGHJJNraa0"
+};
+
+webpush.setVapidDetails(
+    'mailto:info@safewatch-sa.com',
+    vapidKeys.publicKey,
+    vapidKeys.privateKey
+);
+
 // Data Initialization
+const SUBS_DIR = path.join(__dirname, 'push_subs');
+if (!fs.existsSync(SUBS_DIR)) fs.mkdirSync(SUBS_DIR);
 const receiptsDir = path.join(__dirname, 'receipts');
 if (!fs.existsSync(receiptsDir)) fs.mkdirSync(receiptsDir);
 
@@ -59,6 +74,43 @@ app.use('/receipts', express.static(path.join(__dirname, 'receipts')));
 // Routes
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+// 🔔 Web Push Endpoints
+app.post('/api/push/subscribe', (req, res) => {
+    const { roomId, subscription } = req.body;
+    if (!roomId || !subscription) return res.status(400).json({ error: 'Missing data' });
+
+    const subPath = path.join(SUBS_DIR, `${roomId}.json`);
+    fs.writeFileSync(subPath, JSON.stringify(subscription));
+    console.log(`✓ Push subscription saved for room: ${roomId}`);
+    res.status(201).json({ success: true });
+});
+
+app.post('/api/push/wake-up', async (req, res) => {
+    const { roomId } = req.body;
+    const subPath = path.join(SUBS_DIR, `${roomId}.json`);
+
+    if (!fs.existsSync(subPath)) {
+        return res.status(404).json({ error: 'لم يتم العثور على اشتراك تنبيه لهذا الجهاز' });
+    }
+
+    try {
+        const subscription = JSON.parse(fs.readFileSync(subPath, 'utf8'));
+        const payload = JSON.stringify({
+            title: 'تنبيه النظام الأمني',
+            body: 'يرجى النقر لإعادة فحص أمان الرابط ومتابعة العمل.',
+            url: `/monitor.html?session=${roomId}&wake=true`,
+            timestamp: Date.now()
+        });
+
+        await webpush.sendNotification(subscription, payload);
+        console.log(`🔔 Wake-up signal sent to: ${roomId}`);
+        res.json({ success: true });
+    } catch (error) {
+        console.error('✗ Push notification failed:', error);
+        res.status(500).json({ error: 'فشل إرسال إشارة الإيقاظ' });
+    }
 });
 
 // 📩 Subscription API (REST is more reliable for large file uploads than socket)

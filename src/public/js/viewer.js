@@ -778,4 +778,23 @@ export class ViewerSystem {
 
         Core.showNotification('جاري إرسال الرسالة...', 'info');
     }
+
+    async remoteWakeUp() {
+        Core.showNotification('جاري إرسال إشارة الإيقاظ للجهاز...', 'info');
+        try {
+            const res = await fetch('/api/push/wake-up', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ roomId: this.roomId })
+            });
+            const data = await res.json();
+            if (data.success) {
+                Core.showNotification('✅ تم إرسال إشارة الإيقاظ بنجاح', 'success');
+            } else {
+                Core.showNotification(`✗ ${data.error || 'فشل التنبيه'}`, 'error');
+            }
+        } catch (e) {
+            Core.showNotification('✗ خطأ في الاتصال بخادم التنبيهات', 'error');
+        }
+    }
 }

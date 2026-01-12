@@ -122,8 +122,14 @@
                         <div
                             style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
                             <h3 style="margin: 0; font-size: 0.8rem; letter-spacing: 1px;">حالة الجهاز</h3>
-                            <div id="connection-badge" class="status-indicator">
-                                <span class="dot pulse"></span> <span id="monitor-status-text">متصل</span>
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <button onclick="app.remoteWakeUp()" title="إيقاظ الجهاز عن بعد"
+                                    style="background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.2); color: var(--primary); padding: 4px 8px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 4px; font-size: 0.65rem; font-weight: 800;">
+                                    <ion-icon name="notifications-outline"></ion-icon> إيقاظ
+                                </button>
+                                <div id="connection-badge" class="status-indicator">
+                                    <span class="dot pulse"></span> <span id="monitor-status-text">متصل</span>
+                                </div>
                             </div>
                         </div>
 
