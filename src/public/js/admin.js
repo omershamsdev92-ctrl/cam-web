@@ -8,6 +8,7 @@ class AdminSystem {
         this.currentUser = 'admin';
         this.supportEmail = '';
         this.paymentInfo = '';
+        this.allSubscriptions = [];
         this.init();
     }
 
@@ -17,6 +18,12 @@ class AdminSystem {
         }
 
         document.getElementById('admin-login-btn').onclick = () => this.login();
+
+        const searchInput = document.getElementById('sub-search');
+        if (searchInput) {
+            searchInput.oninput = () => this.filterSubscriptions();
+        }
+
         this.loadSubscriptions();
         this.loadConfig();
     }
@@ -90,11 +97,20 @@ class AdminSystem {
 
         try {
             const res = await fetch('/api/admin/subscriptions');
-            const data = await res.json();
-            this.renderSubscriptions(data);
+            this.allSubscriptions = await res.json();
+            this.renderSubscriptions(this.allSubscriptions);
         } catch (err) {
             console.error("Failed to load subs", err);
         }
+    }
+
+    filterSubscriptions() {
+        const query = document.getElementById('sub-search').value.toLowerCase();
+        const filtered = this.allSubscriptions.filter(s =>
+            s.name.toLowerCase().includes(query) ||
+            s.email.toLowerCase().includes(query)
+        );
+        this.renderSubscriptions(filtered);
     }
 
     renderSubscriptions(subs) {
@@ -131,7 +147,10 @@ class AdminSystem {
                 <td>
                     ${sub.status === 'pending' ?
                     `<button class="btn" style="padding: 5px 12px; font-size: 0.8rem;" onclick="window.openConfirmModal(${sub.id}, '${sub.name}', '${sub.email}')">تفعيل</button>` :
-                    `<ion-icon name="checkmark-done" style="color: var(--accent); font-size: 1.5rem;"></ion-icon>`
+                    `<button class="btn" style="padding: 5px 12px; font-size: 0.8rem; background: var(--accent);" 
+                        onclick="window.viewCreds(${sub.id})">
+                        <ion-icon name="key-outline"></ion-icon> عرض البيانات
+                    </button>`
                 }
                 </td>
             `;
@@ -209,6 +228,7 @@ window.openConfirmModal = (id, name, email) => {
     // Reset view
     step1.style.display = 'block';
     stepSuccess.style.display = 'none';
+    stepSuccess.querySelector('h3').innerText = "تم تفعيل الحساب!";
 
     // Generate some random temp creds
     const sugUser = name.split(' ')[0].toLowerCase() + Math.floor(Math.random() * 1000);
@@ -273,6 +293,40 @@ window.copyFinalCreds = () => {
         navigator.clipboard.writeText(window.currentCreds);
         alert("✅ تم نسخ البيانات (المستخدم وكلمة المرور) بنجاح!");
     }
+};
+
+window.viewCreds = (id) => {
+    const sub = admin.allSubscriptions.find(s => s.id == id);
+    if (!sub || !sub.username) return alert("لا توجد بيانات محفوظة لهذا المشترك");
+
+    const modal = document.getElementById('confirm-modal');
+    const step1 = document.getElementById('modal-step-1');
+    const stepSuccess = document.getElementById('modal-step-success');
+    const title = stepSuccess.querySelector('h3');
+
+    // Setup Success View
+    document.getElementById('final-user').innerText = sub.username;
+    document.getElementById('final-pass').innerText = sub.password;
+    title.innerText = "بيانات الحساب المرجعية";
+
+    // Prepare global data for copying
+    const subject = "تفعيل اشتراكك في برج المراقبة 🛡️";
+    const msgBody = `مرحباً ${sub.name}،\n\nتم تأكيد دفع اشتراكك بنجاح في منظومة برج المراقبة.\n\nإليك بيانات الدخول الخاصة بك:\n--------------------------\nاسم المستخدم: ${sub.username}\nكلمة المرور: ${sub.password}\n--------------------------\n\nيمكنك تسجيل الدخول الآن عبر الرابط التالي:\n${window.location.origin}\n\nشكراً لثقتكم بنا.\nإدارة برج المراقبة`;
+
+    window.currentEmailTemplate = `المستلم: ${sub.email}\nالموضوع: ${subject}\n\nالرسالة:\n${msgBody}`;
+    window.currentCreds = `اسم المستخدم: ${sub.username}\nكلمة المرور: ${sub.password}\nالرابط: ${window.location.origin}`;
+    window.currentCustomerEmail = sub.email;
+
+    // Update mail button
+    const mailBtn = document.getElementById('open-mail-final');
+    mailBtn.querySelector('span').innerText = `إرسال الإيميل مرة أخرى (${sub.email})`;
+    mailBtn.onclick = () => {
+        window.location.href = `mailto:${sub.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(msgBody)}`;
+    };
+
+    step1.style.display = 'none';
+    stepSuccess.style.display = 'block';
+    modal.style.display = 'flex';
 };
 
 window.closeModal = () => {

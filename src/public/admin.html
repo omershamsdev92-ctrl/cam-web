@@ -242,11 +242,15 @@
             <!-- View: Subscriptions -->
             <div id="view-subs">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
-                    <h1 style="font-size: 1.5rem; font-weight: 800;">إدارة المشتركين الجدد</h1>
-                    <button class="btn" onclick="loadSubscriptions()"
-                        style="padding: 10px 15px; background: rgba(255,255,255,0.05);">
-                        <ion-icon name="refresh-outline"></ion-icon> تحديث
-                    </button>
+                    <h1 style="font-size: 1.5rem; font-weight: 800;">إدارة قاعدة البيانات والطلبات</h1>
+                    <div style="display: flex; gap: 10px;">
+                        <input type="text" id="sub-search" placeholder="بحث باسم العميل أو الإيميل..."
+                            style="background: rgba(0,0,0,0.2); border: 1px solid var(--glass-border); border-radius: 10px; padding: 8px 15px; color: white; width: 250px;">
+                        <button class="btn" onclick="loadSubscriptions()"
+                            style="padding: 10px 15px; background: rgba(255,255,255,0.05);">
+                            <ion-icon name="refresh-outline"></ion-icon>
+                        </button>
+                    </div>
                 </div>
 
                 <div class="stats-grid">
