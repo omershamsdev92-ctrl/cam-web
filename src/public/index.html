@@ -154,8 +154,9 @@
                             للصور الملتقطة
                         </li>
                     </ul>
-                    <a href="mailto:admin@example.com?subject=طلب اشتراك جديد في برج المراقبة" class="btn"
-                        style="width: 100%;">اطلب اشتراكك الآن</a>
+                    <button
+                        onclick="document.getElementById('payment-form-section').scrollIntoView({behavior: 'smooth'})"
+                        class="btn" style="width: 100%;">اطلب اشتراكك الآن</button>
                 </div>
             </div>
 
@@ -167,21 +168,67 @@
                         <div class="step-number">1</div>
                         <h4 style="margin-bottom: 10px;">التواصل مع الإدارة</h4>
                         <p style="font-size: 0.8rem; color: var(--text-muted);">راسلنا عبر البريد الإلكتروني المذكور في
-                            الأسفل لطلب بيانات التحويل.</p>
+                            الأسفل للحصول على بيانات التحويل المحلي.</p>
                     </div>
                     <div class="step-card">
                         <div class="step-number">2</div>
-                        <h4 style="margin-bottom: 10px;">تأكيد الدفع</h4>
-                        <p style="font-size: 0.8rem; color: var(--text-muted);">أرسل صورة من إيصال التحويل البنكي أو
-                            وسيلة الدفع المحلية المختارة.</p>
+                        <h4 style="margin-bottom: 10px;">نموذج تأكيد الدفع</h4>
+                        <p style="font-size: 0.8rem; color: var(--text-muted);">قم بتعبئة النموذج الخاص بتأكيد الدفع
+                            أدناه مع إرفاق صورة الإيصال.</p>
                     </div>
                     <div class="step-card">
                         <div class="step-number">3</div>
-                        <h4 style="margin-bottom: 10px;">استلام البيانات</h4>
-                        <p style="font-size: 0.8rem; color: var(--text-muted);">خلال أقل من ساعة، سنرسل لك اسم المستخدم
-                            وكلمة المرور الخاصة بك.</p>
+                        <h4 style="margin-bottom: 10px;">استلام الحساب</h4>
+                        <p style="font-size: 0.8rem; color: var(--text-muted);">سنقوم بتزويدك باسم المستخدم وكلمة المرور
+                            الخاصة بمنظومتك عبر بريدك الإلكتروني.</p>
                     </div>
                 </div>
+            </div>
+
+            <!-- Payment Confirmation Form -->
+            <div id="payment-form-section" class="payment-form-container">
+                <h3><ion-icon name="receipt-outline"
+                        style="vertical-align: middle; margin-left:10px; color:var(--primary)"></ion-icon> نموذج تأكيد
+                    الاشتراك والدفع</h3>
+                <p style="font-size: 0.85rem; color:var(--text-muted); margin-bottom: 30px;">يرجى تعبئة البيانات بدقة
+                    لضمان سرعة تفعيل حسابك.</p>
+
+                <form id="subscription-form">
+                    <div class="form-group">
+                        <label>👤 الاسم الكامل:</label>
+                        <input type="text" id="client-name" class="form-input" placeholder="أدخل اسمك كما في الحوالة"
+                            required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>📧 البريد الإلكتروني:</label>
+                        <input type="email" id="client-email" class="form-input"
+                            placeholder="سنرسل لك بيانات الحساب هنا" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>📱 رقم الهاتف (واتساب):</label>
+                        <input type="tel" id="client-phone" class="form-input" placeholder="+966xxxxxxxxx"
+                            style="direction: ltr; text-align: left;">
+                    </div>
+
+                    <div class="form-group">
+                        <label>📸 صورة إيصال الدفع:</label>
+                        <div class="file-upload-box" id="drop-zone">
+                            <ion-icon name="cloud-upload-outline"></ion-icon>
+                            <p id="file-label">اضغط لرفع صورة الإيصال أو التحويل</p>
+                            <input type="file" id="receipt-file" accept="image/*" style="display: none;">
+                            <img id="receipt-preview" class="file-preview">
+                        </div>
+                    </div>
+
+                    <button type="submit" id="submit-form-btn" class="submit-btn" style="margin-top: 20px;">
+                        إرسال طلب التفعيل
+                    </button>
+
+                    <p id="form-status" style="margin-top: 15px; text-align: center; font-size: 0.9rem; display: none;">
+                    </p>
+                </form>
             </div>
 
             <!-- Terms & Content -->

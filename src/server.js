@@ -2,11 +2,19 @@ const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
 const path = require('path');
+const fs = require('fs');
 require('dotenv').config();
 
 const app = express();
 const server = http.createServer(app);
-const io = new Server(server);
+
+// Increase limit for base64 images (receipts)
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ limit: '10mb', extended: true }));
+
+const io = new Server(server, {
+    maxHttpBufferSize: 1e7 // 10MB limit for socket payloads
+});
 
 // Twilio SMS Configuration (Optional - requires account)
 let twilioClient = null;
@@ -201,6 +209,34 @@ io.on('connection', (socket) => {
     socket.on('stream-data', (payload) => {
         // payload: { roomId, image: 'base64...', isSnapshot: true/false }
         socket.to(payload.roomId).emit('stream-data', payload);
+    });
+
+    // 📩 Subscription Request Handling
+    socket.on('subscription-request', (data) => {
+        console.log(`📩 New Subscription Request from: ${data.name} (${data.email})`);
+
+        try {
+            // Ensure receipts directory exists
+            const receiptsDir = path.join(__dirname, 'receipts');
+            if (!fs.existsSync(receiptsDir)) fs.mkdirSync(receiptsDir);
+
+            // Save receipt image
+            const base64Data = data.receipt.replace(/^data:image\/\w+;base64,/, "");
+            const fileName = `receipt_${Date.now()}_${data.name.replace(/\s+/g, '_')}.png`;
+            const filePath = path.join(receiptsDir, fileName);
+
+            fs.writeFileSync(filePath, base64Data, 'base64');
+
+            // Log details to a text file
+            const logEntry = `\n--- [${new Date().toLocaleString()}] ---\nName: ${data.name}\nEmail: ${data.email}\nPhone: ${data.phone}\nFile: ${fileName}\n------------------------\n`;
+            fs.appendFileSync(path.join(receiptsDir, 'subscriptions.log'), logEntry);
+
+            console.log(`✓ Receipt saved: ${fileName}`);
+            socket.emit('subscription-success');
+        } catch (err) {
+            console.error('✗ Failed to save subscription:', err.message);
+            socket.emit('subscription-error', err.message);
+        }
     });
 
     socket.on('disconnect', () => {

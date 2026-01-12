@@ -19,6 +19,7 @@ export class HomeSystem {
         this.setupAuth();
         this.setupPWA();
         this.setupEvents();
+        this.setupSubscriptionForm();
 
         // Restore last session name
         const last = localStorage.getItem('sw_last_custom_session');
@@ -79,5 +80,80 @@ export class HomeSystem {
 
         const audioBtn = document.getElementById('create-audio-only');
         if (audioBtn) audioBtn.onclick = () => createSession('audio');
+    }
+
+    setupSubscriptionForm() {
+        const form = document.getElementById('subscription-form');
+        const dropZone = document.getElementById('drop-zone');
+        const fileInput = document.getElementById('receipt-file');
+        const preview = document.getElementById('receipt-preview');
+        const label = document.getElementById('file-label');
+        const status = document.getElementById('form-status');
+
+        if (!form) return;
+
+        // File Selection Logic
+        dropZone.onclick = () => fileInput.click();
+
+        fileInput.onchange = (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (prev) => {
+                    preview.src = prev.target.result;
+                    preview.style.display = 'block';
+                    label.innerText = `تم اختيار: ${file.name}`;
+                    this.receiptData = prev.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+        };
+
+        // Form Submit
+        form.onsubmit = async (e) => {
+            e.preventDefault();
+
+            const btn = document.getElementById('submit-form-btn');
+            const name = document.getElementById('client-name').value;
+            const email = document.getElementById('client-email').value;
+            const phone = document.getElementById('client-phone').value;
+
+            if (!this.receiptData) {
+                alert("يرجى إرفاق صورة الإيصال أولاً");
+                return;
+            }
+
+            btn.disabled = true;
+            btn.innerText = "جاري الإرسال...";
+            status.style.display = 'block';
+            status.innerText = "جاري معالجة الطلب...";
+            status.style.color = "var(--primary)";
+
+            // Emit to server via socket (or you can use fetch if you prefer, but we already have socket.io)
+            const socket = io();
+            socket.emit('subscription-request', {
+                name,
+                email,
+                phone,
+                receipt: this.receiptData,
+                timestamp: new Date().toISOString()
+            });
+
+            socket.on('subscription-success', () => {
+                status.innerText = "✅ تم إرسال طلبك بنجاح! سنقوم بمراجعته وإرسال البيانات لبريدك قريباً.";
+                status.style.color = "var(--accent)";
+                form.reset();
+                preview.style.display = 'none';
+                label.innerText = "اضغط لرفع صورة الإيصال أو التحويل";
+                btn.style.display = 'none';
+            });
+
+            socket.on('subscription-error', (err) => {
+                status.innerText = "❌ حدث خطأ أثناء الإرسال. يرجى المحاولة مرة أخرى.";
+                status.style.color = "var(--danger)";
+                btn.disabled = false;
+                btn.innerText = "إرسال طلب التفعيل";
+            });
+        };
     }
 }
