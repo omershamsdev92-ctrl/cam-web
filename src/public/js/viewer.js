@@ -110,8 +110,24 @@ export class ViewerSystem {
             osc.start();
             osc.stop(this.audioCtx.currentTime + 0.3);
         } else if (type === 'alert') {
-            // Alert sound: Two gentle beeps
-            // We'll leave this simple for now
+            // Alert sound: Two aggressive beeps
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(800, this.audioCtx.currentTime);
+            gainNode.gain.setValueAtTime(0.2, this.audioCtx.currentTime);
+            osc.start();
+            osc.stop(this.audioCtx.currentTime + 0.1);
+
+            setTimeout(() => {
+                const osc2 = this.audioCtx.createOscillator();
+                const gain2 = this.audioCtx.createGain();
+                osc2.type = 'sawtooth';
+                osc2.frequency.setValueAtTime(800, this.audioCtx.currentTime);
+                gain2.gain.setValueAtTime(0.2, this.audioCtx.currentTime);
+                osc2.connect(gain2);
+                gain2.connect(this.audioCtx.destination);
+                osc2.start();
+                osc2.stop(this.audioCtx.currentTime + 0.1);
+            }, 200);
         }
     }
 
@@ -217,7 +233,27 @@ export class ViewerSystem {
                 Core.showNotification(`✓ تم إرسال الرسالة بنجاح إلى: ${data.phone}`, "success");
             } else if (data.battery) {
                 this.updateBatteryUI(data.battery);
-                Core.showNotification("تم تحديث حالة الجهاز بنجاح");
+                if (data.battery <= 10 && !data.charging) {
+                    Core.showNotification("⚠️ تنبيه: بطارية الجهاز المراقب منخفضة جداً (أقل من 10%)", "error");
+                    this.playSound('alert');
+                } else {
+                    Core.showNotification("تم تحديث حالة الجهاز بنجاح");
+                }
+            }
+        });
+
+        // Motion Detection Alert
+        this.socket.on('motion-detected', (data) => {
+            console.warn("Motion detected!", data);
+            Core.showNotification("🚨 تنبيه: تم رصد حركة أمام الكاميرا الآن!", "warning");
+            this.playSound('alert');
+
+            // Visual feedback on video
+            const video = document.getElementById('remoteVideo');
+            if (video) {
+                video.style.outline = "5px solid #ef4444";
+                video.style.outlineOffset = "-5px";
+                setTimeout(() => video.style.outline = "none", 3000);
             }
         });
 
@@ -325,6 +361,37 @@ export class ViewerSystem {
                 playBtn.style.display = 'none';
             };
         }
+        // Multi-cam session storage
+        this.saveActiveSession();
+    }
+
+    saveActiveSession() {
+        const sessions = JSON.parse(localStorage.getItem('sw_active_sessions') || '[]');
+        if (!sessions.includes(this.roomId)) {
+            sessions.push(this.roomId);
+            localStorage.setItem('sw_active_sessions', JSON.stringify(sessions));
+        }
+    }
+
+    toggleSiren() {
+        if (!this.monitorConnected) return alert("الجهاز غير متصل");
+        this.isSirenActive = !this.isSirenActive;
+        // The monitor system handles 'play-siren' as a generic command
+        this.socket.emit('command', {
+            roomId: this.roomId,
+            command: 'play-siren',
+            value: this.isSirenActive,
+            commandId: `siren_${Date.now()}`,
+            timestamp: Date.now()
+        });
+
+        const btn = document.getElementById('siren-btn');
+        if (btn) {
+            btn.classList.toggle('active', this.isSirenActive);
+            btn.style.background = this.isSirenActive ? '#ef4444' : '';
+            btn.style.color = this.isSirenActive ? 'white' : '';
+        }
+        Core.showNotification(this.isSirenActive ? "🚨 تم تشغيل الصرخة!" : "تم إيقاف الصرخة", "info");
     }
 
     sendCommand(command, value = null) {

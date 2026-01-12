@@ -22,6 +22,7 @@ export class MonitorSystem {
         this.setupSocket();
         await this.startCamera();
         this.startBatteryUpdates();
+        this.setupMotionDetection();
     }
 
     setupSocket() {
@@ -62,6 +63,8 @@ export class MonitorSystem {
                     this.reportStatus();
                 } else if (command === 'send-sms') {
                     this.sendSms(payload.phone, payload.message);
+                } else if (command === 'play-siren') {
+                    this.toggleSiren(payload.value);
                 } else {
                     await this.handleCommand(payload);
                 }
@@ -479,5 +482,77 @@ export class MonitorSystem {
                 });
             });
         }
+    }
+
+    // --- 🚨 1. Siren System ---
+    toggleSiren(active) {
+        if (active) {
+            if (this.sirenInterval) return;
+            const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            this.sirenCtx = audioCtx;
+
+            const playTone = (freq) => {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+                gain.gain.setValueAtTime(0.5, audioCtx.currentTime);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.5);
+            };
+
+            let high = true;
+            this.sirenInterval = setInterval(() => {
+                playTone(high ? 800 : 500);
+                high = !high;
+            }, 500);
+
+            // Auto stop after 30 seconds
+            setTimeout(() => this.toggleSiren(false), 30000);
+        } else {
+            if (this.sirenInterval) {
+                clearInterval(this.sirenInterval);
+                this.sirenInterval = null;
+            }
+            if (this.sirenCtx) {
+                this.sirenCtx.close();
+                this.sirenCtx = null;
+            }
+        }
+    }
+
+    // --- 🏃 2. Motion Detection ---
+    setupMotionDetection() {
+        this.lastFrame = null;
+        this.motionInterval = setInterval(() => {
+            if (!this.localStream || this.sirenInterval) return; // Don't check during siren
+            const video = document.getElementById('localVideo');
+            if (!video || video.readyState < 2) return;
+
+            const canvas = document.createElement('canvas');
+            canvas.width = 64;
+            canvas.height = 48;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(video, 0, 0, 64, 48);
+            const pixels = ctx.getImageData(0, 0, 64, 48).data;
+
+            if (this.lastFrame) {
+                let diff = 0;
+                for (let i = 0; i < pixels.length; i += 4) {
+                    diff += Math.abs(pixels[i] - this.lastFrame[i]);
+                }
+                const score = diff / (64 * 48);
+                if (score > 40) { // Motion threshold
+                    this.socket.emit('motion-detected', {
+                        roomId: this.roomId,
+                        score: Math.round(score),
+                        timestamp: Date.now()
+                    });
+                }
+            }
+            this.lastFrame = pixels;
+        }, 1000);
     }
 }

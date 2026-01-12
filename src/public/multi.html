@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>عرض الأجهزة المتعددة | SafeWatch</title>
+    <link rel="stylesheet" href="css/style.css?v=12.0">
+    <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
+    <style>
+        .multi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 20px;
+            padding: 20px;
+        }
+
+        .cam-card {
+            background: var(--glass);
+            border-radius: 20px;
+            overflow: hidden;
+            border: 1px solid var(--glass-border);
+            position: relative;
+        }
+
+        .cam-video {
+            width: 100%;
+            aspect-ratio: 16/9;
+            background: #000;
+            object-fit: cover;
+        }
+
+        .cam-header {
+            padding: 10px 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(0, 0, 0, 0.3);
+        }
+
+        .cam-badge {
+            font-size: 0.7rem;
+            padding: 4px 10px;
+            border-radius: 50px;
+            background: rgba(16, 185, 129, 0.2);
+            color: #10b981;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .cam-badge.offline {
+            background: rgba(239, 68, 68, 0.2);
+            color: #ef4444;
+        }
+    </style>
+</head>
+
+<body style="background: #0f172a;">
+    <div class="container" style="max-width: 100%;">
+        <header style="padding: 20px;">
+            <div style="display: flex; align-items: center; gap: 15px;">
+                <a href="index.html" style="color: white; font-size: 1.5rem;"><ion-icon
+                        name="arrow-forward-outline"></ion-icon></a>
+                <h1>شاشة المراقبة الكبرى</h1>
+            </div>
+            <div id="stats" style="font-size: 0.9rem; color: var(--text-muted);">
+                الأجهزة النشطة: <span id="active-count" style="color: var(--primary); font-weight: 800;">0</span>
+            </div>
+        </header>
+
+        <div id="multi-grid" class="multi-grid">
+            <!-- Cam cards will be injected here -->
+        </div>
+
+        <div id="no-sessions" style="display: none; text-align: center; padding: 100px 20px;">
+            <ion-icon name="videocam-off-outline" style="font-size: 5rem; opacity: 0.2;"></ion-icon>
+            <h2 style="margin-top: 20px; opacity: 0.5;">لا توجد أجهزة مربوطة حالياً</h2>
+            <p style="opacity: 0.4;">قم بتفعيل الأجهزة من لوحة التحكم الفردية لتظهر هنا</p>
+            <a href="index.html" class="btn" style="margin-top: 20px;">العودة للرئيسية</a>
+        </div>
+    </div>
+
+    <script type="module" src="js/multi.js"></script>
+</body>
+
+</html>

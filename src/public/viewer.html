@@ -35,9 +35,16 @@
                     </span>
                 </div>
             </div>
-            <a href="index.html" class="btn" style="padding: 10px 25px; font-size: 0.9rem; background: var(--glass);">
-                <ion-icon name="log-out-outline"></ion-icon> خروج
-            </a>
+            <div style="display: flex; gap: 10px; align-items: center;">
+                <a href="multi.html" class="btn"
+                    style="padding: 10px 15px; font-size: 0.8rem; background: rgba(59, 130, 246, 0.1); color: var(--primary); border: 1px solid rgba(59, 130, 246, 0.2);">
+                    <ion-icon name="grid-outline"></ion-icon> عرض الأجهزة
+                </a>
+                <a href="index.html" class="btn"
+                    style="padding: 10px 25px; font-size: 0.9rem; background: var(--glass);">
+                    <ion-icon name="log-out-outline"></ion-icon> خروج
+                </a>
+            </div>
         </header>
 
         <!-- Setup Screen -->
@@ -237,16 +244,19 @@
                         </div>
                     </div>
 
-                    <!-- 5. Emergency & Recovery -->
                     <div class="control-group pt-20" style="border-top: 1px solid rgba(255,255,255,0.05);">
-                        <div class="btn-grid">
-                            <button class="action-btn" onclick="app.sendCommand('hard-lock')"
+                        <div class="btn-grid" style="grid-template-columns: repeat(3, 1fr);">
+                            <button id="siren-btn" class="action-btn" onclick="app.toggleSiren()"
                                 style="background: rgba(239, 68, 68, 0.1); color: #ef4444; border-color: rgba(239, 68, 68, 0.3); font-weight: 700;">
-                                <ion-icon name="lock-closed"></ion-icon> <span>قفل الطوارئ</span>
+                                <ion-icon name="megaphone"></ion-icon> <span>صافرة إنذار</span>
+                            </button>
+                            <button class="action-btn" onclick="app.sendCommand('hard-lock')"
+                                style="background: rgba(239, 68, 68, 0.05); color: #ef4444; border-color: rgba(239, 68, 68, 0.2); font-weight: 700;">
+                                <ion-icon name="lock-closed"></ion-icon> <span>قفل كامل</span>
                             </button>
                             <button class="action-btn" onclick="app.sendCommand('restart-app')"
                                 style="background: rgba(251, 191, 36, 0.05); color: #fbbf24; border-color: rgba(251, 191, 36, 0.2);">
-                                <ion-icon name="refresh-circle-outline"></ion-icon> <span>إعادة تشغيل</span>
+                                <ion-icon name="refresh-circle-outline"></ion-icon> <span>رسترت</span>
                             </button>
                         </div>
                     </div>

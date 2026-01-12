@@ -159,88 +159,88 @@
             </div>
 
             <div class="btn-grid" style="grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px;">
-                <!-- 1. Media Control -->
+                <!-- 1. AI Motion Detection -->
+                <div class="controls-panel" style="border-right: 4px solid #f59e0b;">
+                    <div style="display: flex; gap: 15px; align-items: flex-start;">
+                        <div style="background: rgba(245, 158, 11, 0.1); padding: 12px; border-radius: 12px;">
+                            <ion-icon name="eye" style="font-size: 1.8rem; color: #f59e0b;"></ion-icon>
+                        </div>
+                        <div style="text-align: right;">
+                            <h3 style="margin-bottom: 8px; font-size: 1.1rem;">رادار كشف الحركة (AI)</h3>
+                            <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.6;">نظام ذكي يقوم
+                                بتحليل الصورة وتنبيهك فوراً بصوت إنذار عند وجود أي حركة مريبة أمام الكاميرا.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2. Remote Siren -->
+                <div class="controls-panel" style="border-right: 4px solid #ef4444;">
+                    <div style="display: flex; gap: 15px; align-items: flex-start;">
+                        <div style="background: rgba(239, 68, 68, 0.1); padding: 12px; border-radius: 12px;">
+                            <ion-icon name="megaphone" style="font-size: 1.8rem; color: #ef4444;"></ion-icon>
+                        </div>
+                        <div style="text-align: right;">
+                            <h3 style="margin-bottom: 8px; font-size: 1.1rem;">صافرة الإنذار المدوية</h3>
+                            <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.6;">إمكانية إطلاق
+                                صرخة إنذار بأقصى صوت من الجهاز المراقب لإخافة المتسللين أو تنبيه من في المكان عن بُعد.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 3. Multi-View Dashboard -->
                 <div class="controls-panel" style="border-right: 4px solid var(--primary);">
                     <div style="display: flex; gap: 15px; align-items: flex-start;">
                         <div style="background: rgba(59, 130, 246, 0.1); padding: 12px; border-radius: 12px;">
-                            <ion-icon name="videocam" style="font-size: 1.8rem; color: var(--primary);"></ion-icon>
+                            <ion-icon name="grid" style="font-size: 1.8rem; color: var(--primary);"></ion-icon>
                         </div>
                         <div style="text-align: right;">
-                            <h3 style="margin-bottom: 8px; font-size: 1.1rem;">تحكم كامل بالكاميرا</h3>
-                            <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.6;">التبديل بين
-                                الكاميرا الأمامية والخلفية، تقريب الصورة (Zoom) حتى 10x، وتشغيل الفلاش عن بُعد للحالات
-                                المظلمة.</p>
+                            <h3 style="margin-bottom: 8px; font-size: 1.1rem;">شاشة المراقبة الكبرى</h3>
+                            <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.6;">راقب حتى 4 أجهزة
+                                في وقت واحد عبر لوحة تحكم موحدة (Multi-View) تتيح لك رؤية كل شيء في شاشة واحدة.</p>
                         </div>
                     </div>
                 </div>
 
-                <!-- 2. Device Data -->
-                <div class="controls-panel" style="border-right: 4px solid #f43f5e;">
-                    <div style="display: flex; gap: 15px; align-items: flex-start;">
-                        <div style="background: rgba(244, 63, 94, 0.1); padding: 12px; border-radius: 12px;">
-                            <ion-icon name="battery-charging" style="font-size: 1.8rem; color: #f43f5e;"></ion-icon>
-                        </div>
-                        <div style="text-align: right;">
-                            <h3 style="margin-bottom: 8px; font-size: 1.1rem;">بيانات الهاتف الحية</h3>
-                            <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.6;">استعلام مباشر عن
-                                مستوى البطارية، حالة الشحن، جودة إشارة الواي فاي، ونظام تشغيل الجهاز المراقب.</p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- 3. Audio & Stealth -->
+                <!-- 4. Video Recording -->
                 <div class="controls-panel" style="border-right: 4px solid #10b981;">
                     <div style="display: flex; gap: 15px; align-items: flex-start;">
                         <div style="background: rgba(16, 185, 129, 0.1); padding: 12px; border-radius: 12px;">
-                            <ion-icon name="mic" style="font-size: 1.8rem; color: #10b981;"></ion-icon>
+                            <ion-icon name="videocam" style="font-size: 1.8rem; color: #10b981;"></ion-icon>
                         </div>
                         <div style="text-align: right;">
-                            <h3 style="margin-bottom: 8px; font-size: 1.1rem;">صوت تفاعلي ووضع خفي</h3>
-                            <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.6;">استماع ونقل صوت
-                                ثنائي الاتجاه، مع القدرة على قفل الشاشة (الوضع الأسود) لجعل الجهاز يبدو منطفئاً أثناء
-                                العمل.</p>
+                            <h3 style="margin-bottom: 8px; font-size: 1.1rem;">تسجيل الفيديو والميديا</h3>
+                            <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.6;">ليس فقط بثاً
+                                حياً؛ يمكنك تسجيل مقاطع فيديو وحفظها بدقة HD على جهازك للرجوع إليها كدليل أمان.</p>
                         </div>
                     </div>
                 </div>
 
-                <!-- 4. Location & History -->
+                <!-- 5. Status & Battery Alerts -->
                 <div class="controls-panel" style="border-right: 4px solid #8b5cf6;">
                     <div style="display: flex; gap: 15px; align-items: flex-start;">
                         <div style="background: rgba(139, 92, 246, 0.1); padding: 12px; border-radius: 12px;">
-                            <ion-icon name="map" style="font-size: 1.8rem; color: #8b5cf6;"></ion-icon>
+                            <ion-icon name="battery-charging" style="font-size: 1.8rem; color: #8b5cf6;"></ion-icon>
                         </div>
                         <div style="text-align: right;">
-                            <h3 style="margin-bottom: 8px; font-size: 1.1rem;">تتبع جغرافي دقيق</h3>
-                            <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.6;">تحديد موقع الجهاز
-                                الحالي على الخريطة بدقة عالية مع تحديث لحظي للمسارات والتحركات.</p>
+                            <h3 style="margin-bottom: 8px; font-size: 1.1rem;">تنبيهات البطارية والنظام</h3>
+                            <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.6;">استقبل إشعارات
+                                فورية عند انخفاض بطارية الجهاز المراقب أو انقطاع اتصاله بالإنترنت لضمان استمرارية العمل.
+                            </p>
                         </div>
                     </div>
                 </div>
 
-                <!-- 5. Network Tools -->
-                <div class="controls-panel" style="border-right: 4px solid #fbbf24;">
-                    <div style="display: flex; gap: 15px; align-items: flex-start;">
-                        <div style="background: rgba(251, 191, 36, 0.1); padding: 12px; border-radius: 12px;">
-                            <ion-icon name="barcode" style="font-size: 1.8rem; color: #fbbf24;"></ion-icon>
-                        </div>
-                        <div style="text-align: right;">
-                            <h3 style="margin-bottom: 8px; font-size: 1.1rem;">تحليل الشبكة (IP)</h3>
-                            <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.6;">أداة مدمجة لتحليل
-                                الـ IP الخارجي وكشف الموقع الجغرافي ونوع مزود الخدمة ومعلومات اتصال الهاتف الحقيقية.</p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- 6. Storage & Capture -->
+                <!-- 6. Full Remote Stealth -->
                 <div class="controls-panel" style="border-right: 4px solid #ec4899;">
                     <div style="display: flex; gap: 15px; align-items: flex-start;">
                         <div style="background: rgba(236, 72, 153, 0.1); padding: 12px; border-radius: 12px;">
-                            <ion-icon name="camera-reverse" style="font-size: 1.8rem; color: #ec4899;"></ion-icon>
+                            <ion-icon name="eye-off" style="font-size: 1.8rem; color: #ec4899;"></ion-icon>
                         </div>
                         <div style="text-align: right;">
-                            <h3 style="margin-bottom: 8px; font-size: 1.1rem;">لقطات فورية ومعرض</h3>
-                            <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.6;">إمكانية أخذ لقطات
-                                شاشة (Screenshots) وحفظها فوراً في معرض خاص داخل الموقع للرجوع إليها لاحقاً.</p>
+                            <h3 style="margin-bottom: 8px; font-size: 1.1rem;">الوضع الخفي والتحكم بالزووم</h3>
+                            <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.6;">تحكم كامل بزاوية
+                                الرؤية (Zoom 10x) مع إمكانية إطفاء شاشة الجهاز المراقب ليعمل في خفاء تام.</p>
                         </div>
                     </div>
                 </div>
