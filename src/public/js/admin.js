@@ -196,8 +196,12 @@ window.openConfirmModal = (id, name, email) => {
         step1.style.display = 'none';
         stepSuccess.style.display = 'block';
 
-        // Set up the mail button
-        document.getElementById('open-mail-final').onclick = () => {
+        // Update the email button to show the target address
+        const mailBtn = document.getElementById('open-mail-final');
+        mailBtn.innerHTML = `<ion-icon name="mail-outline"></ion-icon> إيميل (${email})`;
+
+        // Set up the mail button click
+        mailBtn.onclick = () => {
             const subject = encodeURIComponent("تفعيل اشتراكك في برج المراقبة 🛡️");
             const msgBody = `مرحباً ${name}،\n\nتم تأكيد دفع اشتراكك بنجاح في منظومة برج المراقبة.\n\nإليك بيانات الدخول الخاصة بك:\n--------------------------\nاسم المستخدم: ${u}\nكلمة المرور: ${p}\n--------------------------\n\nيمكنك تسجيل الدخول الآن عبر الرابط التالي:\n${window.location.origin}\n\nشكراً لثقتكم بنا.\nإدارة برج المراقبة`;
             window.location.href = `mailto:${email}?subject=${subject}&body=${encodeURIComponent(msgBody)}`;
