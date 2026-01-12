@@ -20,7 +20,7 @@ export class MonitorSystem {
     async init() {
         console.log("Initializing Monitor System...");
         this.setupSocket();
-        await this.startCamera();
+        // Camera will be started manually via user gesture in the UI
         this.startBatteryUpdates();
         this.setupMotionDetection();
         this.setupPushNotifications();
