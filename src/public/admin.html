@@ -229,6 +229,11 @@
                 <span>إعدادات الإدارة</span>
             </div>
 
+            <div class="nav-item" onclick="showView('admins')">
+                <ion-icon name="key-outline"></ion-icon>
+                <span>إدارة المسؤولين</span>
+            </div>
+
             <div style="margin-top: auto;">
                 <div class="nav-item" onclick="logout()" style="color: #ef4444;">
                     <ion-icon name="log-out-outline"></ion-icon>
@@ -279,6 +284,43 @@
                         <!-- Filled by JS -->
                     </tbody>
                 </table>
+            </div>
+
+            <!-- View: Admins -->
+            <div id="view-admins" style="display: none;">
+                <h1 style="font-size: 1.5rem; font-weight: 800; margin-bottom: 30px;">إدارة فريق العمل (المسؤولين)</h1>
+
+                <div class="payment-form-container" style="margin: 0; max-width: 500px; margin-bottom: 30px;">
+                    <h3>إضافة مسؤول جديد</h3>
+                    <p style="font-size: 0.8rem; color: #94a3b8; margin-bottom: 15px;">سيتمكن هذا الشخص من الدخول للوحة
+                        والتعامل مع الطلبات.</p>
+                    <div class="form-group">
+                        <label>اسم المستخدم:</label>
+                        <input type="text" id="new-admin-user" class="form-input" placeholder="مثلاً: omer_admin">
+                    </div>
+                    <div class="form-group">
+                        <label>كلمة المرور:</label>
+                        <input type="text" id="new-admin-pass-raw" class="form-input" placeholder="اكتب كلمة مرور قوية">
+                    </div>
+                    <button class="submit-btn" onclick="addAdmin()" style="background: var(--accent);">
+                        <ion-icon name="add-circle-outline"></ion-icon> إضافة المسؤول الآن
+                    </button>
+                </div>
+
+                <div class="payment-form-container" style="margin: 0; max-width: 600px;">
+                    <h3>قائمة المسؤولين الحاليين</h3>
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>اسم المستخدم</th>
+                                <th>الإجراء</th>
+                            </tr>
+                        </thead>
+                        <tbody id="admins-list">
+                            <!-- Filled by JS -->
+                        </tbody>
+                    </table>
+                </div>
             </div>
 
             <!-- View: Settings -->

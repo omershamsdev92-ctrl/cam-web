@@ -192,6 +192,72 @@ class AdminSystem {
             alert("فشل تغيير كلمة المرور");
         }
     }
+
+    async loadAdmins() {
+        try {
+            const res = await fetch('/api/admin/list');
+            const admins = await res.json();
+            this.renderAdmins(admins);
+        } catch (e) { console.error("Admin load error", e); }
+    }
+
+    renderAdmins(admins) {
+        const list = document.getElementById('admins-list');
+        if (!list) return;
+        list.innerHTML = '';
+        admins.forEach(a => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td><strong style="color: #fff;">${a.username}</strong></td>
+                <td>
+                    ${a.username === 'admin' ?
+                    '<span style="color: #94a3b8; font-size: 0.8rem;">المسؤول الرئيسي</span>' :
+                    `<button class="btn" style="padding: 5px 10px; background: #ef4444; font-size: 0.8rem;" onclick="window.deleteAdmin('${a.username}')">حذف</button>`
+                }
+                </td>
+            `;
+            list.appendChild(row);
+        });
+    }
+
+    async addAdmin() {
+        const user = document.getElementById('new-admin-user').value;
+        const pass = document.getElementById('new-admin-pass-raw').value;
+        if (!user || !pass) return alert("يرجى تعبئة جميع الخانات");
+
+        try {
+            const res = await fetch('/api/admin/add', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username: user, password: pass })
+            });
+            const data = await res.json();
+            if (data.success) {
+                alert("✅ تم إضافة المسؤول بنجاح");
+                document.getElementById('new-admin-user').value = '';
+                document.getElementById('new-admin-pass-raw').value = '';
+                this.loadAdmins();
+            } else {
+                alert(data.message);
+            }
+        } catch (e) { alert("حدث خطأ"); }
+    }
+
+    async deleteAdmin(username) {
+        if (!confirm(`هل أنت متأكد من حذف المسؤول: ${username}؟`)) return;
+
+        try {
+            const res = await fetch('/api/admin/delete', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username })
+            });
+            if ((await res.json()).success) {
+                alert("✅ تم الحذف بنجاح");
+                this.loadAdmins();
+            }
+        } catch (e) { alert("فشل الحذف"); }
+    }
 }
 
 // Global window helpers for the HTML onclicks
@@ -200,8 +266,13 @@ const admin = new AdminSystem();
 window.showView = (view) => {
     document.getElementById('view-subs').style.display = view === 'subs' ? 'block' : 'none';
     document.getElementById('view-settings').style.display = view === 'settings' ? 'block' : 'none';
+    document.getElementById('view-admins').style.display = view === 'admins' ? 'block' : 'none';
+
     document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
-    event.currentTarget.classList.add('active');
+    if (event) event.currentTarget.classList.add('active');
+
+    if (view === 'admins') admin.loadAdmins();
+    if (view === 'subs') admin.loadSubscriptions();
 };
 
 window.logout = () => {
@@ -335,3 +406,5 @@ window.closeModal = () => {
 
 window.loadSubscriptions = () => admin.loadSubscriptions();
 window.changeAdminPassword = () => admin.changeAdminPassword();
+window.addAdmin = () => admin.addAdmin();
+window.deleteAdmin = (user) => admin.deleteAdmin(user);

@@ -153,6 +153,37 @@ app.post('/api/admin/login', (req, res) => {
     }
 });
 
+// 👥 Admin Management Routes
+app.get('/api/admin/list', (req, res) => {
+    const admins = JSON.parse(fs.readFileSync(ADMIN_DATA_PATH, 'utf8'));
+    res.json(admins.map(a => ({ username: a.username })));
+});
+
+app.post('/api/admin/add', (req, res) => {
+    const { username, password } = req.body;
+    let admins = JSON.parse(fs.readFileSync(ADMIN_DATA_PATH, 'utf8'));
+    if (admins.find(a => a.username === username)) {
+        return res.status(400).json({ success: false, message: 'اسم المستخدم موجود بالفعل' });
+    }
+    admins.push({ username, password });
+    fs.writeFileSync(ADMIN_DATA_PATH, JSON.stringify(admins, null, 2));
+    res.json({ success: true });
+});
+
+app.post('/api/admin/delete', (req, res) => {
+    const { username } = req.body;
+    if (username === 'admin') return res.status(400).json({ success: false, message: 'لا يمكن حذف حساب المسؤول الرئيسي' });
+
+    let admins = JSON.parse(fs.readFileSync(ADMIN_DATA_PATH, 'utf8'));
+    const initialLen = admins.length;
+    admins = admins.filter(a => a.username !== username);
+
+    if (admins.length === initialLen) return res.status(404).json({ success: false, message: 'المسؤول غير موجود' });
+
+    fs.writeFileSync(ADMIN_DATA_PATH, JSON.stringify(admins, null, 2));
+    res.json({ success: true });
+});
+
 app.get('/api/admin/subscriptions', (req, res) => {
     // Basic auth check would go here
     const subPath = path.join(__dirname, 'receipts', 'subscriptions.json');
