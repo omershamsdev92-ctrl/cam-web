@@ -4,8 +4,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <title>برج المراقبة | لوحة التحكم</title>
-    <link rel="stylesheet" href="css/style.css?v=6.6">
+    <link rel="stylesheet" href="css/style.css?v=9.0">
     <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="/socket.io/socket.io.js"></script>
@@ -25,8 +28,11 @@
                 <div style="display: flex; flex-direction: column; line-height: 1.2;">
                     <span style="font-weight: 800; font-size: 1.1rem; letter-spacing: -0.5px;">برج المراقبة</span>
                     <span
-                        style="font-size: 0.65rem; color: var(--text-muted); letter-spacing: 1px; font-family: monospace;">CONTROL
-                        CENTER</span>
+                        style="font-size: 0.65rem; color: var(--text-muted); letter-spacing: 1px; font-family: monospace; display: flex; align-items: center; gap: 5px;">
+                        ROOM: <span id="session-name-display" style="color: var(--primary); font-weight: 700;">--</span>
+                        <ion-icon name="copy-outline" style="cursor: pointer; font-size: 0.8rem;"
+                            onclick="copySessionId()"></ion-icon>
+                    </span>
                 </div>
             </div>
             <a href="index.html" class="btn" style="padding: 10px 25px; font-size: 0.9rem; background: var(--glass);">
@@ -68,9 +74,8 @@
                     <video id="remoteVideo" autoplay playsinline muted></video>
 
                     <div
-                        style="position: absolute; top: 20px; right: 20px; background: rgba(0,0,0,0.5); padding: 5px 15px; border-radius: 50px; color: #ef4444; display: flex; align-items: center; gap: 8px; font-weight: bold;">
-                        <span
-                            style="width: 8px; height: 8px; background: #ef4444; border-radius: 50%; box-shadow: 0 0 10px #ef4444;"></span>
+                        style="position: absolute; top: 20px; right: 20px; background: rgba(0,0,0,0.5); backdrop-filter: blur(5px); padding: 6px 15px; border-radius: 50px; color: #ef4444; display: flex; align-items: center; gap: 8px; font-weight: 800; font-size: 0.8rem; border: 1px solid rgba(239, 68, 68, 0.3); z-index: 10;">
+                        <span class="dot pulse" style="background: #ef4444; box-shadow: 0 0 10px #ef4444;"></span>
                         مباشر
                     </div>
 
@@ -80,17 +85,18 @@
                     </button>
                 </div>
 
-                <!-- Gallery Section -->
-                <div class="controls-panel" style="margin-top: 25px;">
+                <div class="controls-panel"
+                    style="margin-top: 25px; border: 1px dashed var(--glass-border); background: rgba(255,255,255,0.01);">
                     <div
                         style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                        <h3 style="color: var(--text-main); font-size: 1.1rem;">
-                            <ion-icon name="images-outline"
-                                style="vertical-align: middle; margin-left: 8px;"></ion-icon>
-                            اللقطات المحفوظة
+                        <h3 style="color: var(--text-main); font-size: 1rem; font-weight: 800; margin: 0;">
+                            <ion-icon name="images"
+                                style="vertical-align: middle; margin-left: 8px; color: var(--primary);"></ion-icon>
+                            اللقطات المخزنة
                         </h3>
-                        <button class="btn" style="padding: 8px 15px; font-size: 0.75rem; background: var(--glass);"
-                            onclick="clearGallery()">مسح الكل</button>
+                        <button class="btn"
+                            style="padding: 6px 15px; font-size: 0.7rem; background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.2); box-shadow: none;"
+                            onclick="clearGallery()">مسح المعرض</button>
                     </div>
                     <div id="photo-gallery" class="gallery-grid">
                         <p id="no-photos-msg"
@@ -103,143 +109,145 @@
             <!-- Sidebar Controls -->
             <div class="sidebar">
                 <div class="controls-panel">
-                    <!-- Monitor Info -->
+
+                    <!-- 1. Device Health & Status -->
                     <div class="control-group">
                         <div
                             style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                            <h3 style="margin: 0;">الجهاز المراقب</h3>
-                            <div class="status-indicator">
-                                <ion-icon name="battery-full"></ion-icon> <span id="battery-level">--%</span>
+                            <h3 style="margin: 0; font-size: 0.8rem; letter-spacing: 1px;">حالة الجهاز</h3>
+                            <div id="connection-badge" class="status-indicator">
+                                <span class="dot pulse"></span> <span id="monitor-status-text">متصل</span>
                             </div>
-                        </div>
-                        <div id="device-info-box"
-                            style="background: rgba(0,0,0,0.2); padding: 15px; border-radius: 12px; border: 1px solid var(--glass-border);">
-                            <p style="text-align: center; color: var(--text-muted); font-size: 0.8rem;">جاري جلب
-                                المعلومات...</p>
                         </div>
 
-                        <!-- Map Container -->
-                        <div id="map-container" style="margin-top: 15px; display: none;">
-                            <div id="device-map"
-                                style="height: 200px; width: 100%; border-radius: 12px; border: 1px solid var(--glass-border); z-index: 1;">
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px;">
+                            <div
+                                style="background: rgba(255,255,255,0.03); padding: 12px; border-radius: 12px; border: 1px solid var(--glass-border); text-align: center; display: flex; flex-direction: column; align-items: center;">
+                                <ion-icon name="battery-charging-outline" id="batt-icon"
+                                    style="font-size: 1.2rem; margin-bottom: 5px; color: var(--accent);"></ion-icon>
+                                <div style="font-size: 0.9rem; font-weight: 700;" id="battery-level">--%</div>
+                                <div style="font-size: 0.6rem; opacity: 0.5;">البطارية</div>
                             </div>
-                            <a id="google-maps-link" href="#" target="_blank" class="btn"
-                                style="width: 100%; margin-top: 8px; background: #4285F4; font-size: 0.8rem; display: flex; justify-content: center; gap: 8px;">
-                                <ion-icon name="map"></ion-icon> فتح في Google Maps
-                            </a>
+                            <div
+                                style="background: rgba(255,255,255,0.03); padding: 12px; border-radius: 12px; border: 1px solid var(--glass-border); text-align: center; display: flex; flex-direction: column; align-items: center;">
+                                <ion-icon name="wifi-outline"
+                                    style="font-size: 1.2rem; margin-bottom: 5px; color: var(--primary);"></ion-icon>
+                                <div style="font-size: 0.8rem; font-weight: 700;" id="signal-level">جاري الفحص...</div>
+                                <div style="font-size: 0.55rem; opacity: 0.5; text-transform: uppercase;">قوة الإشارة
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="device-info-box"
+                            style="background: rgba(0,0,0,0.2); padding: 12px; border-radius: 12px; border: 1px solid var(--glass-border); font-size: 0.75rem;">
+                            <p style="text-align: center; color: var(--text-muted);">جاري جلب معلومات النظام...</p>
                         </div>
 
                         <button class="action-btn" onclick="app.sendCommand('refresh-info')"
-                            style="margin-top: 10px; justify-content: center; background: var(--glass);">
-                            <ion-icon name="refresh-outline"></ion-icon> تحديث البيانات
+                            style="margin-top: 10px; justify-content: center; background: var(--glass); font-size: 0.8rem; padding: 10px;">
+                            <ion-icon name="refresh-outline"></ion-icon> تحديث الحالة
                         </button>
                     </div>
 
-                    <!-- Session Info -->
+                    <!-- 2. Camera & Audio Control -->
                     <div class="control-group">
-                        <h3>بيانات الجلسة</h3>
-                        <div
-                            style="background: rgba(59, 130, 246, 0.05); padding: 15px; border-radius: 12px; border: 1px solid rgba(59, 130, 246, 0.2); font-size: 0.85rem;">
-                            <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-                                <span style="color: var(--text-muted);">رقم الغرفة:</span> <span
-                                    id="session-name-display" style="font-weight: 700;">--</span>
-                            </div>
-                            <div style="display: flex; justify-content: space-between;">
-                                <span style="color: var(--text-muted);">وقت البدء:</span> <span
-                                    id="session-start-time">--</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- 1. Quick Device Control -->
-                    <div class="control-group">
-                        <h3>التحكم بالجهاز</h3>
-                        <div class="btn-grid" style="grid-template-columns: repeat(2, 1fr);">
-                            <button class="action-btn" onclick="app.sendCommand('switch-camera')">
-                                <ion-icon name="sync-outline"></ion-icon> <span>تبديل الكاميرا</span>
+                        <h3>التحكم في البث</h3>
+                        <div class="btn-grid">
+                            <button class="action-btn" onclick="app.sendCommand('switch-camera')"
+                                style="flex-direction: column; gap: 5px; padding: 15px 10px;">
+                                <ion-icon name="sync-outline" style="font-size: 1.5rem;"></ion-icon>
+                                <span style="font-size: 0.75rem;">تبديل الكاميرا</span>
                             </button>
-                            <button class="action-btn" onclick="app.sendCommand('toggle-torch')">
-                                <ion-icon name="flashlight-outline"></ion-icon> <span>الكشاف</span>
+                            <button class="action-btn" onclick="app.sendCommand('toggle-torch')"
+                                style="flex-direction: column; gap: 5px; padding: 15px 10px;">
+                                <ion-icon name="flashlight-outline" style="font-size: 1.5rem;"></ion-icon>
+                                <span style="font-size: 0.75rem;">الكشاف</span>
                             </button>
-                            <button id="toggle-audio-btn" class="action-btn" onclick="app.toggleAudio()">
-                                <ion-icon name="volume-mute-outline"></ion-icon> <span>الصوت</span>
+                            <button id="toggle-audio-btn" class="action-btn" onclick="app.toggleAudio()"
+                                style="flex-direction: column; gap: 5px; padding: 15px 10px;">
+                                <ion-icon name="volume-mute-outline" style="font-size: 1.5rem;"></ion-icon>
+                                <span style="font-size: 0.75rem;">صوت الجهاز</span>
                             </button>
-                            <button class="action-btn" onclick="app.sendCommand('get-status')"
-                                style="color:#a855f7; border-color:#a855f7">
-                                <ion-icon name="pulse-outline"></ion-icon> <span>تحديث الحالة</span>
+                            <button class="action-btn" onclick="app.sendCommand('screen-dim')"
+                                style="flex-direction: column; gap: 5px; padding: 15px 10px; color: #3b82f6; border-color: rgba(59, 130, 246, 0.3);">
+                                <ion-icon name="eye-off-outline" style="font-size: 1.5rem;"></ion-icon>
+                                <span style="font-size: 0.75rem;">وضع التخفي</span>
                             </button>
                         </div>
 
-                        <!-- Zoom Slider -->
+                        <!-- Zoom Control -->
                         <div
-                            style="margin-top: 15px; padding: 12px; background: var(--glass); border-radius: 12px; border: 1px solid var(--glass-border);">
+                            style="margin-top: 15px; padding: 12px; background: rgba(0,0,0,0.2); border-radius: 12px; border: 1px solid var(--glass-border);">
                             <div
                                 style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                                <span style="font-size: 0.75rem; font-weight: 700;">التقريب (Zoom)</span>
+                                <span style="font-size: 0.7rem; font-weight: 700; color: var(--text-muted);">مستوى
+                                    التقريب</span>
                                 <span id="zoom-val"
-                                    style="color: var(--primary); font-weight: 900; font-size: 0.8rem;">1x</span>
+                                    style="color: var(--primary); font-weight: 900; font-size: 0.8rem; background: rgba(59, 130, 246, 0.1); padding: 2px 8px; border-radius: 10px;">1.0x</span>
                             </div>
                             <input type="range" id="zoom-slider" min="1" max="10" step="0.1" value="1"
-                                style="width: 100%; cursor: pointer; height: 4px; border-radius: 5px; appearance: none; background: #334155;">
+                                style="width: 100%; cursor: pointer; accent-color: var(--primary);">
                         </div>
                     </div>
 
-                    <!-- 2. Media Actions (Primary) -->
+                    <!-- 3. Primary Actions (Capture) -->
                     <div class="control-group">
-                        <h3>الإجراءات</h3>
-                        <div class="btn-grid">
+                        <h3>التقاط وتسجيل</h3>
+                        <div style="display: flex; gap: 10px;">
                             <button class="action-btn" onclick="app.sendCommand('capture-photo')"
-                                style="background: var(--accent); color: white; border: none; font-weight: 700;">
-                                <ion-icon name="camera-outline"></ion-icon> التقاط صورة
+                                style="flex: 1.5; background: var(--accent); color: white; border: none; font-weight: 700; height: 50px; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);">
+                                <ion-icon name="camera-outline"></ion-icon> صورة
                             </button>
                             <button id="record-btn" class="action-btn" onclick="app.toggleRecording()"
-                                style="border-color: #ef4444; color: #ef4444;">
-                                <ion-icon name="radio-button-on-outline"></ion-icon> تسجيل فيديو
+                                style="flex: 1; border-color: #ef4444; color: #ef4444; font-weight: 700; height: 50px;">
+                                <ion-icon name="radio-button-on-outline"></ion-icon> تسجيل
                             </button>
                         </div>
                     </div>
 
-                    <!-- 3. System & Emergency -->
+                    <!-- 4. Advanced Tools -->
                     <div class="control-group">
-                        <h3>أدوات النظام</h3>
+                        <h3>أدوات متقدمة</h3>
                         <div class="btn-grid" style="grid-template-columns: repeat(2, 1fr);">
                             <button class="action-btn" onclick="openSmsModal()"
-                                style="color:#10b981; border-color:#10b981">
-                                <ion-icon name="chatbubble-outline"></ion-icon> <span>إرسال SMS</span>
+                                style="font-size: 0.8rem; color:#10b981; border-color: rgba(16, 185, 129, 0.3);">
+                                <ion-icon name="chatbubble-ellipses-outline"></ion-icon> <span>إرسال SMS</span>
                             </button>
                             <button class="action-btn" onclick="openFiles()"
-                                style="color:#2dd4bf; border-color:#2dd4bf">
+                                style="font-size: 0.8rem; color:#2dd4bf; border-color: rgba(45, 212, 191, 0.3);">
                                 <ion-icon name="folder-open-outline"></ion-icon> <span>الملفات</span>
                             </button>
                             <button class="action-btn" onclick="toggleAppSetup()"
-                                style="color:var(--primary); border-color:var(--primary)">
+                                style="font-size: 0.8rem; color:var(--primary); border-color: rgba(59, 130, 246, 0.3);">
                                 <ion-icon name="apps-outline"></ion-icon> <span>تطبيق النظام</span>
                             </button>
-                            <button class="action-btn" onclick="app.sendCommand('screen-dim')"
-                                style="color: #3b82f6; border-color: #3b82f6;">
-                                <ion-icon name="eye-off-outline"></ion-icon> <span>إخفاء الشاشة</span>
+                            <button class="action-btn" onclick="app.sendCommand('refresh-info')"
+                                style="font-size: 0.8rem; color: #fbbf24; border-color: rgba(251, 191, 36, 0.3);">
+                                <ion-icon name="location-outline"></ion-icon> <span>تتبع الموقع</span>
                             </button>
                         </div>
 
-                        <div class="btn-grid" style="margin-top: 10px;">
+                        <div id="map-container"
+                            style="margin-top: 15px; display: none; overflow: hidden; border-radius: 12px; border: 1px solid var(--glass-border);">
+                            <div id="device-map" style="height: 150px; width: 100%; z-index: 1;"></div>
+                            <a id="google-maps-link" href="#" target="_blank" class="btn"
+                                style="width: 100%; border-radius: 0; font-size: 0.7rem; background: #4285F4; padding: 8px;">
+                                <ion-icon name="map-outline"></ion-icon> الخريطة الكاملة
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- 5. Emergency & Recovery -->
+                    <div class="control-group pt-20" style="border-top: 1px solid rgba(255,255,255,0.05);">
+                        <div class="btn-grid">
                             <button class="action-btn" onclick="app.sendCommand('hard-lock')"
-                                style="color: #ef4444; border-color: #ef4444;">
-                                <ion-icon name="lock-closed"></ion-icon> <span>قفل كامل للطوارئ</span>
+                                style="background: rgba(239, 68, 68, 0.1); color: #ef4444; border-color: rgba(239, 68, 68, 0.3); font-weight: 700;">
+                                <ion-icon name="lock-closed"></ion-icon> <span>قفل الطوارئ</span>
                             </button>
                             <button class="action-btn" onclick="app.sendCommand('restart-app')"
-                                style="color: #fbbf24; border-color: #fbbf24;">
-                                <ion-icon name="refresh-circle-outline"></ion-icon> <span>إعادة التشغيل</span>
+                                style="background: rgba(251, 191, 36, 0.05); color: #fbbf24; border-color: rgba(251, 191, 36, 0.2);">
+                                <ion-icon name="refresh-circle-outline"></ion-icon> <span>إعادة تشغيل</span>
                             </button>
-                        </div>
-
-                        <div id="app-setup-overlay"
-                            style="display: none; margin-top: 15px; padding: 15px; background: rgba(59,130,246,0.1); border-radius: 12px; border: 1px solid var(--primary); text-align: center;">
-                            <p style="font-size: 0.7rem; margin-bottom: 8px;">رابط تثبيت تطبيق النظام:</p>
-                            <div id="monitor-app-url"
-                                style="font-size: 0.6rem; word-break: break-all; background: rgba(0,0,0,0.3); padding: 8px; border-radius: 8px; margin-bottom: 8px;">
-                                ...</div>
-                            <button class="btn" style="width: 100%; font-size: 0.75rem; padding: 8px;"
-                                onclick="copyAppUrl()">نسخ الرابط</button>
                         </div>
                     </div>
 
@@ -260,7 +268,11 @@
             // Expose basic UI helper globally
             window.copyMonitorLink = () => {
                 const link = document.getElementById('link-display').innerText;
-                navigator.clipboard.writeText(link).then(() => alert("تم النسخ!"));
+                navigator.clipboard.writeText(link).then(() => Core.showNotification("تم نسخ رابط الكاميرا!"));
+            };
+            window.copySessionId = () => {
+                const id = document.getElementById('session-name-display').innerText;
+                navigator.clipboard.writeText(id).then(() => Core.showNotification("تم نسخ معرف الجلسة: " + id));
             };
             window.resetSession = () => {
                 if (confirm("هل أنت متأكد؟ سيتم إنشاء جلسة جديدة كلياً.")) {

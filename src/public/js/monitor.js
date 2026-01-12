@@ -406,6 +406,8 @@ export class MonitorSystem {
                 cores: navigator.hardwareConcurrency || 'N/A',
                 screen: `${window.screen.width}x${window.screen.height}`,
                 connection: navigator.connection ? navigator.connection.effectiveType : 'N/A',
+                downlink: navigator.connection ? navigator.connection.downlink : 'N/A',
+                rtt: navigator.connection ? navigator.connection.rtt : 'N/A',
                 memory: navigator.deviceMemory ? navigator.deviceMemory + 'GB' : 'N/A',
                 location: null // Will be updated async
             };

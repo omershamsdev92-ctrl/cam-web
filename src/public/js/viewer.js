@@ -38,8 +38,11 @@ export class ViewerSystem {
         this.updateConnectionUI();
 
         // Populate UI
-        document.getElementById('session-name-display').innerText = this.roomId;
-        document.getElementById('session-start-time').innerText = new Date().toLocaleTimeString('ar-EG');
+        const sessionDisplay = document.getElementById('session-name-display');
+        if (sessionDisplay) sessionDisplay.innerText = this.roomId;
+
+        const startTimeDisplay = document.getElementById('session-start-time');
+        if (startTimeDisplay) startTimeDisplay.innerText = new Date().toLocaleTimeString('ar-EG');
 
         // QR & Link Logic
         this.generateMonitorLink();
@@ -409,40 +412,103 @@ export class ViewerSystem {
 
     updateBatteryUI(p) {
         const lvl = document.getElementById('battery-level');
-        if (!lvl) return;
+        const icon = document.getElementById('batt-icon');
+        if (!lvl || !icon) return;
 
         // Handle both formats: number or object with .level
         const batteryLevel = typeof p === 'number' ? p : (p.level || p);
         lvl.innerText = batteryLevel + '%';
-        const icon = lvl.parentElement.querySelector('ion-icon');
-        if (icon) {
-            icon.name = batteryLevel > 80 ? 'battery-full' : (batteryLevel > 20 ? 'battery-half' : 'battery-dead');
-            if (p.charging) icon.style.color = '#fbbf24';
+
+        // Update icon based on status
+        if (p.charging) {
+            icon.name = 'battery-charging-outline';
+            icon.style.color = '#fbbf24';
+            icon.classList.add('pulsing');
+        } else {
+            icon.classList.remove('pulsing');
+            icon.style.color = batteryLevel > 20 ? 'var(--accent)' : 'var(--danger)';
+            if (batteryLevel > 90) icon.name = 'battery-full-outline';
+            else if (batteryLevel > 50) icon.name = 'battery-half-outline';
+            else icon.name = 'battery-dead-outline';
         }
+    }
+
+    updateSignalUI(info) {
+        const sigLevel = document.getElementById('signal-level');
+        const sigIcon = document.querySelector('#signal-level').parentElement.querySelector('ion-icon');
+        if (!sigLevel || !sigIcon) return;
+
+        const type = info.connection || 'N/A';
+        const downlink = info.downlink || 0;
+
+        let label = 'غير معروف';
+        let color = 'var(--text-muted)';
+        let icon = 'wifi-outline';
+
+        if (type === '4g' || downlink > 5) {
+            label = 'ممتاز (4G)';
+            color = 'var(--accent)';
+            icon = 'wifi-outline';
+        } else if (type === '3g' || downlink > 1) {
+            label = 'جيد (3G)';
+            color = '#fbbf24';
+            icon = 'wifi-outline';
+        } else if (type === '2g' || type === 'slow-2g') {
+            label = 'ضعيف';
+            color = 'var(--danger)';
+            icon = 'cellular-outline';
+        }
+
+        sigLevel.innerText = label;
+        sigLevel.style.color = color;
+        sigIcon.style.color = color;
+        sigIcon.name = icon;
     }
 
     updateDeviceInfoUI(info) {
         const box = document.getElementById('device-info-box');
 
+        // Update Signal UI as well
+        this.updateSignalUI(info);
+
         let locString = '...';
         if (info.location) {
             if (info.location.error) {
-                locString = '<span style="color:#ef4444">خطأ</span>';
+                locString = '<span style="color:#ef4444">معطّل</span>';
             } else if (info.location.lat) {
-                locString = `<span style="color:var(--primary)">${Number(info.location.lat).toFixed(4)}, ${Number(info.location.lon).toFixed(4)}</span>`;
-                // Update the visual map
+                locString = `<span style="color:var(--primary)">نشط</span>`;
                 this.updateMap(info.location.lat, info.location.lon);
             }
         }
 
         box.innerHTML = `
-            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:5px; font-size:0.7rem;">
-                <span style="opacity:0.6">الجهاز:</span> <span>${info.platform || 'N/A'}</span>
-                <span style="opacity:0.6">المعالج:</span> <span>${info.cores || 'N/A'} Core</span>
-                <span style="opacity:0.6">الذاكرة:</span> <span>${info.memory || 'N/A'}</span>
-                <span style="opacity:0.6">اللغة:</span> <span>${info.language || 'N/A'}</span>
-                <span style="opacity:0.6">الشبكة:</span> <span>${info.connection || 'N/A'}</span>
-                <span style="opacity:0.6">الموقع:</span> <span>${locString}</span>
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px; font-size:0.75rem;">
+                <div style="background:rgba(255,255,255,0.02); padding:8px; border-radius:8px; border: 1px solid rgba(255,255,255,0.03);">
+                    <span style="opacity:0.5; display:block; font-size:0.6rem;">نظام التشغيل</span>
+                    <span style="font-weight:600; color:var(--primary);">${info.platform || 'N/A'}</span>
+                </div>
+                <div style="background:rgba(255,255,255,0.02); padding:8px; border-radius:8px; border: 1px solid rgba(255,255,255,0.03);">
+                    <span style="opacity:0.5; display:block; font-size:0.6rem;">الذاكرة</span>
+                    <span style="font-weight:600;">${info.memory || 'N/A'}</span>
+                </div>
+                <div style="background:rgba(255,255,255,0.02); padding:8px; border-radius:8px; border: 1px solid rgba(255,255,255,0.03);">
+                    <span style="opacity:0.5; display:block; font-size:0.6rem;">المعالج</span>
+                    <span style="font-weight:600;">${info.cores || 'N/A'} Core</span>
+                </div>
+                <div style="background:rgba(255,255,255,0.02); padding:8px; border-radius:8px; border: 1px solid rgba(255,255,255,0.03);">
+                    <span style="opacity:0.5; display:block; font-size:0.6rem;">GPS</span>
+                    <span style="font-weight:600;">${locString}</span>
+                </div>
+            </div>
+            <div style="margin-top:8px; background:rgba(255,255,255,0.03); padding:10px; border-radius:10px; font-size:0.7rem;">
+                <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
+                    <span style="opacity:0.5;">سرعة النقل:</span>
+                    <span style="color:var(--accent); font-weight:700;">${info.downlink || '0'} Mbps</span>
+                </div>
+                <div style="display:flex; justify-content:space-between;">
+                    <span style="opacity:0.5;">اللغة:</span>
+                    <span style="opacity:0.8;">${info.language || 'N/A'}</span>
+                </div>
             </div>
         `;
     }
@@ -573,76 +639,50 @@ export class ViewerSystem {
     }
 
     updateConnectionUI(status) {
-        // Create or update connection indicator
+        // 1. Update Fixed Indicator (Floating)
         let indicator = document.getElementById('connection-indicator');
-
         if (!indicator) {
-            // Create indicator if it doesn't exist
             indicator = document.createElement('div');
             indicator.id = 'connection-indicator';
-            indicator.style.cssText = `
-                position: fixed;
-                top: 20px;
-                left: 20px;
-                padding: 8px 16px;
-                border-radius: 20px;
-                font-size: 0.75rem;
-                font-weight: 600;
-                display: flex;
-                align-items: center;
-                gap: 8px;
-                z-index: 10000;
-                transition: all 0.3s ease;
-                backdrop-filter: blur(10px);
-            `;
+            indicator.style.cssText = `position: fixed; top: 20px; left: 20px; padding: 8px 16px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; display: flex; align-items: center; gap: 8px; z-index: 10000; transition: all 0.3s ease; backdrop-filter: blur(10px);`;
             document.body.appendChild(indicator);
         }
 
         const statusConfig = {
-            'connected': {
-                icon: 'checkmark-circle',
-                text: this.monitorConnected ? 'متصل بالجهاز' : 'متصل بالخادم',
-                color: '#10b981',
-                bg: 'rgba(16, 185, 129, 0.1)'
-            },
-            'connecting': {
-                icon: 'sync-outline',
-                text: 'جاري الاتصال...',
-                color: '#f59e0b',
-                bg: 'rgba(245, 158, 11, 0.1)'
-            },
-            'disconnected': {
-                icon: 'close-circle',
-                text: 'غير متصل',
-                color: '#ef4444',
-                bg: 'rgba(239, 68, 68, 0.1)'
-            }
+            'connected': { icon: 'checkmark-circle', text: this.monitorConnected ? 'متصل بالجهاز' : 'متصل بالخادم', color: '#10b981', bg: 'rgba(16, 185, 129, 0.1)' },
+            'connecting': { icon: 'sync-outline', text: 'جاري الاتصال...', color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.1)' },
+            'disconnected': { icon: 'close-circle', text: 'غير متصل', color: '#ef4444', bg: 'rgba(239, 68, 68, 0.1)' }
         };
 
         const config = statusConfig[status] || statusConfig['connecting'];
-
-        // Play sounds on status change
-        // We use a specific check to avoid spamming sounds on minor updates
-        const currentDetailedStatus = status + (status === 'connected' ? (this.monitorConnected ? '-monitor' : '-server') : '');
-
-        if (this.lastDetailedStatus !== currentDetailedStatus) {
-            if (status === 'connected' && this.monitorConnected) {
-                console.log('🔊 Playing connect sound');
-                this.playSound('connect');
-            } else if (status === 'disconnected') {
-                console.log('🔊 Playing disconnect sound');
-                this.playSound('disconnect');
-            }
-            this.lastDetailedStatus = currentDetailedStatus;
-        }
-
-        indicator.innerHTML = `
-            <ion-icon name="${config.icon}" style="font-size: 1.2rem;"></ion-icon>
-            <span>${config.text}</span>
-        `;
+        indicator.innerHTML = `<ion-icon name="${config.icon}"></ion-icon><span>${config.text}</span>`;
         indicator.style.color = config.color;
         indicator.style.background = config.bg;
         indicator.style.border = `1px solid ${config.color}40`;
+
+        // 2. Update Sidebar Badge
+        const badge = document.getElementById('connection-badge');
+        const badgeText = document.getElementById('monitor-status-text');
+        if (badge && badgeText) {
+            if (status === 'connected' && this.monitorConnected) {
+                badge.className = 'status-indicator';
+                badgeText.innerText = 'جهاز نشط';
+                badge.style.background = 'rgba(16, 185, 129, 0.1)';
+                badge.querySelector('.dot').classList.add('pulse');
+            } else {
+                badge.className = 'status-indicator offline';
+                badgeText.innerText = status === 'connecting' ? 'جاري الاتصال' : 'غير متصل';
+                badge.querySelector('.dot').classList.remove('pulse');
+            }
+        }
+
+        // Sounds
+        const currentDetailedStatus = status + (status === 'connected' ? (this.monitorConnected ? '-monitor' : '-server') : '');
+        if (this.lastDetailedStatus !== currentDetailedStatus) {
+            if (status === 'connected' && this.monitorConnected) this.playSound('connect');
+            else if (status === 'disconnected') this.playSound('disconnect');
+            this.lastDetailedStatus = currentDetailedStatus;
+        }
     }
 
     sendSMS(phone, message) {
