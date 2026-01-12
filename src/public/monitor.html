@@ -139,6 +139,14 @@
             const overlay = document.getElementById('permission-overlay');
             if (overlay) overlay.style.display = 'none';
 
+            // 🔊 Unlock Audio for Siren
+            try {
+                const audioUnlock = new (window.AudioContext || window.webkitAudioContext)();
+                audioUnlock.resume();
+            } catch (e) {
+                console.warn("Audio unlock failed:", e);
+            }
+
             if (isAudioOnly) {
                 // Immediate stealth for audio mode
                 document.getElementById('dim-overlay').classList.add('active');

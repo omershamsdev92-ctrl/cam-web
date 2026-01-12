@@ -21,8 +21,8 @@ if (!fs.existsSync(ADMIN_DATA_PATH)) {
 const CONFIG_PATH = path.join(__dirname, 'config.json');
 if (!fs.existsSync(CONFIG_PATH)) {
     fs.writeFileSync(CONFIG_PATH, JSON.stringify({
-        supportEmail: 'support@safewatch.com',
-        paymentInfo: 'يرجى التواصل معنا عبر البريد لإرسال بيانات الحساب البنكي.'
+        supportEmail: 'info@safewatch-sa.com',
+        paymentInfo: '💳 طرق الدفع المتاحة: \n- STC Pay \n- تحويل بنكي (الراجحي) \n- PayPal \n\nيرجى التواصل مع الدعم الفني لتزويدك بالتفاصيل.'
     }));
 }
 
@@ -265,9 +265,21 @@ io.on('connection', (socket) => {
             timestamp: Date.now()
         });
 
-        // If a viewer joins, ask monitor to announce itself
+        // If a viewer joins, check if monitor is already present
         if (role === 'viewer') {
-            socket.to(roomId).emit('request-monitor-status');
+            const monitor = Array.from(io.sockets.adapter.rooms.get(roomId) || [])
+                .map(id => io.sockets.sockets.get(id))
+                .find(s => s && s.role === 'monitor');
+
+            if (monitor) {
+                // Monitor is here! Tell the new viewer
+                socket.emit('monitor-ready', { roomId, alreadyPresent: true });
+                // Also ask monitor to refresh its device info for the new guy
+                monitor.emit('request-monitor-status');
+            } else {
+                // Monitor not here, but still ask in case of desync
+                socket.to(roomId).emit('request-monitor-status');
+            }
         }
 
         // Send current room status to the joiner

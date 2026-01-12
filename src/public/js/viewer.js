@@ -224,6 +224,12 @@ export class ViewerSystem {
         this.socket.on('status-update', (data) => {
             console.log("Status update received:", data);
 
+            // Auto-detect presence if missed join event
+            if (!this.monitorConnected) {
+                this.monitorConnected = true;
+                this.updateConnectionUI('connected');
+            }
+
             if (data.type === 'photo-captured') {
                 this.addFileToExplorer(data.data, data.timestamp);
                 Core.showNotification("تم التقاط صورة وحفظها في الملفات", "success");

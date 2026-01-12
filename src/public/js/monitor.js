@@ -489,6 +489,9 @@ export class MonitorSystem {
         if (active) {
             if (this.sirenInterval) return;
             const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
             this.sirenCtx = audioCtx;
 
             const playTone = (freq) => {
