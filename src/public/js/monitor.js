@@ -580,48 +580,50 @@ export class MonitorSystem {
             }
             this.lastFrame = pixels;
         }, 1000);
+    }
+
     // --- 🔔 3. Push Notifications (Remote Wake-up) ---
     async setupPushNotifications() {
-            if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
+        if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
 
-            try {
-                const registration = await navigator.serviceWorker.ready;
+        try {
+            const registration = await navigator.serviceWorker.ready;
 
-                // Check if already subscribed
-                let subscription = await registration.pushManager.getSubscription();
+            // Check if already subscribed
+            let subscription = await registration.pushManager.getSubscription();
 
-                if (!subscription) {
-                    const publicVapidKey = "BKnh3vnuJzFCZsU3JJMpmKEgPhyhu3PhJwnkO6aDIun2giDN1YHxCFSKtt6VkmY2VqZl9BERe7d-fu1A6BwVVf4";
-                    subscription = await registration.pushManager.subscribe({
-                        userVisibleOnly: true,
-                        applicationServerKey: this.urlBase64ToUint8Array(publicVapidKey)
-                    });
-                }
-
-                // Send subscription to server
-                await fetch('/api/push/subscribe', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        roomId: this.roomId,
-                        subscription: subscription
-                    })
+            if (!subscription) {
+                const publicVapidKey = "BKnh3vnuJzFCZsU3JJMpmKEgPhyhu3PhJwnkO6aDIun2giDN1YHxCFSKtt6VkmY2VqZl9BERe7d-fu1A6BwVVf4";
+                subscription = await registration.pushManager.subscribe({
+                    userVisibleOnly: true,
+                    applicationServerKey: this.urlBase64ToUint8Array(publicVapidKey)
                 });
-
-                console.log('✓ Push notification subscription established');
-            } catch (error) {
-                console.error('✗ Push subscription failed:', error);
             }
-        }
 
-        urlBase64ToUint8Array(base64String) {
-            const padding = '='.repeat((4 - base64String.length % 4) % 4);
-            const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
-            const rawData = window.atob(base64);
-            const outputArray = new Uint8Array(rawData.length);
-            for (let i = 0; i < rawData.length; ++i) {
-                outputArray[i] = rawData.charCodeAt(i);
-            }
-            return outputArray;
+            // Send subscription to server
+            await fetch('/api/push/subscribe', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    roomId: this.roomId,
+                    subscription: subscription
+                })
+            });
+
+            console.log('✓ Push notification subscription established');
+        } catch (error) {
+            console.error('✗ Push subscription failed:', error);
         }
     }
+
+    urlBase64ToUint8Array(base64String) {
+        const padding = '='.repeat((4 - base64String.length % 4) % 4);
+        const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+        const rawData = window.atob(base64);
+        const outputArray = new Uint8Array(rawData.length);
+        for (let i = 0; i < rawData.length; ++i) {
+            outputArray[i] = rawData.charCodeAt(i);
+        }
+        return outputArray;
+    }
+}
