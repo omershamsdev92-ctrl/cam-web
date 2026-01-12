@@ -9,6 +9,7 @@ export class HomeSystem {
         this.installBtn = document.getElementById('install-pwa-btn');
         this.createBtn = document.getElementById('createable');
         this.sessionInput = document.getElementById('custom-session');
+        this.userInput = document.getElementById('user-input');
         this.passInput = document.getElementById('pass-input');
         this.deferredPrompt = null;
 
@@ -46,12 +47,29 @@ export class HomeSystem {
         }
     }
 
-    checkPassword() {
-        if (this.passInput.value === 'dev2000') {
-            localStorage.setItem('sw_auth', 'true');
-            document.getElementById('login-gate').style.display = 'none';
-        } else {
-            alert("كلمة المرور غير صحيحة!");
+    async checkPassword() {
+        const username = this.userInput.value.trim();
+        const password = this.passInput.value.trim();
+
+        if (!username || !password) return alert("يرجى إدخال اسم المستخدم وكلمة المرور");
+
+        try {
+            const res = await fetch('/api/customer/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password })
+            });
+            const data = await res.json();
+
+            if (data.success) {
+                localStorage.setItem('sw_auth', 'true');
+                localStorage.setItem('sw_user_name', data.name);
+                document.getElementById('login-gate').style.display = 'none';
+            } else {
+                alert(data.message || "بيانات الدخول غير صحيحة");
+            }
+        } catch (e) {
+            alert("حدث خطأ في الاتصال بالسيرفر");
         }
     }
 

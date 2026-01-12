@@ -132,12 +132,12 @@ class AdminSystem {
         document.getElementById('pending-subs').innerText = pending;
     }
 
-    async updateSubStatus(id, status) {
+    async updateSubStatus(id, status, extra = {}) {
         try {
             await fetch('/api/admin/update-status', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ id, status })
+                body: JSON.stringify({ id, status, ...extra })
             });
             this.loadSubscriptions();
         } catch (e) {
@@ -214,7 +214,7 @@ window.openConfirmModal = (id, name, email) => {
         const p = document.getElementById('send-pass').value;
 
         // Save to database
-        await admin.updateSubStatus(id, 'confirmed');
+        await admin.updateSubStatus(id, 'confirmed', { username: u, password: p });
 
         // Show success state
         document.getElementById('final-user').innerText = u;

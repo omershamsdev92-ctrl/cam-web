@@ -654,3 +654,55 @@ input:checked+.slider:before {
     transform: none;
     box-shadow: none;
 }
+
+/* Rich Animations & Effects */
+@keyframes pulse-ring {
+    0% {
+        transform: scale(0.8);
+        opacity: 0.5;
+    }
+
+    100% {
+        transform: scale(1.6);
+        opacity: 0;
+    }
+}
+
+.pulse-ring {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 100px;
+    height: 100px;
+    border: 2px solid var(--primary);
+    border-radius: 50%;
+    animation: pulse-ring 2s cubic-bezier(0.25, 0.1, 0.25, 1) infinite;
+    z-index: -1;
+}
+
+@keyframes pulsing {
+    0% {
+        transform: scale(1);
+    }
+
+    50% {
+        transform: scale(1.1);
+    }
+
+    100% {
+        transform: scale(1);
+    }
+}
+
+.pulsing {
+    animation: pulsing 1.5s infinite ease-in-out;
+}
+
+.hover-lift {
+    transition: transform 0.3s ease;
+}
+
+.hover-lift:hover {
+    transform: translateY(-5px);
+}

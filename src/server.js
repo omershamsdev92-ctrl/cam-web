@@ -114,6 +114,28 @@ app.post('/api/admin/config', (req, res) => {
     res.json({ success: true });
 });
 
+// 🏠 Customer Login Verification
+app.post('/api/customer/login', (req, res) => {
+    const { username, password } = req.body;
+    const subPath = path.join(__dirname, 'receipts', 'subscriptions.json');
+    if (fs.existsSync(subPath)) {
+        const subs = JSON.parse(fs.readFileSync(subPath, 'utf8'));
+        const found = subs.find(s => s.status === 'confirmed' && s.username === username && s.password === password);
+        if (found) {
+            res.json({ success: true, name: found.name });
+        } else {
+            // Also allow the dev password for backward compatibility
+            if (password === 'dev2000' && username === 'admin') {
+                res.json({ success: true, name: 'المسؤول' });
+            } else {
+                res.status(401).json({ success: false, message: 'بيانات الدخول غير صحيحة أو الحساب قيد المراجعة' });
+            }
+        }
+    } else {
+        res.status(401).json({ success: false, message: 'لا توجد حسابات مفعلة حالياً' });
+    }
+});
+
 app.post('/api/admin/login', (req, res) => {
     const { username, password } = req.body;
     const admins = JSON.parse(fs.readFileSync(ADMIN_DATA_PATH, 'utf8'));
@@ -151,13 +173,17 @@ app.post('/api/admin/change-password', (req, res) => {
 });
 
 app.post('/api/admin/update-status', (req, res) => {
-    const { id, status } = req.body;
+    const { id, status, username, password } = req.body;
     const subPath = path.join(__dirname, 'receipts', 'subscriptions.json');
     if (fs.existsSync(subPath)) {
         let subs = JSON.parse(fs.readFileSync(subPath, 'utf8'));
         const idx = subs.findIndex(s => s.id == id);
         if (idx !== -1) {
             subs[idx].status = status;
+            if (username && password) {
+                subs[idx].username = username;
+                subs[idx].password = password;
+            }
             fs.writeFileSync(subPath, JSON.stringify(subs, null, 2));
             res.json({ success: true });
         } else res.status(404).json({ success: false });

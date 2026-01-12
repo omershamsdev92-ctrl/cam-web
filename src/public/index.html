@@ -17,33 +17,60 @@
 <body>
     <!-- Login Gate -->
     <div id="login-gate" class="login-overlay">
-        <div class="login-card" style="border-top: 4px solid var(--primary);">
-            <div
-                style="display: inline-flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 20px;">
-                <ion-icon name="radio-outline" style="font-size: 3rem; color: var(--primary);"></ion-icon>
+        <div class="login-card"
+            style="border-top: 5px solid var(--primary); background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(20px);">
+            <div style="position: relative; margin-bottom: 25px;">
+                <div
+                    style="background: var(--primary); width: 80px; height: 80px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto; box-shadow: 0 0 30px rgba(59, 130, 246, 0.4);">
+                    <ion-icon name="shield-checkmark" style="font-size: 3rem; color: white;"></ion-icon>
+                </div>
+                <div class="pulse-ring"></div>
             </div>
-            <h2 style="font-weight: 800;">برج المراقبة</h2>
-            <p style="color: var(--text-muted); margin-bottom: 20px; font-size: 0.9rem;">نظام الأمن المركزي المتكامل</p>
-            <input type="password" id="pass-input" class="login-input" placeholder="كلمة المرور">
-            <button id="login-btn" class="btn" style="width: 100%;">دخول للنظام</button>
+
+            <h2
+                style="font-weight: 900; font-size: 1.8rem; margin-bottom: 5px; background: linear-gradient(45deg, #fff, var(--primary)); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;">
+                برج المراقبة</h2>
+            <p style="color: var(--text-muted); margin-bottom: 30px; font-size: 0.95rem; letter-spacing: 1px;">
+                WATCHTOWER SECURITY</p>
+
+            <div style="width: 100%; display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px;">
+                <div style="position: relative;">
+                    <ion-icon name="person-outline"
+                        style="position: absolute; right: 15px; top: 50%; transform: translateY(-50%); color: var(--text-muted);"></ion-icon>
+                    <input type="text" id="user-input" class="login-input" placeholder="اسم المستخدم"
+                        style="padding-right: 45px; margin: 0;">
+                </div>
+                <div style="position: relative;">
+                    <ion-icon name="lock-closed-outline"
+                        style="position: absolute; right: 15px; top: 50%; transform: translateY(-50%); color: var(--text-muted);"></ion-icon>
+                    <input type="password" id="pass-input" class="login-input" placeholder="كلمة المرور"
+                        style="padding-right: 45px; margin: 0;">
+                </div>
+            </div>
+
+            <button id="login-btn" class="btn"
+                style="width: 100%; padding: 15px; font-size: 1.1rem; font-weight: 700; box-shadow: 0 10px 20px rgba(0,0,0,0.2);">
+                <ion-icon name="log-in-outline" style="margin-left: 8px;"></ion-icon> دخول آمن
+            </button>
             <button onclick="localStorage.clear(); location.reload();"
-                style="background:none; border:none; color:var(--text-muted); font-size:0.7rem; margin-top:20px; cursor:pointer; text-decoration:underline;">إعادة
-                ضبط الإعدادات</button>
+                style="background:none; border:none; color:var(--text-muted); font-size:0.75rem; margin-top:25px; cursor:pointer; text-decoration:underline; opacity: 0.7;">إعادة
+                ضبط النظام</button>
         </div>
     </div>
 
     <div class="container">
         <header>
-            <div class="logo" style="display: flex; align-items: center; gap: 12px;">
+            <div class="logo" style="display: flex; align-items: center; gap: 15px;">
                 <div
-                    style="background: rgba(59, 130, 246, 0.1); padding: 8px; border-radius: 12px; border: 1px solid rgba(59, 130, 246, 0.3);">
-                    <ion-icon name="radio" style="font-size: 1.5rem; color: var(--primary);"></ion-icon>
+                    style="background: linear-gradient(135deg, var(--primary), #1e40af); padding: 10px; border-radius: 12px; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3); display: flex; align-items: center; justify-content: center;">
+                    <ion-icon name="shield-checkmark" style="font-size: 1.8rem; color: white;"></ion-icon>
                 </div>
-                <div style="display: flex; flex-direction: column; line-height: 1.2;">
-                    <span style="font-weight: 800; font-size: 1.1rem; letter-spacing: -0.5px;">برج المراقبة</span>
+                <div style="display: flex; flex-direction: column; line-height: 1.1;">
+                    <span style="font-weight: 900; font-size: 1.3rem; letter-spacing: -0.5px; color: #fff;">برج
+                        المراقبة</span>
                     <span
-                        style="font-size: 0.65rem; color: var(--text-muted); letter-spacing: 1px; font-family: monospace;">WATCHTOWER
-                        SYS</span>
+                        style="font-size: 0.7rem; color: var(--primary); letter-spacing: 2px; font-weight: 700; text-transform: uppercase;">WatchTower
+                        Security</span>
                 </div>
             </div>
             <button id="install-pwa-btn" class="btn" style="padding: 10px 20px; font-size: 0.85rem; display: none;">
