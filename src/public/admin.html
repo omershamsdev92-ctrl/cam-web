@@ -296,23 +296,52 @@
     <!-- Modal: Confirmation & Credentials -->
     <div id="confirm-modal" class="modal">
         <div class="modal-content">
-            <h3 id="modal-title">تفعيل الحساب</h3>
-            <p id="modal-desc" style="color: #94a3b8; margin: 15px 0;"></p>
+            <div id="modal-step-1">
+                <h3 id="modal-title">تفعيل الحساب وتوليد البيانات</h3>
+                <p id="modal-desc" style="color: #94a3b8; margin: 15px 0;"></p>
 
-            <div id="creds-section" style="margin-top: 20px;">
-                <div class="form-group">
-                    <label>اسم المستخدم المراد إرساله:</label>
-                    <input type="text" id="send-user" class="form-input" value="user_XXXX">
+                <div id="creds-section" style="margin-top: 20px;">
+                    <div class="form-group">
+                        <label>اسم المستخدم المقترح:</label>
+                        <input type="text" id="send-user" class="form-input">
+                    </div>
+                    <div class="form-group">
+                        <label>كلمة المرور المقترحة:</label>
+                        <input type="text" id="send-pass" class="form-input">
+                    </div>
+                    <button class="submit-btn" id="confirm-action-btn">تأكيد التفعيل وتوليد البيانات</button>
+                    <button class="btn" onclick="closeModal()"
+                        style="width: 100%; background: none; margin-top: 10px;">إلغاء</button>
                 </div>
-                <div class="form-group">
-                    <label>كلمة المرور:</label>
-                    <input type="text" id="send-pass" class="form-input" value="pass_XXXX">
+            </div>
+
+            <!-- Success State (Step 2) -->
+            <div id="modal-step-success" style="display: none; text-align: center;">
+                <ion-icon name="checkmark-circle"
+                    style="font-size: 4rem; color: var(--accent); margin-bottom: 15px;"></ion-icon>
+                <h3 style="margin-bottom: 10px;">تم تفعيل الحساب!</h3>
+                <p style="color: #94a3b8; margin-bottom: 20px;">الآن قم بنسخ البيانات أو إرسالها للعميل:</p>
+
+                <div
+                    style="background: rgba(0,0,0,0.3); padding: 20px; border-radius: 15px; text-align: right; margin-bottom: 20px; border: 1px solid var(--glass-border);">
+                    <div style="margin-bottom: 10px;">👤 المستخدم: <strong id="final-user"
+                            style="color: var(--primary); font-size: 1.1rem;"></strong></div>
+                    <div>🔑 كلمة المرور: <strong id="final-pass"
+                            style="color: var(--primary); font-size: 1.1rem;"></strong></div>
                 </div>
-                <p style="font-size: 0.75rem; color: var(--accent); margin-bottom: 15px;">سيتم تزويدك بزر لفتح الإيميل
-                    مباشرة بهذه البيانات</p>
-                <button class="submit-btn" id="confirm-action-btn">إرسال وتأكيد الدفع</button>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                    <button class="btn" onclick="window.copyFinalCreds()"
+                        style="background: var(--accent); padding: 12px;">
+                        <ion-icon name="copy-outline"></ion-icon> نسخ
+                    </button>
+                    <button class="btn" id="open-mail-final" style="padding: 12px;">
+                        <ion-icon name="mail-outline"></ion-icon> إيميل
+                    </button>
+                </div>
                 <button class="btn" onclick="closeModal()"
-                    style="width: 100%; background: none; margin-top: 10px;">إلغاء</button>
+                    style="width: 100%; background: none; margin-top: 20px; border: 1px solid var(--glass-border);">إغلاق
+                    التنبيه</button>
             </div>
         </div>
     </div>
