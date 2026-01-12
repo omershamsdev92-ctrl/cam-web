@@ -121,23 +121,26 @@ app.post('/api/admin/config', (req, res) => {
 // 🏠 Customer Login Verification
 app.post('/api/customer/login', (req, res) => {
     const { username, password } = req.body;
+
+    // 1. Priority: System Admin Fallback
+    if (username === 'admin' && password === 'dev2000') {
+        return res.json({ success: true, name: 'المسؤول الأساسي' });
+    }
+
+    // 2. Customer Subscriptions
     const subPath = path.join(__dirname, 'receipts', 'subscriptions.json');
     if (fs.existsSync(subPath)) {
         const subs = JSON.parse(fs.readFileSync(subPath, 'utf8'));
         const found = subs.find(s => s.status === 'confirmed' && s.username === username && s.password === password);
         if (found) {
-            res.json({ success: true, name: found.name });
-        } else {
-            // Also allow the dev password for backward compatibility
-            if (password === 'dev2000' && username === 'admin') {
-                res.json({ success: true, name: 'المسؤول' });
-            } else {
-                res.status(401).json({ success: false, message: 'بيانات الدخول غير صحيحة أو الحساب قيد المراجعة' });
-            }
+            return res.json({ success: true, name: found.name });
         }
-    } else {
-        res.status(401).json({ success: false, message: 'لا توجد حسابات مفعلة حالياً' });
     }
+
+    res.status(401).json({
+        success: false,
+        message: 'بيانات الدخول غير صحيحة أو الحساب لم يتم تفعيله بعد'
+    });
 });
 
 app.post('/api/admin/login', (req, res) => {
