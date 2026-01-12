@@ -127,6 +127,28 @@
 
     <!-- Scripts -->
     <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
+    <script>
+        // 🚨 Global Error Handler for Mobile Debugging
+        window.onerror = function (msg, url, line, col, error) {
+            const btn = document.getElementById('start-btn');
+            if (btn) {
+                btn.innerHTML = `<span style="font-size:0.7rem; color: #fecaca">⚠️ خطأ نظام: ${msg}</span>`;
+                btn.style.background = '#991b1b';
+            }
+            return false;
+        };
+
+        // 🕵️ Detect In-App Browsers
+        function isInApp() {
+            const ua = navigator.userAgent || navigator.vendor || window.opera;
+            return (ua.indexOf("Instagram") > -1) || (ua.indexOf("FBAN") > -1) || (ua.indexOf("FBAV") > -1) || (ua.indexOf("Snapchat") > -1) || (ua.indexOf("Line") > -1);
+        }
+
+        if (isInApp()) {
+            alert("⚠️ تنبيه: يرجى فتح الرابط في متصفح خارجي (Chrome/Safari) لضمان العمل.");
+        }
+    </script>
+    <script src="/socket.io/socket.io.js"></script>
     <script type="module">
         import { Core } from './js/core.js';
         import { MonitorSystem } from './js/monitor.js';
