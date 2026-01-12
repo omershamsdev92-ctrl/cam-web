@@ -63,6 +63,20 @@
         </div>
     </div>
 
+    <!-- Global Notice Bar -->
+    <div
+        style="background: linear-gradient(90deg, #1e293b, #1e40af, #1e293b); color: white; padding: 12px; text-align: center; font-size: 0.9rem; border-bottom: 1px solid var(--glass-border); position: sticky; top: 0; z-index: 999; backdrop-filter: blur(10px);">
+        <div style="display: flex; align-items: center; justify-content: center; gap: 10px; flex-wrap: wrap;">
+            <ion-icon name="information-circle-outline" style="color: var(--accent); font-size: 1.2rem;"></ion-icon>
+            <span>هل أنت مستخدم جديد؟ للاستفادة من خدمات المراقبة الذكية، يرجى <strong>التسجيل وطلب الاشتراك</strong> من
+                القسم الموجود في أسفل الصفحة.</span>
+            <button onclick="document.getElementById('pricing-section').scrollIntoView({behavior: 'smooth'})"
+                style="background: var(--accent); border: none; color: white; padding: 4px 12px; border-radius: 20px; font-size: 0.8rem; cursor: pointer; font-weight: 700; margin-right: 10px;">
+                اشترك الآن <ion-icon name="arrow-down-outline"></ion-icon>
+            </button>
+        </div>
+    </div>
+
     <div class="container">
         <header>
             <div class="logo" style="display: flex; align-items: center; gap: 15px;">
@@ -170,7 +184,7 @@
         </div>
 
         <!-- Premium Subscription Section -->
-        <section class="footer-section">
+        <section id="pricing-section" class="footer-section">
             <h2 style="font-size: 2.2rem; font-weight: 900; margin-bottom: 10px;">انضم إلى <span
                     style="color: var(--primary);">المحترفين</span></h2>
             <p style="color: var(--text-muted); max-width: 600px; margin: 0 auto 40px auto;">احصل على كامل الصلاحيات
