@@ -196,16 +196,13 @@ window.openConfirmModal = (id, name, email) => {
         step1.style.display = 'none';
         stepSuccess.style.display = 'block';
 
-        // Update the email button to show the target address
-        const mailBtn = document.getElementById('open-mail-final');
-        mailBtn.innerHTML = `<ion-icon name="mail-outline"></ion-icon> إيميل (${email})`;
+        // Update the email link (Anchor Tag)
+        const mailLink = document.getElementById('open-mail-final');
+        const subject = encodeURIComponent("تفعيل اشتراكك في برج المراقبة 🛡️");
+        const msgBody = `مرحباً ${name}،\n\nتم تأكيد دفع اشتراكك بنجاح في منظومة برج المراقبة.\n\nإليك بيانات الدخول الخاصة بك:\n--------------------------\nاسم المستخدم: ${u}\nكلمة المرور: ${p}\n--------------------------\n\nيمكنك تسجيل الدخول الآن عبر الرابط التالي:\n${window.location.origin}\n\nشكراً لثقتكم بنا.\nإدارة برج المراقبة`;
 
-        // Set up the mail button click
-        mailBtn.onclick = () => {
-            const subject = encodeURIComponent("تفعيل اشتراكك في برج المراقبة 🛡️");
-            const msgBody = `مرحباً ${name}،\n\nتم تأكيد دفع اشتراكك بنجاح في منظومة برج المراقبة.\n\nإليك بيانات الدخول الخاصة بك:\n--------------------------\nاسم المستخدم: ${u}\nكلمة المرور: ${p}\n--------------------------\n\nيمكنك تسجيل الدخول الآن عبر الرابط التالي:\n${window.location.origin}\n\nشكراً لثقتكم بنا.\nإدارة برج المراقبة`;
-            window.location.href = `mailto:${email}?subject=${subject}&body=${encodeURIComponent(msgBody)}`;
-        };
+        mailLink.href = `mailto:${email}?subject=${subject}&body=${encodeURIComponent(msgBody)}`;
+        mailLink.querySelector('span').innerText = `إيميل (${email})`;
 
         // Global data for copying
         window.currentCreds = `اسم المستخدم: ${u}\nكلمة المرور: ${p}\nالرابط: ${window.location.origin}`;
