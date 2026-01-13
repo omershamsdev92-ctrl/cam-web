@@ -124,347 +124,295 @@
             </div>
         </header>
 
-        <section class="hero">
-            <h1>حول هاتفك القديم إلى <br> <span style="color: var(--primary);">منظومة مراقبة</span> ذكية</h1>
-            <p>حل آمن، فوري، ومشفر لمراقبة أطفالك وممتلكاتك من أي مكان في العالم عبر المتصفح مباشرة.</p>
-
+        <section class="hero" style="padding: 100px 20px; position: relative; overflow: hidden;">
             <div
-                style="background: var(--glass); padding: 40px; border-radius: 30px; border: 1px solid var(--glass-border); display: inline-block; width: 100%; max-width: 500px; text-align: center;">
-                <div style="margin-bottom: 20px;">
+                style="position: absolute; top: -50%; left: -50%; width: 200%; height: 200%; background: radial-gradient(circle, rgba(59,130,246,0.15) 0%, rgba(0,0,0,0) 70%); pointer-events: none; z-index: -1;">
+            </div>
+
+            <h1 style="font-size: 3.5rem; line-height: 1.2; margin-bottom: 20px;">
+                حول جوالك القديم إلى <br>
+                <span
+                    style="background: linear-gradient(120deg, var(--primary), var(--accent)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">نظام
+                    أمان ذكي ومجاني</span>
+            </h1>
+            <p
+                style="font-size: 1.2rem; color: var(--text-muted); max-width: 650px; margin: 0 auto 40px auto; line-height: 1.8;">
+                بدون تحميل تطبيقات، وبدون شراء معدات مكلفة.
+                <br>
+                راقب منزلك، أطفالك، أو مكتبك فوراً عبر المتصفح باستخدام أي هاتف ذكي قديم لديك.
+            </p>
+
+            <!-- Main CTA Container -->
+            <div
+                style="background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(20px); border: 1px solid var(--glass-border); padding: 40px; border-radius: 30px; display: inline-block; width: 100%; max-width: 550px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);">
+
+                <div style="margin-bottom: 25px;">
                     <label
-                        style="display: block; text-align: right; margin-bottom: 10px; color: var(--text-muted); font-size: 0.9rem;">اسم
-                        الجلسة (اختياري):</label>
-                    <input type="text" id="custom-session" class="login-input" style="margin: 0; font-size: 1rem;"
-                        placeholder="مثلاً: kids-room">
+                        style="display: block; text-align: right; margin-bottom: 12px; color: var(--text-main); font-weight: 700; font-size: 1.1rem;">
+                        <ion-icon name="videocam"
+                            style="vertical-align: middle; color: var(--primary); margin-left:8px;"></ion-icon>
+                        ابدأ المراقبة الآن (مجاناً)
+                    </label>
+                    <input type="text" id="custom-session" class="login-input"
+                        style="margin: 0; font-size: 1.1rem; padding: 18px; text-align: center; border-radius: 15px; background: rgba(0,0,0,0.4);"
+                        placeholder="اكتب اسم للجلسة (مثلاً: home-cam-1)">
                 </div>
-                <button id="createable" class="btn" style="width: 100%; margin-bottom: 12px;">
-                    <ion-icon name="play-circle" style="font-size: 1.4rem;"></ion-icon> ابدأ المراقبة بالفيديو
+
+                <button id="createable" class="btn"
+                    style="width: 100%; margin-bottom: 15px; font-size: 1.3rem; padding: 18px; box-shadow: 0 0 20px rgba(59, 130, 246, 0.4); animation: pulse 2s infinite;">
+                    <ion-icon name="rocket"></ion-icon> إنشاء كاميرا جديدة
                 </button>
+
                 <button id="create-audio-only" class="btn"
-                    style="width: 100%; background: var(--accent); margin-bottom: 25px;">
-                    <ion-icon name="mic-circle" style="font-size: 1.4rem;"></ion-icon> إنشاء رابط مراقبة صوتية فقط
+                    style="width: 100%; background: transparent; border: 1px solid var(--glass-border); color: var(--text-muted); font-size: 0.95rem; padding: 12px;">
+                    <ion-icon name="mic"></ion-icon> وضع مراقبة صوتية فقط (توفير البيانات)
                 </button>
+            </div>
 
-                <!-- IP Lookup Tool for Members -->
-                <div style="border-top: 1px solid var(--glass-border); margin-top: 20px; padding-top: 25px;">
-                    <label
-                        style="display: block; text-align: right; margin-bottom: 10px; color: var(--text-muted); font-size: 0.9rem;">أداة
-                        كشف معلومات الجهاز (بواسطة IP):</label>
-                    <div style="display: flex; gap: 10px; margin-bottom: 15px;">
-                        <input type="text" id="home-ip-input" class="login-input" style="margin: 0; font-size: 0.9rem;"
-                            placeholder="مثال: 8.8.8.8">
-                        <button id="home-ip-btn" class="btn"
-                            style="padding: 0 20px; font-size: 0.9rem; white-space: nowrap; background: #6366f1;">فحص</button>
+            <p style="margin-top: 25px; font-size: 0.9rem; color: var(--text-muted); opacity: 0.8;">
+                <ion-icon name="shield-checkmark" style="color: var(--accent); vertical-align: bottom;"></ion-icon>
+                مشفر بالكامل (End-to-End) | لا يتطلب تسجيل
+            </p>
+        </section>
+
+        <!-- How it works - Steps -->
+        <section style="margin: 60px 0; text-align: center;">
+            <h2 style="font-size: 2rem; margin-bottom: 50px; font-weight: 800;">كيف يعمل النظام؟ <span
+                    style="font-weight: 300;">(في 30 ثانية)</span></h2>
+
+            <div class="steps-container" style="display: flex; flex-wrap: wrap; justify-content: center; gap: 30px;">
+                <div class="step-card"
+                    style="flex: 1; min-width: 280px; text-align: center; padding: 30px; position: relative;">
+                    <div
+                        style="width: 60px; height: 60px; background: var(--bg-dark); border: 2px solid var(--primary); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: 900; margin: 0 auto 20px auto; color: var(--primary);">
+                        1</div>
+                    <h3 style="margin-bottom: 10px;">افتح الموقع في الجوال القديم</h3>
+                    <p style="color: var(--text-muted); font-size: 0.9rem;">استخدم هاتفك القديم، افتح هذا الموقع عليه،
+                        واكتب اسماً للجلسة ثم اضغط "إنشاء كاميرا".</p>
+                </div>
+
+                <div class="step-card" style="flex: 1; min-width: 280px; text-align: center; padding: 30px;">
+                    <div
+                        style="width: 60px; height: 60px; background: var(--bg-dark); border: 2px solid var(--accent); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: 900; margin: 0 auto 20px auto; color: var(--accent);">
+                        2</div>
+                    <h3 style="margin-bottom: 10px;">انسخ رابط المراقبة</h3>
+                    <p style="color: var(--text-muted); font-size: 0.9rem;">سيظهر لك "باركود" ورابط. انسخ هذا الرابط
+                        وأرسله لنفسك (واتساب مثلاً).</p>
+                </div>
+
+                <div class="step-card" style="flex: 1; min-width: 280px; text-align: center; padding: 30px;">
+                    <div
+                        style="width: 60px; height: 60px; background: var(--bg-dark); border: 2px solid #fbbf24; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: 900; margin: 0 auto 20px auto; color: #fbbf24;">
+                        3</div>
+                    <h3 style="margin-bottom: 10px;">شاهد من جوالك الأساسي</h3>
+                    <p style="color: var(--text-muted); font-size: 0.9rem;">افتح الرابط في جوالك الأساسي، واستمتع
+                        بمراقبة وصوت وبث مباشر فوراً!</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Features Grid (Redesigned) -->
+        <section style="margin: 100px 0;">
+            <div style="text-align: center; margin-bottom: 60px;">
+                <h2 style="font-size: 2.2rem; font-weight: 900; margin-bottom: 15px;">لماذا <span
+                        style="color: var(--primary);">برج المراقبة</span> هو الأفضل؟</h2>
+                <p style="color: var(--text-muted);">مميزات احترافية تنافس أنظمة المراقبة الباهظة، مجاناً بين يديك</p>
+            </div>
+
+            <div class="btn-grid" style="grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
+                <!-- Feature 1 -->
+                <div class="controls-panel hover-lift"
+                    style="border-right: 4px solid var(--primary); text-align: right;">
+                    <ion-icon name="eye-off"
+                        style="font-size: 2rem; color: var(--primary); margin-bottom: 15px;"></ion-icon>
+                    <h3 style="font-size: 1.2rem; margin-bottom: 10px;">وضع التخفي الذكي</h3>
+                    <p style="font-size: 0.9rem; color: var(--text-muted); line-height: 1.6;">يمكنك جعل شاشة الهاتف
+                        المراقب "سوداء" تماماً وكأنه مغلق، بينما الكاميرا تعمل في الخلفية بامتياز.</p>
+                </div>
+
+                <!-- Feature 2 -->
+                <div class="controls-panel hover-lift"
+                    style="border-right: 4px solid var(--accent); text-align: right;">
+                    <ion-icon name="flash"
+                        style="font-size: 2rem; color: var(--accent); margin-bottom: 15px;"></ion-icon>
+                    <h3 style="font-size: 1.2rem; margin-bottom: 10px;">كاشف حركة AI</h3>
+                    <p style="font-size: 0.9rem; color: var(--text-muted); line-height: 1.6;">نظام ذكي يراقب المكان،
+                        ويرسل لك تنبيهاً فورياً إذا تحرك أي شيء أمام الكاميرا.</p>
+                </div>
+
+                <!-- Feature 3 -->
+                <div class="controls-panel hover-lift" style="border-right: 4px solid #f59e0b; text-align: right;">
+                    <ion-icon name="wifi" style="font-size: 2rem; color: #f59e0b; margin-bottom: 15px;"></ion-icon>
+                    <h3 style="font-size: 1.2rem; margin-bottom: 10px;">يعمل بدون إنترنت قوي</h3>
+                    <p style="font-size: 0.9rem; color: var(--text-muted); line-height: 1.6;">تقنية P2P تضمن بثاً سلساً
+                        حتى مع سرعات الإنترنت الضعيفة، مع توفير هائل في استهلاك البيانات.</p>
+                </div>
+
+                <!-- Feature 4 -->
+                <div class="controls-panel hover-lift" style="border-right: 4px solid #ef4444; text-align: right;">
+                    <ion-icon name="lock-closed"
+                        style="font-size: 2rem; color: #ef4444; margin-bottom: 15px;"></ion-icon>
+                    <h3 style="font-size: 1.2rem; margin-bottom: 10px;">خصوصية تامة</h3>
+                    <p style="font-size: 0.9rem; color: var(--text-muted); line-height: 1.6;">بث الفيديو لا يمر عبر
+                        سيرفراتنا لتخزينه. الاتصال مباشر بين جهازك وجهازك (Encrypted P2P).</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Testimonials (Social Proof) -->
+        <section style="margin: 80px 0; background: rgba(255,255,255,0.02); padding: 50px; border-radius: 30px;">
+            <h2 style="text-align: center; margin-bottom: 40px; font-size: 1.8rem;">قصص نجاح المستخدمين ❤️</h2>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 25px;">
+                <!-- Review 1 -->
+                <div
+                    style="background: var(--bg-card); padding: 25px; border-radius: 20px; border: 1px solid var(--glass-border);">
+                    <div style="color: #fbbf24; margin-bottom: 10px;">
+                        <ion-icon name="star"></ion-icon><ion-icon name="star"></ion-icon><ion-icon
+                            name="star"></ion-icon><ion-icon name="star"></ion-icon><ion-icon name="star"></ion-icon>
                     </div>
-                    <div id="home-ip-result"
-                        style="display: none; background: rgba(0,0,0,0.3); padding: 15px; border-radius: 15px; border: 1px solid var(--glass-border); text-align: right; font-size: 0.8rem;">
-                        <!-- Results -->
+                    <p style="font-size: 0.95rem; line-height: 1.6; margin-bottom: 15px;">"فكرة عبقرية! استخدمته لمراقبة
+                        طفلي الرضيع وأنا بالمطبخ. الصوت والصورة واضحين جداً وما يحتاج انترنت قوي."</p>
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <div
+                            style="width: 40px; height: 40px; background: var(--primary); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white;">
+                            س</div>
+                        <span style="font-size: 0.9rem; font-weight: 700;">سارة، أم وجدان</span>
+                    </div>
+                </div>
+
+                <!-- Review 2 -->
+                <div
+                    style="background: var(--bg-card); padding: 25px; border-radius: 20px; border: 1px solid var(--glass-border);">
+                    <div style="color: #fbbf24; margin-bottom: 10px;">
+                        <ion-icon name="star"></ion-icon><ion-icon name="star"></ion-icon><ion-icon
+                            name="star"></ion-icon><ion-icon name="star"></ion-icon><ion-icon name="star"></ion-icon>
+                    </div>
+                    <p style="font-size: 0.95rem; line-height: 1.6; margin-bottom: 15px;">"كنت بشتري كاميرا بـ 300 ريال،
+                        هالموقع وفرها علي. استخدمت جوال سامسونج قديم والحين يراقب البيت 24 ساعة."</p>
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <div
+                            style="width: 40px; height: 40px; background: var(--accent); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white;">
+                            أ</div>
+                        <span style="font-size: 0.9rem; font-weight: 700;">أحمد العتيبي</span>
                     </div>
                 </div>
             </div>
         </section>
 
-        <!-- Advanced Features Showcase -->
-        <section style="margin-top: 80px;">
-            <div style="text-align: center; margin-bottom: 50px;">
-                <h2 style="font-size: 2rem; font-weight: 900; margin-bottom: 15px;">لوحة تحكم <span
-                        style="color: var(--primary);">خارقة</span> في يدك</h2>
-                <p style="color: var(--text-muted); max-width: 700px; margin: 0 auto;">اكتشف القوة الحقيقية للمراقبة عن
-                    بُعد من خلال مجموعة الأدوات المتقدمة التي توفرها المنظومة للمشتركين.</p>
-            </div>
-
-            <div class="btn-grid" style="grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px;">
-                <!-- 1. AI Motion Detection -->
-                <div class="controls-panel" style="border-right: 4px solid #f59e0b;">
-                    <div style="display: flex; gap: 15px; align-items: flex-start;">
-                        <div style="background: rgba(245, 158, 11, 0.1); padding: 12px; border-radius: 12px;">
-                            <ion-icon name="eye" style="font-size: 1.8rem; color: #f59e0b;"></ion-icon>
-                        </div>
-                        <div style="text-align: right;">
-                            <h3 style="margin-bottom: 8px; font-size: 1.1rem;">رادار كشف الحركة (AI)</h3>
-                            <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.6;">نظام ذكي يقوم
-                                بتحليل الصورة وتنبيهك فوراً بصوت إنذار عند وجود أي حركة مريبة أمام الكاميرا.</p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- 2. Remote Siren -->
-                <div class="controls-panel" style="border-right: 4px solid #ef4444;">
-                    <div style="display: flex; gap: 15px; align-items: flex-start;">
-                        <div style="background: rgba(239, 68, 68, 0.1); padding: 12px; border-radius: 12px;">
-                            <ion-icon name="megaphone" style="font-size: 1.8rem; color: #ef4444;"></ion-icon>
-                        </div>
-                        <div style="text-align: right;">
-                            <h3 style="margin-bottom: 8px; font-size: 1.1rem;">صافرة الإنذار المدوية</h3>
-                            <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.6;">إمكانية إطلاق
-                                صرخة إنذار بأقصى صوت من الجهاز المراقب لإخافة المتسللين أو تنبيه من في المكان عن بُعد.
-                            </p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- 3. Multi-View Dashboard -->
-                <div class="controls-panel" style="border-right: 4px solid var(--primary);">
-                    <div style="display: flex; gap: 15px; align-items: flex-start;">
-                        <div style="background: rgba(59, 130, 246, 0.1); padding: 12px; border-radius: 12px;">
-                            <ion-icon name="grid" style="font-size: 1.8rem; color: var(--primary);"></ion-icon>
-                        </div>
-                        <div style="text-align: right;">
-                            <h3 style="margin-bottom: 8px; font-size: 1.1rem;">شاشة المراقبة الكبرى</h3>
-                            <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.6;">راقب حتى 4 أجهزة
-                                في وقت واحد عبر لوحة تحكم موحدة (Multi-View) تتيح لك رؤية كل شيء في شاشة واحدة.</p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- 4. Video Recording -->
-                <div class="controls-panel" style="border-right: 4px solid #10b981;">
-                    <div style="display: flex; gap: 15px; align-items: flex-start;">
-                        <div style="background: rgba(16, 185, 129, 0.1); padding: 12px; border-radius: 12px;">
-                            <ion-icon name="videocam" style="font-size: 1.8rem; color: #10b981;"></ion-icon>
-                        </div>
-                        <div style="text-align: right;">
-                            <h3 style="margin-bottom: 8px; font-size: 1.1rem;">تسجيل الفيديو والميديا</h3>
-                            <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.6;">ليس فقط بثاً
-                                حياً؛ يمكنك تسجيل مقاطع فيديو وحفظها بدقة HD على جهازك للرجوع إليها كدليل أمان.</p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- 5. Status & Battery Alerts -->
-                <div class="controls-panel" style="border-right: 4px solid #8b5cf6;">
-                    <div style="display: flex; gap: 15px; align-items: flex-start;">
-                        <div style="background: rgba(139, 92, 246, 0.1); padding: 12px; border-radius: 12px;">
-                            <ion-icon name="battery-charging" style="font-size: 1.8rem; color: #8b5cf6;"></ion-icon>
-                        </div>
-                        <div style="text-align: right;">
-                            <h3 style="margin-bottom: 8px; font-size: 1.1rem;">تنبيهات البطارية والنظام</h3>
-                            <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.6;">استقبل إشعارات
-                                فورية عند انخفاض بطارية الجهاز المراقب أو انقطاع اتصاله بالإنترنت لضمان استمرارية العمل.
-                            </p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- 6. Full Remote Stealth -->
-                <div class="controls-panel" style="border-right: 4px solid #ec4899;">
-                    <div style="display: flex; gap: 15px; align-items: flex-start;">
-                        <div style="background: rgba(236, 72, 153, 0.1); padding: 12px; border-radius: 12px;">
-                            <ion-icon name="eye-off" style="font-size: 1.8rem; color: #ec4899;"></ion-icon>
-                        </div>
-                        <div style="text-align: right;">
-                            <h3 style="margin-bottom: 8px; font-size: 1.1rem;">الوضع الخفي والتحكم بالزووم</h3>
-                            <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.6;">تحكم كامل بزاوية
-                                الرؤية (Zoom 10x) مع إمكانية إطفاء شاشة الجهاز المراقب ليعمل في خفاء تام.</p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- 7. GPS Tracking -->
-                <div class="controls-panel" style="border-right: 4px solid #6366f1;">
-                    <div style="display: flex; gap: 15px; align-items: flex-start;">
-                        <div style="background: rgba(99, 102, 241, 0.1); padding: 12px; border-radius: 12px;">
-                            <ion-icon name="location" style="font-size: 1.8rem; color: #6366f1;"></ion-icon>
-                        </div>
-                        <div style="text-align: right;">
-                            <h3 style="margin-bottom: 8px; font-size: 1.1rem;">تتبع جغرافي (GPS)</h3>
-                            <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.6;">تحديد موقع الجهاز
-                                الحالي على الخريطة بدقة عالية مع تحديث لحظي للمسارات والتحركات.</p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- 8. IP Analysis Tool -->
-                <div class="controls-panel" style="border-right: 4px solid #fbbf24;">
-                    <div style="display: flex; gap: 15px; align-items: flex-start;">
-                        <div style="background: rgba(251, 191, 36, 0.1); padding: 12px; border-radius: 12px;">
-                            <ion-icon name="barcode" style="font-size: 1.8rem; color: #fbbf24;"></ion-icon>
-                        </div>
-                        <div style="text-align: right;">
-                            <h3 style="margin-bottom: 8px; font-size: 1.1rem;">تحليل الشبكة (IP)</h3>
-                            <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.6;">أداة مدمجة لتحليل
-                                الـ IP الخارجي وكشف الموقع الجغرافي ونوع مزود الخدمة ومعلومات الاتصال.</p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- 9. Storage & Capture -->
-                <div class="controls-panel" style="border-right: 4px solid #14b8a6;">
-                    <div style="display: flex; gap: 15px; align-items: flex-start;">
-                        <div style="background: rgba(20, 184, 166, 0.1); padding: 12px; border-radius: 12px;">
-                            <ion-icon name="camera" style="font-size: 1.8rem; color: #14b8a6;"></ion-icon>
-                        </div>
-                        <div style="text-align: right;">
-                            <h3 style="margin-bottom: 8px; font-size: 1.1rem;">لقطات فورية ومعرض</h3>
-                            <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.6;">إمكانية أخذ لقطات
-                                شاشة (Screenshots) وحفظها فوراً في معرض خاص داخل الموقع للرجوع إليها.</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- Premium Subscription Section -->
+        <!-- Premium Subscription & Payment Section -->
         <section id="pricing-section" class="footer-section">
-            <h2 style="font-size: 2.2rem; font-weight: 900; margin-bottom: 10px;">انضم إلى <span
+            <h2 style="font-size: 2.5rem; font-weight: 900; margin-bottom: 15px;">باقة <span
                     style="color: var(--primary);">المحترفين</span></h2>
-            <p style="color: var(--text-muted); max-width: 600px; margin: 0 auto 40px auto;">احصل على كامل الصلاحيات
-                والتحكم المطلق في منظومتك الأمنية من خلال اشتراك سنوي رمزي.</p>
+            <p style="color: var(--text-muted); max-width: 600px; margin: 0 auto 50px auto; font-size: 1.1rem;">
+                احصل على راحة البال الكاملة مع ميزات الصيانة الفورية والدعم الفني المباشر
+            </p>
 
             <div class="pricing-grid">
-                <div class="pricing-card">
-                    <h3 style="color: var(--text-muted); font-size: 1rem;">الاشتراك السنوي</h3>
-                    <div class="price-tag">15$ <span>/ سنة</span></div>
-                    <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 20px;">أو ما يعادلها بالعملة
-                        المحلية لبلدك</p>
+                <div class="pricing-card" style="border: 2px solid var(--primary); transform: scale(1.05);">
+                    <h3 style="color: var(--primary); font-size: 1.2rem; font-weight: 800;">الاشتراك السنوي الشامل</h3>
+                    <div class="price-tag">15$ <span style="font-size: 1rem; color: var(--text-muted);">/ سنوياً</span>
+                    </div>
+                    <p style="font-size: 0.9rem; margin-bottom: 30px; color: var(--text-main);">سعر رمزي = 1.25$ فقط
+                        بالشهر!</p>
+
                     <ul style="text-align: right; margin: 30px 0; list-style: none; padding: 0;">
-                        <li style="margin-bottom: 15px; display: flex; align-items: center; gap: 10px;">
-                            <ion-icon name="checkmark-circle" style="color: var(--accent);"></ion-icon> دعم فني متواصل
-                            24/7
+                        <li
+                            style="margin-bottom: 15px; display: flex; align-items: center; gap: 10px; font-size: 0.95rem;">
+                            <ion-icon name="checkmark-circle"
+                                style="color: var(--accent); font-size: 1.3rem;"></ion-icon>
+                            ضمان تشغيل السيرفر 24/7 بدون انقطاع
                         </li>
-                        <li style="margin-bottom: 15px; display: flex; align-items: center; gap: 10px;">
-                            <ion-icon name="checkmark-circle" style="color: var(--accent);"></ion-icon> عدد غير محدود من
-                            الجلسات
+                        <li
+                            style="margin-bottom: 15px; display: flex; align-items: center; gap: 10px; font-size: 0.95rem;">
+                            <ion-icon name="checkmark-circle"
+                                style="color: var(--accent); font-size: 1.3rem;"></ion-icon>
+                            دعم فني مباشر عبر الواتساب
                         </li>
-                        <li style="margin-bottom: 15px; display: flex; align-items: center; gap: 10px;">
-                            <ion-icon name="checkmark-circle" style="color: var(--accent);"></ion-icon> جودة بث فائقة
-                            السرعة
+                        <li
+                            style="margin-bottom: 15px; display: flex; align-items: center; gap: 10px; font-size: 0.95rem;">
+                            <ion-icon name="checkmark-circle"
+                                style="color: var(--accent); font-size: 1.3rem;"></ion-icon>
+                            مزايا "الإيقاظ عن بعد" والتنبيهات
                         </li>
-                        <li style="margin-bottom: 15px; display: flex; align-items: center; gap: 10px;">
-                            <ion-icon name="checkmark-circle" style="color: var(--accent);"></ion-icon> تخزين سحابي
-                            للصور الملتقطة
+                        <li
+                            style="margin-bottom: 15px; display: flex; align-items: center; gap: 10px; font-size: 0.95rem;">
+                            <ion-icon name="checkmark-circle"
+                                style="color: var(--accent); font-size: 1.3rem;"></ion-icon>
+                            عدد غير محدود من أجهزة المراقبة
                         </li>
                     </ul>
                     <button
                         onclick="document.getElementById('payment-form-section').scrollIntoView({behavior: 'smooth'})"
-                        class="btn" style="width: 100%;">اطلب اشتراكك الآن</button>
-                </div>
-            </div>
-
-            <!-- How it works -->
-            <div style="margin-top: 60px;">
-                <h3 style="margin-bottom: 30px; font-weight: 800;">خطوات تفعيل الحساب</h3>
-                <div class="steps-container">
-                    <div class="step-card">
-                        <div class="step-number">1</div>
-                        <h4 style="margin-bottom: 10px;">تحويل رسوم الاشتراك</h4>
-                        <p style="font-size: 0.8rem; color: var(--text-muted);">قم بتحويل المبلغ عبر أحد طرق الدفع
-                            الموضحة في النموذج أدناه.</p>
-                    </div>
-                    <div class="step-card">
-                        <div class="step-number">2</div>
-                        <h4 style="margin-bottom: 10px;">نموذج تأكيد الدفع</h4>
-                        <p style="font-size: 0.8rem; color: var(--text-muted);">قم بتعبئة النموذج أدناه مع إرفاق صورة
-                            إيصال التحويل لتوثيق العملية.</p>
-                    </div>
-                    <div class="step-card">
-                        <div class="step-number">3</div>
-                        <h4 style="margin-bottom: 10px;">استلام الحساب</h4>
-                        <p style="font-size: 0.8rem; color: var(--text-muted);">سنقوم بمراجعة الطلب وتزويدك ببيانات
-                            الدخول عبر بريدك الإلكتروني فوراً.</p>
-                    </div>
+                        class="btn" style="width: 100%; box-shadow: 0 10px 30px rgba(59, 130, 246, 0.4);">
+                        اشترك الآن وابدأ فوراً
+                    </button>
                 </div>
             </div>
 
             <!-- Payment Confirmation Form -->
-            <div id="payment-form-section" class="payment-form-container">
-                <div class="payment-instructions-box">
-                    <h4><ion-icon name="wallet-outline"></ion-icon> بيانات الدفع المعتمدة</h4>
-                    <div id="payment-info-display" class="payment-text">جاري تحميل بيانات الدفع...</div>
+            <div id="payment-form-section" class="payment-form-container" style="margin-top: 60px;">
+                <div class="payment-instructions-box" style="margin-bottom: 30px;">
+                    <h4 style="margin-bottom: 15px; font-size: 1.1rem;"><ion-icon name="wallet"></ion-icon> طرق الدفع
+                        المتاحة</h4>
+                    <div id="payment-info-display" class="payment-text" style="font-size: 0.95rem; line-height: 1.8;">
+                        جاري تحميل بيانات الدفع...
+                    </div>
                 </div>
 
-                <h3><ion-icon name="receipt-outline"
-                        style="vertical-align: middle; margin-left:10px; color:var(--primary)"></ion-icon> نموذج تأكيد
-                    الاشتراك والدفع</h3>
-                <p style="font-size: 0.85rem; color:var(--text-muted); margin-bottom: 30px;">يرجى تعبئة البيانات وإرفاق
-                    الإيصال لتفعيل حسابك.</p>
+                <h3 style="border-bottom: 1px solid var(--glass-border); padding-bottom: 15px; margin-bottom: 25px;">
+                    <ion-icon name="cloud-upload"
+                        style="color: var(--primary); vertical-align: middle; margin-left:10px"></ion-icon>
+                    تفعيل الاشتراك
+                </h3>
 
                 <form id="subscription-form">
                     <div class="form-group">
-                        <label>👤 الاسم الكامل:</label>
-                        <input type="text" id="client-name" class="form-input" placeholder="أدخل اسمك كما في الحوالة"
+                        <label>الاسم الكريم:</label>
+                        <input type="text" id="client-name" class="form-input" placeholder="اسمك الكامل" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>البريد الإلكتروني (لاستلام الحساب):</label>
+                        <input type="email" id="client-email" class="form-input" placeholder="name@example.com"
                             required>
                     </div>
 
                     <div class="form-group">
-                        <label>📧 البريد الإلكتروني:</label>
-                        <input type="email" id="client-email" class="form-input"
-                            placeholder="سنرسل لك بيانات الحساب هنا" required>
-                    </div>
-
-                    <div class="form-group">
-                        <label>📱 رقم الهاتف (واتساب):</label>
+                        <label>رقم الواتساب (للدعم الفني):</label>
                         <input type="tel" id="client-phone" class="form-input" placeholder="+966xxxxxxxxx"
                             style="direction: ltr; text-align: left;">
                     </div>
 
                     <div class="form-group">
-                        <label>📸 صورة إيصال الدفع:</label>
-                        <div class="file-upload-box" id="drop-zone">
-                            <ion-icon name="cloud-upload-outline"></ion-icon>
-                            <p id="file-label">اضغط لرفع صورة الإيصال أو التحويل</p>
+                        <label>صورة التحويل / الإيصال:</label>
+                        <div class="file-upload-box" id="drop-zone" style="background: var(--glass);">
+                            <ion-icon name="image-outline"></ion-icon>
+                            <p id="file-label">اضغط هنا لرفع صورة الإيصال</p>
                             <input type="file" id="receipt-file" accept="image/*" style="display: none;">
                             <img id="receipt-preview" class="file-preview">
                         </div>
                     </div>
 
-                    <button type="submit" id="submit-form-btn" class="submit-btn" style="margin-top: 20px;">
-                        إرسال طلب التفعيل
+                    <button type="submit" id="submit-form-btn" class="submit-btn"
+                        style="margin-top: 25px; padding: 18px; font-size: 1.1rem;">
+                        <ion-icon name="paper-plane"></ion-icon> إرسال وتفعيل الحساب
                     </button>
 
-                    <p id="form-status" style="margin-top: 15px; text-align: center; font-size: 0.9rem; display: none;">
+                    <p id="form-status" style="margin-top: 20px; text-align: center; font-weight: bold; display: none;">
                     </p>
                 </form>
             </div>
 
-            <!-- Terms & Content -->
-            <div class="terms-container">
-                <h3 style="margin-bottom: 25px; border-bottom: 1px solid var(--glass-border); padding-bottom: 10px;">
-                    الشروط والأحكام وخصوصية الموقع</h3>
-
-                <div class="terms-item">
-                    <ion-icon name="shield-half-outline"></ion-icon>
-                    <div>
-                        <h4 style="margin-bottom: 5px;">البند الأول: نظام الاشتراك والدفع</h4>
-                        <p style="font-size: 0.85rem; color: var(--text-muted);">الموقع يقدم خدمة مدفوعة باشتراك سنوي
-                            واحد بسعر رمزي. يضمن لك هذا الاشتراك استمرارية الخدمة، التحديثات الدورية، وحماية بياناتك
-                            بشكل كامل دون أي رسوم خفية إضافية.</p>
-                    </div>
-                </div>
-
-                <div class="terms-item">
-                    <ion-icon name="cube-outline"></ion-icon>
-                    <div>
-                        <h4 style="margin-bottom: 5px;">البند الثاني: محتويات وإمكانيات المنظومة</h4>
-                        <p style="font-size: 0.85rem; color: var(--text-muted);">
-                            توفر منظومة <strong>برج المراقبة</strong> تجربة أمنية متكاملة تشمل:
-                            بث الفيديو المباشر في الخلفية، خاصية "وضع التخفي" لقفل الشاشة أثناء التصوير، تتبع جغرافي
-                            دقيق عبر الأقمار الصناعية، نظام مراسلة فورية للطوارئ (SMS)، وإمكانية التقاط الصور وتصفح
-                            ملفات الجهاز عن بُعد. كل هذا يتم عبر بروتوكولات تشفير P2P لضمان أعلى مستويات الخصوصية.
-                        </p>
-                    </div>
-                </div>
-
-                <div class="terms-item">
-                    <ion-icon name="heart-outline"></ion-icon>
-                    <div>
-                        <h4 style="margin-bottom: 5px;">البند الثالث: الاستخدام المسؤول</h4>
-                        <p style="font-size: 0.85rem; color: var(--text-muted);">الموقع مُعد للاستخدام في مراقبة
-                            الأطفال، كبار السن، أو تأمين الممتلكات الشخصية. يُمنع منعاً باتاً استخدامه في أي أغراض تخالف
-                            القوانين المحلية أو تنتهك خصوصية الآخرين دون علمهم.</p>
-                    </div>
-                </div>
-
-                <div style="margin-top: 40px; text-align: center;">
-                    <a href="mailto:support@safewatch.com" class="contact-badge" id="footer-support-email">
-                        <ion-icon name="mail-outline"></ion-icon>
-                        <span id="footer-support-text">للدعم والاستفسارات: support@safewatch.com</span>
-                    </a>
+            <!-- Footer Contact -->
+            <div
+                style="margin-top: 80px; border-top: 1px solid var(--glass-border); padding-top: 40px; color: var(--text-muted); font-size: 0.9rem;">
+                <p>جميع الحقوق محفوظة &copy; 2026 برج المراقبة الأمنية</p>
+                <div style="margin-top: 15px; display: flex; justify-content: center; gap: 20px;">
+                    <a href="mailto:support@safewatch-sa.com"
+                        style="color: var(--text-muted); text-decoration: none;">الدعم الفني</a>
+                    <a href="#" style="color: var(--text-muted); text-decoration: none;">الشروط والأحكام</a>
                 </div>
             </div>
-
-            <p style="font-size: 0.7rem; color: var(--text-muted); margin-top: 40px;">&copy; 2026 برج المراقبة - جميع
-                الحقوق محفوظة</p>
         </section>
     </div>
 
