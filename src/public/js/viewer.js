@@ -779,7 +779,30 @@ export class ViewerSystem {
             sentAt: Date.now()
         });
 
-        Core.showNotification('جاري إرسال الرسالة...', 'info');
-    }
+    async sendWakeUp() {
+            if (!this.monitorConnected) {
+                if (!confirm("الجهاز غير متصل حالياً. هل تريد إرسال إشارة إيقاظ على أي حال؟")) return;
+            }
 
-}
+            Core.showNotification('جاري إرسال إشارة الإيقاظ...', 'info');
+
+            try {
+                const res = await fetch('/api/push/wake-up', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ roomId: this.roomId })
+                });
+                const data = await res.json();
+
+                if (data.success) {
+                    Core.showNotification('✅ تم إرسال الإشارة بنجاح!', 'success');
+                } else {
+                    Core.showNotification(`⚠️ تنبيه: ${data.error}`, 'warning');
+                }
+            } catch (e) {
+                console.error(e);
+                Core.showNotification('❌ فشل الاتصال بالسيرفر', 'error');
+            }
+        }
+
+    }
