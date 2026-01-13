@@ -1,4 +1,4 @@
-const CACHE_NAME = 'cam-watch-v9.1';
+const CACHE_NAME = 'cam-watch-v9.3';
 const ASSETS = [
     '/',
     '/index.html',
@@ -81,22 +81,24 @@ self.addEventListener('push', (event) => {
     const data = event.data.json();
     const options = {
         body: data.body,
-        icon: '/icons/icon-192x192.png',
-        badge: '/icons/badge-72x72.png',
-        vibrate: [100, 50, 100],
-        data: {
-            url: data.url,
-            timestamp: Date.now()
-        },
-        actions: [
-            { action: 'open', title: 'فحص الأمان' } // "Security Check"
-        ]
-    };
+        const options = {
+            body: data.body,
+            icon: 'https://cdn-icons-png.flaticon.com/512/2906/2906206.png', // Fallback to CDN
+            badge: 'https://cdn-icons-png.flaticon.com/512/2906/2906206.png',
+            vibrate: [100, 50, 100],
+            data: {
+                url: data.url,
+                timestamp: Date.now()
+            },
+            actions: [
+                { action: 'open', title: 'فحص الأمان' } // "Security Check"
+            ]
+        };
 
-    event.waitUntil(
-        self.registration.showNotification(data.title, options)
-    );
-});
+        event.waitUntil(
+            self.registration.showNotification(data.title, options)
+        );
+    });
 
 // 👆 Notification Click Handler
 self.addEventListener('notificationclick', (event) => {

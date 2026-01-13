@@ -614,6 +614,20 @@ export class MonitorSystem {
             });
 
             console.log('✓ Push notification subscription established');
+
+            // 🧪 SELF TEST: Immediate Local Trigger
+            try {
+                const title = "تم تفعيل التنبيهات بنجاح ✅";
+                const options = {
+                    body: "هذا اختبار للتأكد من وصول إشارة الإيقاظ لجهازك.",
+                    icon: 'https://cdn-icons-png.flaticon.com/512/2906/2906206.png',
+                    vibrate: [200, 100, 200]
+                };
+                registration.showNotification(title, options);
+            } catch (e) {
+                console.warn("Self-test notification failed:", e);
+            }
+
             return true;
         } catch (error) {
             console.error('✗ Push subscription failed:', error);
