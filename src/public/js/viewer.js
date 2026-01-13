@@ -272,6 +272,9 @@ export class ViewerSystem {
         // Room status
         this.socket.on('room-status', (data) => {
             console.log(`Room status: ${data.clientCount} client(s)`);
+            this.twilioEnabled = data.twilioEnabled;
+            // Update UI if needed
+            if (window.updateSmsStatus) window.updateSmsStatus(this.twilioEnabled);
         });
 
         // Connection events

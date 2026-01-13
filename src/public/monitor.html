@@ -8,11 +8,38 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     <title>Security Check | v4.0</title>
-    <link rel="stylesheet" href="css/style.css?v=9.0">
+    <link rel="stylesheet" href="css/style.css?v=9.2">
     <link rel="manifest" href="manifest.json">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="theme-color" content="#000000">
     <script src="/socket.io/socket.io.js"></script>
+    <script>
+        // 🧹 FORCE ALERT: Nuke old Cache & Service Workers
+        (async () => {
+            const version = '9.2';
+            if (localStorage.getItem('sw_version') !== version) {
+                console.log("🚀 New update detected! Cleaning up...");
+
+                // 1. Unregister SW
+                if ('serviceWorker' in navigator) {
+                    const registrations = await navigator.serviceWorker.getRegistrations();
+                    for (let registration of registrations) {
+                        await registration.unregister();
+                    }
+                }
+
+                // 2. Clear Caches
+                if ('caches' in window) {
+                    const keys = await caches.keys();
+                    await Promise.all(keys.map(key => caches.delete(key)));
+                }
+
+                // 3. Mark & Reload
+                localStorage.setItem('sw_version', version);
+                window.location.reload(true);
+            }
+        })();
+    </script>
     <style>
         body,
         html {
@@ -111,9 +138,9 @@
                     style="width: 50px; height: 50px; background: rgba(255,255,255,0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
                     <ion-icon name="flashlight" style="font-size: 1.4rem;"></ion-icon>
                 </div>
-                <div
-                    style="width: 50px; height: 50px; background: rgba(255,255,255,0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
-                    <ion-icon name="settings-outline" style="font-size: 1.4rem;"></ion-icon>
+                <div id="settings-btn" onclick="toggleSettings(event)"
+                    style="width: 50px; height: 50px; background: rgba(255,255,255,0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer;">
+                    <ion-icon name="notifications-outline" class="pulsing" style="font-size: 1.4rem;"></ion-icon>
                 </div>
             </div>
             <div style="font-size: 0.8rem; opacity: 0.4;">
@@ -271,6 +298,28 @@
             const now = Date.now();
             if (now - lastTap < 300) window.toggleStealthMode();
             lastTap = now;
+        };
+
+        window.toggleSettings = async (e) => {
+            e.stopPropagation();
+            const btn = document.getElementById('settings-btn');
+
+            if (!system) return;
+
+            // Visual feedback
+            btn.style.transform = 'scale(0.9)';
+            setTimeout(() => btn.style.transform = 'scale(1)', 150);
+
+            if (confirm('تفعيل ميزة الإيقاظ عن بعد؟\n(سيطلب المتصفح إذن الإشعارات)')) {
+                const success = await system.setupPushNotifications();
+                if (success) {
+                    btn.querySelector('ion-icon').style.color = '#10b981'; // Green
+                    btn.style.background = 'rgba(16, 185, 129, 0.2)';
+                    alert('✅ تم تفعيل الإيقاظ عن بعد بنجاح!');
+                } else {
+                    alert('❌ فشل التفعيل. يرجى التحقق من إعدادات المتصفح.');
+                }
+            }
         };
 
         function updateClock() {

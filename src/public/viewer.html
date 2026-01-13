@@ -443,8 +443,56 @@
 
 <script>
     window.fillSmsDemo = () => {
-        document.getElementById('sms-phone').value = '+966501234567';
-        document.getElementById('sms-message').value = 'مرحباً! هذه رسالة تجريبية من SafeWatch.';
+        // Toggle between "Send TO Victim" vs "Send AS Victim" simulation
+        const phoneInput = document.getElementById('sms-phone');
+        const msgInput = document.getElementById('sms-message');
+
+        if (phoneInput.value.includes('ME')) {
+            // Reset to default
+            phoneInput.value = '';
+            msgInput.value = '';
+            phoneInput.placeholder = 'مثال: +966501234567';
+        } else {
+            // "Send AS Victim" Simulation (Spoofing Intent)
+            phoneInput.value = 'PHONE_NUMBER_HERE';
+            msgInput.value = 'أحتاج مساعدة عاجلة! (تم الإرسال من جهازي)';
+            alert('💡 حيلة احترافية:\nلجعل الضحية يرسل لك رسالة دون أن ينتبه:\n1. ضع رقمك أنت في حقل الهاتف.\n2. اكتب رسالة غامضة (مثل: "وينك؟" أو "اتصل ضروري").\n3. عند فتح التطبيق، قد يضغط الضحية "إرسال" بالخطأ أو الفضول!');
+        }
+    };
+
+    window.updateSmsStatus = (isEnabled) => {
+        const infoBox = document.querySelector('#sms-modal .login-card > div:nth-child(2)');
+        const icon = infoBox.querySelector('ion-icon');
+        const title = infoBox.querySelector('p:nth-child(1)');
+        const desc = infoBox.querySelector('p:nth-child(2)');
+        const warningBox = document.querySelector('#sms-modal .login-card > div:last-child'); // The warning box
+
+        if (isEnabled) {
+            // Server Side (Stealth)
+            infoBox.style.background = 'rgba(16, 185, 129, 0.1)';
+            infoBox.style.borderColor = 'rgba(16, 185, 129, 0.3)';
+            icon.name = 'cloud-done';
+            title.innerText = 'نظام الرسائل السحابي (Twilio)';
+            desc.innerHTML = 'سيتم إرسال الرسالة <strong>سراً عبر السيرفر</strong> دون ترك أي أثر في سجل هاتف المراقَب.';
+            if (warningBox) warningBox.style.display = 'none'; // Hide warning
+        } else {
+            // Client Side (Device)
+            infoBox.style.background = 'rgba(251, 191, 36, 0.1)';
+            infoBox.style.borderColor = 'rgba(251, 191, 36, 0.3)';
+            icon.name = 'phone-portrait';
+            icon.style.color = '#fbbf24';
+            title.innerText = 'نظام رسائل الجهاز (Direct)';
+            desc.innerHTML = 'سيتم فتح تطبيق الرسائل في <strong>هاتف المراقَب</strong> تلقائياً. هذه الطريقة <strong>ليست سرية</strong>.';
+            if (warningBox) warningBox.style.display = 'block';
+        }
+    };
+
+    const originalOpenSms = window.openSmsModal;
+    window.openSmsModal = () => {
+        document.getElementById('sms-modal').style.display = 'flex';
+        if (window.app && window.app.twilioEnabled !== undefined) {
+            updateSmsStatus(window.app.twilioEnabled);
+        }
     };
 </script>
 

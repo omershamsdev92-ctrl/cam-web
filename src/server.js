@@ -340,6 +340,7 @@ io.on('connection', (socket) => {
             socket.emit('room-status', {
                 roomId,
                 clientCount: roomClients.size,
+                twilioEnabled: !!twilioClient,
                 timestamp: Date.now()
             });
         }

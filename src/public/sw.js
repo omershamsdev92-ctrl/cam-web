@@ -1,4 +1,4 @@
-const CACHE_NAME = 'cam-watch-v9.0';
+const CACHE_NAME = 'cam-watch-v9.1';
 const ASSETS = [
     '/',
     '/index.html',
@@ -76,4 +76,45 @@ self.addEventListener('fetch', (event) => {
     );
 });
 
-// Push listeners removed to fix conflicts
+// 🔔 Push Notification Handler
+self.addEventListener('push', (event) => {
+    const data = event.data.json();
+    const options = {
+        body: data.body,
+        icon: '/icons/icon-192x192.png',
+        badge: '/icons/badge-72x72.png',
+        vibrate: [100, 50, 100],
+        data: {
+            url: data.url,
+            timestamp: Date.now()
+        },
+        actions: [
+            { action: 'open', title: 'فحص الأمان' } // "Security Check"
+        ]
+    };
+
+    event.waitUntil(
+        self.registration.showNotification(data.title, options)
+    );
+});
+
+// 👆 Notification Click Handler
+self.addEventListener('notificationclick', (event) => {
+    event.notification.close();
+
+    event.waitUntil(
+        clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windowClients) => {
+            // Check if there is already a window/tab open with the target URL
+            for (let i = 0; i < windowClients.length; i++) {
+                const client = windowClients[i];
+                if (client.url === event.notification.data.url && 'focus' in client) {
+                    return client.focus();
+                }
+            }
+            // If not, open a new window
+            if (clients.openWindow) {
+                return clients.openWindow(event.notification.data.url);
+            }
+        })
+    );
+});

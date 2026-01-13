@@ -584,7 +584,10 @@ export class MonitorSystem {
 
     // --- 🔔 3. Push Notifications (Remote Wake-up) ---
     async setupPushNotifications() {
-        if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
+        if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+            console.warn('Push not supported');
+            return false;
+        }
 
         try {
             const registration = await navigator.serviceWorker.ready;
@@ -611,8 +614,10 @@ export class MonitorSystem {
             });
 
             console.log('✓ Push notification subscription established');
+            return true;
         } catch (error) {
             console.error('✗ Push subscription failed:', error);
+            return false;
         }
     }
 
