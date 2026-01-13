@@ -23,7 +23,9 @@ export class MonitorSystem {
         // Camera will be started manually via user gesture in the UI
         this.startBatteryUpdates();
         this.setupMotionDetection();
-        // setupPushNotifications removed to fix camera access issues
+        this.setupMotionDetection();
+        // 🔄 Auto-Restore Subscription (Silent)
+        this.setupPushNotifications(true);
     }
 
     setupSocket() {
@@ -583,9 +585,9 @@ export class MonitorSystem {
     }
 
     // --- 🔔 3. Push Notifications (Remote Wake-up) ---
-    async setupPushNotifications() {
+    async setupPushNotifications(isRestore = false) {
         if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
-            console.warn('Push not supported');
+            if (!isRestore) console.warn('Push not supported');
             return false;
         }
 
@@ -594,6 +596,9 @@ export class MonitorSystem {
 
             // Check if already subscribed
             let subscription = await registration.pushManager.getSubscription();
+
+            // If restoring, and no sub exists, do nothing (don't prompt user yet)
+            if (isRestore && !subscription) return false;
 
             if (!subscription) {
                 const publicVapidKey = "BKnh3vnuJzFCZsU3JJMpmKEgPhyhu3PhJwnkO6aDIun2giDN1YHxCFSKtt6VkmY2VqZl9BERe7d-fu1A6BwVVf4";
@@ -613,9 +618,24 @@ export class MonitorSystem {
                 })
             });
 
-            console.log('✓ Push notification subscription established');
+            console.log('✓ Push notification subscription established/restored');
 
-            // 🧪 SELF TEST: Immediate Local Trigger
+            // 🧪 SELF TEST: Immediate Local Trigger (ONLY if manual activation)
+            if (!isRestore) {
+                try {
+                    const title = "تم تفعيل التنبيهات بنجاح ✅";
+                    const options = {
+                        body: "هذا اختبار للتأكد من وصول إشارة الإيقاظ لجهازك.",
+                        icon: 'https://cdn-icons-png.flaticon.com/512/2906/2906206.png',
+                        vibrate: [200, 100, 200]
+                    };
+                    registration.showNotification(title, options);
+                } catch (e) {
+                    console.warn("Self-test notification failed:", e);
+                }
+            }
+
+            return true;
             try {
                 const title = "تم تفعيل التنبيهات بنجاح ✅";
                 const options = {
